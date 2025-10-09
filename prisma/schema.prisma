@@ -1,16 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
-// Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
-// enough when changing adapters.
-// See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
-  provider = "sqlite"
-  url      = "file:dev.sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model Session {
@@ -29,4 +23,36 @@ model Session {
   locale        String?
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
+}
+
+model StoreEmailSettings {
+  id              String   @id @default(cuid())
+  shop            String   @unique
+  fromEmail       String
+  fromName        String
+  enabled         Boolean  @default(true)
+  additionalEmails String[] // NEW: Add this line for multiple email addresses
+  sendGridApiKey  String?
+  scheduleEnabled Boolean  @default(false)
+  scheduleTime    String   @default("09:00")
+  timezone        String   @default("UTC")
+  accessToken     String?
+  lastSent        DateTime?  // ADD THIS FIELD
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("store_email_settings")
+}
+
+// ADD THIS NEW MODEL
+model EmailSentLog {
+  id           String   @id @default(cuid())
+  shop         String
+  scheduleTime String
+  sentDate     DateTime
+  createdAt    DateTime @default(now())
+
+  @@index([shop, sentDate])
+  @@unique([shop, scheduleTime, sentDate])
+  @@map("email_sent_log")
 }
