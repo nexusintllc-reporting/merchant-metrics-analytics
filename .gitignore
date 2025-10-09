@@ -23,3 +23,18 @@ database.sqlite
 # Ignore shopify files created during app dev
 .shopify/*
 .shopify.lock
+
+
+# Ignore environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# Node modules and build folders
+node_modules/
+build/
+dist/
+.vscode/
+.DS_Store
+*.log
