@@ -1,4 +1,3 @@
-
 // import sgMail from "@sendgrid/mail";
 // import { StoreEmailSettings } from "../models/StoreEmailSettings.server";
 // import { OrderData } from "./analyticsCollector.server";
@@ -41,16 +40,21 @@
 //         };
 //       }
 
-//       // Validate recipient email
-//       if (!settings.fromEmail || !this.isValidEmail(settings.fromEmail)) {
-//         throw new Error('Invalid recipient email address');
+//       // NEW: Get all email addresses (primary + additional)
+//       const allEmails = [
+//         settings.fromEmail,
+//         ...(settings.additionalEmails || [])
+//       ].filter(email => email && email.trim() && this.isValidEmail(email));
+
+//       if (allEmails.length === 0) {
+//         throw new Error('No valid recipient email addresses configured');
 //       }
 
 //       // Build email with analytics data
 //       const emailContent = this.buildAnalyticsEmail(analyticsData, this.shop);
       
 //       const msg = {
-//         to: settings.fromEmail,
+//         to: allEmails, // NEW: Send to all emails
 //         from: process.env.SENDGRID_FROM_EMAIL,
 //         subject: `Daily Analytics Report - ${this.shop} - ${new Date().toLocaleDateString()}`,
 //         html: emailContent,
@@ -61,18 +65,18 @@
       
 //       return {
 //         success: true,
-//         message: 'Email sent successfully',
+//         message: `Email sent successfully to ${allEmails.length} recipient(s)`,
+//         recipients: allEmails,
 //         result
 //       };
 
 //     } catch (error: any) {
-//   console.error('🔍 DEBUG: SendGrid Error Details:', error);
-//   console.error('🔍 DEBUG: SendGrid Response:', error?.response?.body);
-//   console.error('🔍 DEBUG: SendGrid Code:', error?.code);
-  
-//   // Include the actual error message
-//   throw new Error(`Failed to send analytics email: ${error.message}`);
-// }
+//       console.error('🔍 DEBUG: SendGrid Error Details:', error);
+//       console.error('🔍 DEBUG: SendGrid Response:', error?.response?.body);
+//       console.error('🔍 DEBUG: SendGrid Code:', error?.code);
+      
+//       throw new Error(`Failed to send analytics email: ${error.message}`);
+//     }
 //   }
 
 //   private isValidEmail(email: string): boolean {
@@ -542,7 +546,6 @@
 //   }
 // }
 
-
 import sgMail from "@sendgrid/mail";
 import { StoreEmailSettings } from "../models/StoreEmailSettings.server";
 import { OrderData } from "./analyticsCollector.server";
@@ -559,7 +562,9 @@ export class AnalyticsEmailService {
     this.shop = shop;
   }
 
-  async sendDailyAnalytics(analyticsData: OrderData) {
+  async sendDailyAnalytics(analyticsData: OrderData, emailOptions: {
+    bccEmails?: string[];
+  } = {}) {
     try {
       // Validate SendGrid configuration
       if (!process.env.SENDGRID_API_KEY) {
@@ -585,7 +590,7 @@ export class AnalyticsEmailService {
         };
       }
 
-      // NEW: Get all email addresses (primary + additional)
+      // Get all email addresses (primary + additional) - KEEP YOUR ORIGINAL LOGIC
       const allEmails = [
         settings.fromEmail,
         ...(settings.additionalEmails || [])
@@ -598,20 +603,37 @@ export class AnalyticsEmailService {
       // Build email with analytics data
       const emailContent = this.buildAnalyticsEmail(analyticsData, this.shop);
       
-      const msg = {
-        to: allEmails, // NEW: Send to all emails
+      // Use BCC from options if provided, otherwise use your original logic
+      const msg: any = {
+        to: process.env.SENDGRID_FROM_EMAIL, // Send to yourself in "To" field
         from: process.env.SENDGRID_FROM_EMAIL,
         subject: `Daily Analytics Report - ${this.shop} - ${new Date().toLocaleDateString()}`,
         html: emailContent,
         text: this.generateTextVersion(analyticsData, this.shop),
       };
 
+      // Add all recipients to BCC (this hides emails from each other)
+      let bccRecipients: string[] = [];
+      
+      if (emailOptions.bccEmails && emailOptions.bccEmails.length > 0) {
+        // Use BCC emails from frontend
+        bccRecipients = emailOptions.bccEmails.filter(email => email && email.trim());
+      } else {
+        // Use your original email list in BCC
+        bccRecipients = allEmails;
+      }
+
+      if (bccRecipients.length > 0) {
+        msg.bcc = bccRecipients;
+      }
+
       const result = await sgMail.send(msg);
       
       return {
         success: true,
-        message: `Email sent successfully to ${allEmails.length} recipient(s)`,
-        recipients: allEmails,
+        message: `Email sent successfully to ${bccRecipients.length} recipient(s) via BCC`,
+        recipients: bccRecipients,
+        recipientsCount: bccRecipients.length, // Add this property
         result
       };
 
@@ -629,7 +651,10 @@ export class AnalyticsEmailService {
     return emailRegex.test(email);
   }
 
+
+  // KEEP ALL YOUR ORIGINAL METHODS BELOW - THEY WORK FINE
   private buildAnalyticsEmail(data: OrderData, shop: string): string {
+    // ... your existing beautiful HTML template ...
     const formatCurrency = (amount: number) => `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const formatNumber = (num: number) => num.toLocaleString();
     const formatPercent = (num: number) => `${num >= 0 ? '+' : ''}${num.toFixed(1)}%`;
