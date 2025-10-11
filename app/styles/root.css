@@ -397,3 +397,52 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+/* Desktop Navigation - Show all links */
+.nav-menu.desktop-nav {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Mobile Navigation - Hidden by default on desktop */
+.nav-menu.mobile-nav {
+  display: none;
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .nav-menu.desktop-nav {
+    display: none;
+  }
+  
+  .nav-menu.mobile-nav {
+    position: fixed;
+    top: 72px;
+    left: 0;
+    right: 0;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    display: flex;
+  }
+
+  .nav-menu.mobile-nav.mobile-open {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .nav-menu.mobile-nav .nav-link {
+    width: 100%;
+    justify-content: center;
+    padding: 1rem;
+  }
+}
