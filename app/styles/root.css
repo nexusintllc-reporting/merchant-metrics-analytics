@@ -398,7 +398,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Desktop Navigation - Show all links */
+/* Desktop Navigation - Show only main links */
 .nav-menu.desktop-nav {
   display: flex;
   gap: 0.5rem;
