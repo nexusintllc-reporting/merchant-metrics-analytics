@@ -212,7 +212,6 @@ export default function App() {
                     {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
                   </button>
 
-                  {/* Desktop Navigation - Only main pages, NO email settings */}
                   <nav className="nav-menu desktop-nav">
                     <NavLink
                       to="/app"
@@ -222,17 +221,8 @@ export default function App() {
                       <AnalyticsIcon />
                       <span>Orders Dashboard</span>
                     </NavLink>
-
-                    <NavLink
-                      to="/products"
-                      className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                    >
-                      <ProductIcon />
-                      <span>Products</span>
-                    </NavLink>
                   </nav>
 
-                  {/* Mobile Navigation - Includes email settings for mobile access */}
                   <nav 
                     className={`nav-menu mobile-nav ${isMobileMenuOpen ? 'mobile-open' : ''}`} 
                     id="navMenu" 
@@ -248,16 +238,6 @@ export default function App() {
                       <span>Orders Dashboard</span>
                     </NavLink>
 
-                    <NavLink
-                      to="/products"
-                      className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                      onClick={closeMobileMenu}
-                    >
-                      <ProductIcon />
-                      <span>Products</span>
-                    </NavLink>
-
-                    {/* Email Settings - ONLY in mobile hamburger menu */}
                     <NavLink
                       to="/app/email-settings"
                       className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}

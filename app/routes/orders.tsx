@@ -509,24 +509,6 @@ function getLast8Weeks(shopTimeZone: string = "UTC") {
   return weeks;
 }
 
-
-function formatWeekDisplay(weekKey: string): string {
-  if (weekKey.startsWith('Week of ')) {
-    const dateStr = weekKey.replace('Week of ', '');
-    const startOfWeek = new Date(dateStr + 'T00:00:00');
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    
-    const startMonth = startOfWeek.toLocaleDateString("en-US", { month: "short" });
-    const startDay = startOfWeek.getDate();
-    const endMonth = endOfWeek.toLocaleDateString("en-US", { month: "short" });
-    const endDay = endOfWeek.getDate();
-    
-    return `${startMonth} ${startDay}-${endMonth} ${endDay}`;
-  }
-  return weekKey;
-}
-
 // ==================== 5.0 API FETCHING FUNCTIONS ====================
 
 async function fetchOrdersSince(
@@ -3291,8 +3273,9 @@ function ShopifyAnalyticsPage() {
                 return (
                   <div key={week} className={`week-card ${isCurrentWeek ? 'current-week' : ''}`}>
                     <div className="week-header">
-  <div className="week-label">{formatWeekDisplay(week)}</div>
-</div>
+                      <div className="week-label">Week {week.replace('Week of ', '').split('-')[2]}</div>
+                      <div className="week-period">{week.replace('Week of ', '').split('-')[0]}</div>
+                    </div>
                     
                     <div className="week-metrics">
                       <div className="week-metric orders">
@@ -3388,8 +3371,9 @@ function ShopifyAnalyticsPage() {
                 return (
                   <div key={week} className={`weekly-financial-card ${isCurrentWeek ? 'current-week' : ''}`}>
                     <div className="weekly-financial-header">
-  <div className="weekly-financial-label">{formatWeekDisplay(week)}</div>
-</div>
+                      <div className="weekly-financial-label">Week {week.replace('Week of ', '').split('-')[2]}</div>
+                      <div className="weekly-financial-period">{week.replace('Week of ', '').split('-')[0]}</div>
+                    </div>
                     
                     <div className="weekly-financial-metrics">
                       <div className="weekly-financial-metric gross-revenue">

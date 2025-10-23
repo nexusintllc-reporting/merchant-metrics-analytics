@@ -1,0 +1,188 @@
+/* PDF Report Styles */
+.pdf-report-body { 
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+  margin: 40px; 
+  color: #333;
+  line-height: 1.4;
+}
+
+.pdf-header { 
+  text-align: center; 
+  border-bottom: 3px solid #2c3e50; 
+  padding-bottom: 25px; 
+  margin-bottom: 35px; 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 30px;
+  margin: -40px -40px 35px -40px;
+  border-radius: 0 0 20px 20px;
+}
+
+.pdf-header h1 { 
+  margin: 0; 
+  color: white;
+  font-size: 2.2em;
+  font-weight: 700;
+}
+
+.pdf-header .date { 
+  color: rgba(255,255,255,0.9); 
+  margin-top: 8px;
+  font-size: 1.1em;
+}
+
+.pdf-section { 
+  margin-bottom: 40px; 
+  break-inside: avoid;
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  border-left: 4px solid #3498db;
+}
+
+.pdf-section h2 { 
+  color: #2c3e50; 
+  border-bottom: 2px solid #ecf0f1; 
+  padding-bottom: 12px; 
+  margin-bottom: 20px;
+  font-size: 1.4em;
+}
+
+.pdf-metrics-grid { 
+  display: grid; 
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 25px; 
+  margin: 25px 0; 
+}
+
+.pdf-metric-card { 
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 25px; 
+  border-radius: 10px; 
+  text-align: center; 
+  border-left: 4px solid #3498db;
+  transition: all 0.3s ease;
+}
+
+.pdf-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.pdf-metric-value { 
+  font-size: 2em; 
+  font-weight: bold; 
+  color: #2c3e50; 
+  margin-bottom: 8px;
+}
+
+.pdf-metric-label { 
+  color: #666; 
+  margin-top: 8px;
+  font-weight: 600;
+}
+
+.pdf-growth-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 0.9em;
+  font-weight: 600;
+  margin-top: 10px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  width: fit-content;
+  margin: 10px auto 0;
+}
+
+.pdf-growth-positive {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.pdf-growth-negative {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.pdf-growth-arrow {
+  font-weight: bold;
+}
+
+.pdf-financial-grid { 
+  display: grid; 
+  grid-template-columns: repeat(2, 1fr); 
+  gap: 20px; 
+}
+
+.pdf-financial-card { 
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 20px; 
+  border-radius: 8px; 
+  border-left: 4px solid #27ae60;
+  transition: all 0.3s ease;
+}
+
+.pdf-financial-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.pdf-financial-value { 
+  font-size: 1.5em; 
+  font-weight: bold; 
+  color: #2c3e50; 
+}
+
+.pdf-financial-label { 
+  color: #666; 
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.pdf-summary-table { 
+  width: 100%; 
+  border-collapse: collapse; 
+  margin: 20px 0; 
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.pdf-summary-table th, .pdf-summary-table td { 
+  padding: 15px; 
+  text-align: left; 
+  border-bottom: 1px solid #ddd; 
+}
+
+.pdf-summary-table th { 
+  background: #f8f9fa; 
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.pdf-positive { color: #27ae60; }
+.pdf-negative { color: #e74c3c; }
+
+.pdf-footer { 
+  margin-top: 50px; 
+  padding-top: 25px; 
+  border-top: 2px solid #ddd; 
+  text-align: center; 
+  color: #666;
+  font-size: 0.9em;
+}
+
+@media print { 
+  .pdf-report-body { margin: 20px; } 
+  .pdf-metric-card, .pdf-financial-card { break-inside: avoid; }
+  .pdf-section { break-inside: avoid; page-break-inside: avoid; }
+  .pdf-header { margin: -20px -20px 25px -20px; }
+}
+
+@page {
+  margin: 1cm;
+  size: A4;
+}

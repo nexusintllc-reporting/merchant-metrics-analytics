@@ -1,4 +1,4 @@
-/* ==================== 1. BASE STYLES & LAYOUT ==================== */
+/* ==================== 1.0 BASE STYLES & LAYOUT ==================== */
 
 .orders-dashboard {
   max-width: 1400px;
@@ -10,7 +10,7 @@
   min-height: 100vh;
 }
 
-/* ==================== 2. DASHBOARD HEADER & CONTROLS ==================== */
+/* ==================== 2.0 DASHBOARD HEADER & CONTROLS ==================== */
 
 .dashboard-header {
   background: #fff;
@@ -29,30 +29,48 @@
   font-weight: 600;
 }
 
-.print-button {
-  background-color: #2563eb;
+.header-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.print-button,
+.export-button {
+  background: #2563eb;
   color: white;
   border: none;
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-radius: 6px;
-  cursor: pointer;
   font-size: 14px;
-  transition: background 0.2s ease;
+  font-weight: 500;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: all 0.2s ease;
 }
 
-.print-button:hover {
-  background-color: #1d4ed8;
+.print-button:hover,
+.export-button:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
 }
 
-.print-button svg {
+.print-button:disabled,
+.export-button:disabled {
+  background: #8c9196;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.print-button svg,
+.export-button svg {
   width: 16px;
   height: 16px;
 }
 
-/* ==================== 3. TODAY'S PERFORMANCE SECTION ==================== */
+/* ==================== 3.0 TODAY'S PERFORMANCE SECTION ==================== */
 
 .today-performance {
   background: white;
@@ -71,6 +89,8 @@
   margin: 0 0 32px 0;
   padding-bottom: 16px;
   border-bottom: 3px solid #e3f2fd;
+  text-align: center;
+  width: 100%;
 }
 
 /* 3.1 Primary Metrics Grid */
@@ -281,7 +301,7 @@
 .text-positive { color: #28a745; }
 .text-negative { color: #dc3545; }
 
-/* ==================== 4. CUSTOMER INSIGHTS SECTIONS ==================== */
+/* ==================== 4.0 CUSTOMER INSIGHTS SECTIONS ==================== */
 
 .customer-metrics {
   background: white;
@@ -309,10 +329,15 @@
 .customer-metrics h3 {
   font-size: 1.5rem;
   font-weight: 700;
+  color: #3b82f6;
   margin-bottom: 1.5rem;
   text-align: center;
   position: relative;
   padding-bottom: 0.75rem;
+}
+
+.customer-metrics:last-of-type h3 {
+  color: #10b981;
 }
 
 .customer-metrics h3::after {
@@ -392,7 +417,7 @@
   letter-spacing: 0.05em;
 }
 
-/* ==================== 5. FINANCIAL METRICS SECTION ==================== */
+/* ==================== 5.0 FINANCIAL METRICS SECTION ==================== */
 
 .financial-metrics {
   background: white;
@@ -407,21 +432,21 @@
 .financial-metrics h3 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #111827;
+  color: #8b5cf6;
   margin-bottom: 1.5rem;
   text-align: center;
 }
 
 .financial-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 1rem;
-  margin-bottom: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .financial-metric-card {
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  padding: 1.5rem 1rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  padding: 1.5rem;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   text-align: center;
@@ -429,33 +454,52 @@
   position: relative;
   overflow: hidden;
   border-left: 4px solid transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.financial-metric-card.revenue {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
 }
 
 .financial-metric-card.discounts {
   border-left-color: #f59e0b;
-}
-
-.financial-metric-card.shipping {
-  border-left-color: #3b82f6;
-}
-
-.financial-metric-card.taxes {
-  border-left-color: #10b981;
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
 }
 
 .financial-metric-card.returns {
   border-left-color: #ef4444;
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
 }
 
-.financial-metric-card.net-revenue {
+.financial-metric-card.return-fees {
   border-left-color: #8b5cf6;
-  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+}
+
+.financial-metric-card.net-sales {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+}
+
+.financial-metric-card.shipping {
+  border-left-color: #06b6d4;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+}
+
+.financial-metric-card.taxes {
+  border-left-color: #f97316;
+  background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
+}
+
+.financial-metric-card.total-sales {
+  border-left-color: #6366f1;
+  background: linear-gradient(135deg, #ffffff 0%, #eef2ff 100%);
 }
 
 .financial-metric-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  border-color: #cbd5e1;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
 .financial-metric-value {
@@ -467,21 +511,27 @@
 }
 
 .financial-metric-label {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: #6b7280;
   font-weight: 600;
+  margin-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 0.25rem;
 }
 
 .financial-metric-rate {
-  font-size: 0.7rem;
+  font-size: 0.8rem;
   color: #9ca3af;
   font-weight: 500;
 }
 
-/* ==================== 6. LAST 7 DAYS ANALYTICS ==================== */
+.financial-metric-period {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* ==================== 6.0 LAST 7 DAYS ANALYTICS ==================== */
 
 .last7days-section {
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
@@ -499,11 +549,13 @@
 .last7days-section h3 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #2d3748;
+  color: #6f42c1;
   margin: 0 0 28px 0;
   padding-bottom: 18px;
   border-bottom: 3px solid #e2e8f0;
   position: relative;
+  text-align: center;
+  width: 100%;
 }
 
 .last7days-grid {
@@ -525,6 +577,27 @@
   position: relative;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border-left: 4px solid #6f42c1;
+}
+
+.last7days-total-card:nth-child(1) {
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+  border-left-color: #3b82f6;
+}
+
+.last7days-total-card:nth-child(2) {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  border-left-color: #0ea5e9;
+}
+
+.last7days-total-card:nth-child(3) {
+  background: linear-gradient(135deg, #ffffff 0%, #fef7ff 100%);
+  border-left-color: #a855f7;
+}
+
+.last7days-total-card:nth-child(4) {
+  background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);
+  border-left-color: #14b8a6;
 }
 
 .last7days-total-card:hover {
@@ -560,7 +633,7 @@
 .daily-breakdown h4 {
   font-size: 1.1rem;
   font-weight: 700;
-  color: #2d3748;
+  color: #6f42c1;
   margin: 0 0 20px 0;
   text-align: center;
 }
@@ -582,6 +655,17 @@
   position: relative;
   overflow: hidden;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  border-left: 4px solid #e2e8f0;
+}
+
+.daily-card:nth-child(odd) {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-left-color: #3b82f6;
+}
+
+.daily-card:nth-child(even) {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  border-left-color: #0ea5e9;
 }
 
 .daily-card:hover {
@@ -590,10 +674,18 @@
   border-color: #c4b5fd;
 }
 
-.daily-card.today {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+.daily-card.current-day {
   border: 2px solid #3b82f6;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15), 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  border-left: 4px solid #3b82f6;
+}
+
+.daily-card.current-day .daily-card-header {
+  background: #3b82f6;
+  margin: -16px -16px 16px -16px;
+  padding: 16px;
+  border-radius: 12px 12px 0 0;
 }
 
 .daily-card-header {
@@ -610,8 +702,8 @@
   letter-spacing: 0.5px;
 }
 
-.daily-card.today .daily-date {
-  color: #1d4ed8;
+.daily-card.current-day .daily-date {
+  color: white;
   font-weight: 800;
 }
 
@@ -622,8 +714,8 @@
   font-weight: 600;
 }
 
-.daily-card.today .daily-day {
-  color: #3b82f6;
+.daily-card.current-day .daily-day {
+  color: white;
   font-weight: 700;
 }
 
@@ -660,129 +752,69 @@
   color: #1f2937;
 }
 
-/* ==================== 7. CHARTS & ANALYTICS SECTION ==================== */
+/* ==================== 7.0 WEEKLY & MONTHLY BREAKDOWN SECTIONS ==================== */
 
-.charts-section {
-  margin: 2rem 0;
+.weekly-financial-breakdown,
+.monthly-financial-breakdown,
+.weekly-breakdown,
+.monthly-breakdown {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1), 0 2px 12px rgba(106, 66, 193, 0.12);
+  border: 1px solid #e1e3e5;
+  position: relative;
+  overflow: hidden;
 }
 
-.charts-section h2 {
-  font-size: 1.5rem;
+.weekly-financial-breakdown {
+  border-left: 6px solid #f59e0b;
+  background: linear-gradient(135deg, #ffffff 0%, #fffaf0 100%);
+}
+
+.monthly-financial-breakdown {
+  border-left: 6px solid #8b5cf6;
+  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
+}
+
+.weekly-breakdown {
+  border-left: 6px solid #3b82f6;
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+}
+
+.monthly-breakdown {
+  border-left: 6px solid #10b981;
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+}
+
+.weekly-financial-breakdown h4,
+.monthly-financial-breakdown h4,
+.weekly-breakdown h4,
+.monthly-breakdown h4 {
+  font-size: 1.2rem;
   font-weight: 700;
-  color: #111827;
-  margin-bottom: 1.5rem;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
   text-align: center;
 }
 
-.charts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
+.weekly-financial-breakdown h4 { color: #f59e0b; }
+.monthly-financial-breakdown h4 { color: #8b5cf6; }
+.weekly-breakdown h4 { color: #3b82f6; }
+.monthly-breakdown h4 { color: #10b981; }
 
-.chart-container {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e5e7eb;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  min-height: 220px;
-  overflow: hidden; /* Prevent chart overflow */
-}
-
-.chart-container:hover {
+.weekly-financial-breakdown:hover,
+.monthly-financial-breakdown:hover,
+.weekly-breakdown:hover,
+.monthly-breakdown:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15), 0 3px 15px rgba(106, 66, 193, 0.2);
+  transition: all 0.3s ease;
 }
 
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.chart-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.chart-legend {
-  display: flex;
-  gap: 0.75rem;
-  font-size: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.legend-color {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.legend-color.new { background: #f59e0b; }
-.legend-color.repeat { background: #10b981; }
-.legend-color.fulfilled { background: #10b981; }
-.legend-color.unfulfilled { background: #ef4444; }
-.legend-color.revenue { background: #3b82f6; }
-.legend-color.orders { background: #8b5cf6; }
-
-/* Chart container sizing */
-.chart-container .react-chartjs {
-  height: 120px !important;
-  width: 100% !important;
-}
-
-.chart-container canvas {
-  max-height: 120px !important;
-  width: 100% !important;
-}
-
-.mini-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #f3f4f6;
-}
-
-.mini-stat-card {
-  background: #f8fafc;
-  padding: 0.75rem;
-  border-radius: 8px;
-  text-align: center;
-  border-left: 3px solid #3b82f6;
-}
-
-.mini-stat-value {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #1f2937;
-  line-height: 1.2;
-}
-
-.mini-stat-label {
-  font-size: 0.7rem;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 0.25rem;
-}
-
-/* ==================== 8. WEEKLY & MONTHLY PERFORMANCE ==================== */
+/* ==================== 8.0 WEEKLY & MONTHLY PERFORMANCE ==================== */
 
 .weekly-performance, .monthly-performance {
   background: white;
@@ -795,19 +827,23 @@
 
 .weekly-performance {
   border-left: 6px solid #f59e0b;
+  background: linear-gradient(135deg, #ffffff 0%, #fffaf0 100%);
 }
 
 .monthly-performance {
   border-left: 6px solid #8b5cf6;
+  background: linear-gradient(135deg, #ffffff 0%, #faf5ff 100%);
 }
 
 .weekly-performance h3, .monthly-performance h3 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #111827;
   margin-bottom: 1.5rem;
   text-align: center;
 }
+
+.weekly-performance h3 { color: #f59e0b; }
+.monthly-performance h3 { color: #8b5cf6; }
 
 .weekly-grid, .monthly-grid {
   display: grid;
@@ -824,6 +860,26 @@
   text-align: center;
   transition: all 0.3s ease;
   border-left: 4px solid #f59e0b;
+}
+
+.weekly-card:nth-child(1), .monthly-card:nth-child(1) {
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+  border-left-color: #3b82f6;
+}
+
+.weekly-card:nth-child(2), .monthly-card:nth-child(2) {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  border-left-color: #0ea5e9;
+}
+
+.weekly-card:nth-child(3), .monthly-card:nth-child(3) {
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+  border-left-color: #10b981;
+}
+
+.weekly-card:nth-child(4), .monthly-card:nth-child(4) {
+  background: linear-gradient(135deg, #ffffff 0%, #fef7ff 100%);
+  border-left-color: #a855f7;
 }
 
 .monthly-card {
@@ -877,6 +933,17 @@
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  border-left: 4px solid #e2e8f0;
+}
+
+.week-card:nth-child(odd), .month-card:nth-child(odd) {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-left-color: #3b82f6;
+}
+
+.week-card:nth-child(even), .month-card:nth-child(even) {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  border-left-color: #0ea5e9;
 }
 
 .week-card:hover, .month-card:hover {
@@ -884,17 +951,33 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.performance-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 8px;
-  height: 100%;
+.week-card.current-week {
+  border: 2px solid #10b981;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  border-left: 4px solid #10b981;
 }
 
-.performance-badge.high { background: linear-gradient(180deg, #10b981, #059669); }
-.performance-badge.medium { background: linear-gradient(180deg, #f59e0b, #d97706); }
-.performance-badge.low { background: linear-gradient(180deg, #ef4444, #dc2626); }
+.week-card.current-week .week-header {
+  background: #10b981;
+  margin: -16px -16px 16px -16px;
+  padding: 16px;
+  border-radius: 12px 12px 0 0;
+}
+
+.month-card.current-month {
+  border: 2px solid #8b5cf6;
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+  border-left: 4px solid #8b5cf6;
+}
+
+.month-card.current-month .month-header {
+  background: #8b5cf6;
+  margin: -16px -16px 16px -16px;
+  padding: 16px;
+  border-radius: 12px 12px 0 0;
+}
 
 .week-header, .month-header {
   margin-bottom: 1rem;
@@ -906,6 +989,14 @@
   font-weight: 700;
   color: #1f2937;
   margin-bottom: 0.25rem;
+}
+
+.week-card.current-week .week-label,
+.week-card.current-week .week-period,
+.month-card.current-month .month-label,
+.month-card.current-month .month-period {
+  color: white;
+  font-weight: 700;
 }
 
 .week-period, .month-period {
@@ -943,7 +1034,7 @@
   color: #1f2937;
 }
 
-/* ==================== 9. FINANCIAL BREAKDOWN DETAILS ==================== */
+/* ==================== 9.0 FINANCIAL BREAKDOWN DETAILS ==================== */
 
 .daily-financial-breakdown, .weekly-financial-breakdown, .monthly-financial-breakdown {
   margin-top: 2rem;
@@ -952,10 +1043,13 @@
 .daily-financial-breakdown h4, .weekly-financial-breakdown h4, .monthly-financial-breakdown h4 {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #374151;
   margin-bottom: 1rem;
   text-align: center;
 }
+
+.daily-financial-breakdown h4 { color: #3b82f6; }
+.weekly-financial-breakdown h4 { color: #f59e0b; }
+.monthly-financial-breakdown h4 { color: #8b5cf6; }
 
 .daily-financial-cards, .weekly-financial-cards, .monthly-financial-cards {
   display: grid;
@@ -969,6 +1063,22 @@
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   transition: all 0.3s ease;
+  position: relative;
+  border-left: 4px solid #e2e8f0;
+}
+
+.daily-financial-card:nth-child(odd), 
+.weekly-financial-card:nth-child(odd), 
+.monthly-financial-card:nth-child(odd) {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-left-color: #3b82f6;
+}
+
+.daily-financial-card:nth-child(even), 
+.weekly-financial-card:nth-child(even), 
+.monthly-financial-card:nth-child(even) {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  border-left-color: #0ea5e9;
 }
 
 .daily-financial-card:hover, .weekly-financial-card:hover, .monthly-financial-card:hover {
@@ -976,9 +1086,46 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.daily-financial-card.today {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border-color: #3b82f6;
+.daily-financial-card.current-day {
+  border: 2px solid #3b82f6;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  border-left: 4px solid #3b82f6;
+}
+
+.daily-financial-card.current-day .daily-financial-header {
+  background: #3b82f6;
+  margin: -16px -16px 16px -16px;
+  padding: 16px;
+  border-radius: 12px 12px 0 0;
+}
+
+.weekly-financial-card.current-week {
+  border: 2px solid #10b981;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+  border-left: 4px solid #10b981;
+}
+
+.weekly-financial-card.current-week .weekly-financial-header {
+  background: #10b981;
+  margin: -16px -16px 16px -16px;
+  padding: 16px;
+  border-radius: 12px 12px 0 0;
+}
+
+.monthly-financial-card.current-month {
+  border: 2px solid #8b5cf6;
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+  border-left: 4px solid #8b5cf6;
+}
+
+.monthly-financial-card.current-month .monthly-financial-header {
+  background: #8b5cf6;
+  margin: -16px -16px 16px -16px;
+  padding: 16px;
+  border-radius: 12px 12px 0 0;
 }
 
 .daily-financial-header, .weekly-financial-header, .monthly-financial-header {
@@ -1031,13 +1178,483 @@
 }
 
 .weekly-financial-rate, .monthly-financial-rate {
-  font-size: 0.7rem;
-  color: #9ca3af;
-  margin-left: 0.5rem;
-  white-space: nowrap;
+  display: none !important;
 }
 
-/* ==================== 10. LOADING & UTILITY STYLES ==================== */
+/* ==================== FIXED ACTIVE CARD TEXT COLORS ==================== */
+
+.daily-financial-card.current-day .daily-financial-header .daily-financial-date {
+  color: white !important;
+  font-weight: 700;
+}
+
+.daily-financial-card.current-day .daily-financial-header .daily-financial-day {
+  color: white;
+  font-weight: 700;
+}
+
+.weekly-financial-card.current-week .weekly-financial-header .weekly-financial-label {
+  color: white !important;
+  font-weight: 700;
+}
+
+.weekly-financial-card.current-week .weekly-financial-header .weekly-financial-period {
+  color: white;
+  font-weight: 700;
+}
+
+.monthly-financial-card.current-month .monthly-financial-header .monthly-financial-label {
+  color: white !important;
+  font-weight: 700;
+}
+
+.monthly-financial-card.current-month .monthly-financial-header .monthly-financial-period {
+  color: white;
+  font-weight: 700;
+}
+
+/* Regular state for labels (non-active cards) */
+.weekly-financial-card .weekly-financial-label,
+.monthly-financial-card .monthly-financial-label {
+  color: #6b7280;
+  font-weight: 700;
+}
+
+/* Currency symbol consistency - REMOVED HARDCODED CURRENCY SYMBOLS */
+.metric-value,
+.financial-metric-value,
+.last7days-total-value,
+.weekly-value,
+.monthly-value,
+.daily-metric-value,
+.week-metric-value,
+.month-metric-value,
+.daily-financial-value,
+.weekly-financial-value,
+.monthly-financial-value,
+.event-value,
+.mismatch-value {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Remove currency symbol for non-currency values - KEEP THIS FOR CONSISTENCY */
+.metric-card.orders .metric-value::before,
+.metric-card.items .metric-value::before,
+.fulfillment-metric-value::before,
+.customer-metric-value::before,
+.event-card .event-value::before,
+.mismatch-value::before {
+  content: '';
+  margin-right: 0;
+}
+
+/* ==================== 10.0 CHARTS & ANALYTICS SECTION ==================== */
+
+.charts-section {
+  margin: 2rem 0;
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+  border-left: 6px solid #6366f1;
+}
+
+.charts-section h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #6366f1;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.chart-container {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: 220px;
+  overflow: hidden;
+  border-left: 4px solid #6366f1;
+}
+
+.chart-container:nth-child(odd) {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+}
+
+.chart-container:nth-child(even) {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+}
+
+.chart-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chart-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.legend-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-color.new { background: #f59e0b; }
+.legend-color.repeat { background: #10b981; }
+.legend-color.fulfilled { background: #10b981; }
+.legend-color.unfulfilled { background: #ef4444; }
+.legend-color.revenue { background: #3b82f6; }
+.legend-color.orders { background: #8b5cf6; }
+.legend-color.discounts { background: #f59e0b; }
+.legend-color.shipping { background: #10b981; }
+.legend-color.taxes { background: #8b5cf6; }
+.legend-color.returns { background: #ef4444; }
+.legend-color.return-fees { background: #f97316; }
+
+.chart-container .react-chartjs {
+  height: 120px !important;
+  width: 100% !important;
+}
+
+.chart-container canvas {
+  max-height: 120px !important;
+  width: 100% !important;
+}
+
+.mini-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.mini-stat-card {
+  background: #f8fafc;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-align: center;
+  border-left: 3px solid #3b82f6;
+}
+
+.mini-stat-card:nth-child(odd) {
+  border-left-color: #3b82f6;
+}
+
+.mini-stat-card:nth-child(even) {
+  border-left-color: #10b981;
+}
+
+.mini-stat-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1.2;
+}
+
+.mini-stat-label {
+  font-size: 0.7rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
+/* ==================== 11.0 EVENT SUMMARY COMPONENTS ==================== */
+
+.event-summary-display {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  margin: 32px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e1e3e5;
+  border-left: 6px solid #8b5cf6;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.event-summary-display h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 28px 0;
+  padding-bottom: 18px;
+  border-bottom: 3px solid #e2e8f0;
+  position: relative;
+  text-align: center;
+  width: 100%;
+}
+
+.today-performance .event-summary-display {
+  border-left: 6px solid #007bff;
+  margin-top: 24px;
+}
+
+.today-performance .event-summary-display h3 {
+  color: #007bff;
+  border-bottom: 3px solid #e3f2fd;
+}
+
+.last7days-section .event-summary-display {
+  border-left: 6px solid #6f42c1;
+}
+
+.last7days-section .event-summary-display h3 {
+  color: #6f42c1;
+}
+
+.weekly-performance .event-summary-display {
+  border-left: 6px solid #f59e0b;
+}
+
+.weekly-performance .event-summary-display h3 {
+  color: #f59e0b;
+}
+
+.monthly-performance .event-summary-display {
+  border-left: 6px solid #8b5cf6;
+}
+
+.monthly-performance .event-summary-display h3 {
+  color: #8b5cf6;
+}
+
+.event-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.event-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  padding: 24px 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border-left: 4px solid transparent;
+}
+
+.event-card.refunds {
+  border-left-color: #ef4444;
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+}
+
+.event-card.partial-refunds {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+}
+
+.event-card.exchanges {
+  border-left-color: #3b82f6;
+  background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+}
+
+.event-card.net-summary {
+  border-left-color: #10b981;
+  background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+  border: 2px solid #10b981;
+}
+
+.event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.event-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.event-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.event-card.refunds .event-value { color: #dc2626; }
+.event-card.partial-refunds .event-value { color: #d97706; }
+.event-card.exchanges .event-value { color: #1d4ed8; }
+.event-card.net-summary .event-value { color: #047857; }
+
+.event-count {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* ==================== 12.0 MISMATCH SUMMARY COMPONENTS ==================== */
+
+.mismatch-summary-card {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  margin: 32px 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e1e3e5;
+  border-left: 6px solid #f59e0b;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.mismatch-summary-card h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 28px 0;
+  padding-bottom: 18px;
+  border-bottom: 3px solid #e2e8f0;
+  position: relative;
+  text-align: center;
+  width: 100%;
+}
+
+.today-performance .mismatch-summary-card {
+  border-left: 6px solid #007bff;
+}
+
+.today-performance .mismatch-summary-card h3 {
+  color: #007bff;
+  border-bottom: 3px solid #e3f2fd;
+}
+
+.last7days-section .mismatch-summary-card {
+  border-left: 6px solid #6f42c1;
+}
+
+.last7days-section .mismatch-summary-card h3 {
+  color: #6f42c1;
+}
+
+.weekly-performance .mismatch-summary-card {
+  border-left: 6px solid #f59e0b;
+}
+
+.weekly-performance .mismatch-summary-card h3 {
+  color: #f59e0b;
+}
+
+.monthly-performance .mismatch-summary-card {
+  border-left: 6px solid #8b5cf6;
+}
+
+.monthly-performance .mismatch-summary-card h3 {
+  color: #8b5cf6;
+}
+
+.mismatch-summary-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.mismatch-metric {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 24px 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+  transition: all 0.3s ease;
+  border-left: 4px solid #f59e0b;
+}
+
+.mismatch-metric:nth-child(odd) {
+  border-left-color: #f59e0b;
+  background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
+}
+
+.mismatch-metric:nth-child(even) {
+  border-left-color: #ef4444;
+  background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+}
+
+.mismatch-metric:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.mismatch-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin-bottom: 12px;
+  line-height: 1;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+}
+
+.mismatch-label {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mismatch-note {
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  padding-top: 20px;
+  border-top: 2px solid #e5e7eb;
+  color: #dc2626;
+}
+
+.mismatch-note span {
+  font-weight: 700;
+}
+
+/* ==================== 13.0 LOADING & UTILITY STYLES ==================== */
 
 .loading-progress-container {
   background: white;
@@ -1134,7 +1751,22 @@
   color: #334155;
 }
 
-/* ==================== 11. RESPONSIVE DESIGN - CODE 1 LOGIC FOR MOBILE ==================== */
+.current-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #ef4444;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 10;
+}
+
+/* ==================== 14.0 RESPONSIVE DESIGN ==================== */
 
 /* Tablets (768px to 1023px) */
 @media (max-width: 1023px) and (min-width: 768px) {
@@ -1196,7 +1828,7 @@
   }
 }
 
-/* MOBILE DEVICES (Code 1 Logic) - Below 768px */
+/* Mobile Devices (Below 768px) */
 @media (max-width: 767px) {
   .orders-dashboard {
     padding: 12px;
@@ -1219,34 +1851,15 @@
     margin: 0;
   }
 
-  .print-button {
-    padding: 6px 12px;
-    font-size: 13px;
-  }
-
-  /* ==================== TODAY'S PERFORMANCE MOBILE FIXES ==================== */
   .today-performance {
-    background: white;
-    border-radius: 16px;
     padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    border-left: 6px solid #007bff;
-    width: 100%;
   }
 
   .today-performance h2 {
-    font-size: 1.375rem;
-    font-weight: 700;
-    color: #007bff;
-    margin: 0 0 24px 0;
-    padding-bottom: 16px;
-    border-bottom: 3px solid #e3f2fd;
-    text-align: center; /* Center the heading */
-    width: 100%;
+    font-size: 1.75rem;
   }
 
-  /* Primary Metrics - Centered Content */
   .primary-metrics-grid {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -1255,9 +1868,7 @@
 
   .metric-card {
     padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #e1e3e5;
-    text-align: center; /* Center all content */
+    text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1266,58 +1877,23 @@
 
   .metric-value {
     font-size: 2rem;
-    font-weight: 700;
-    margin: 0 0 12px 0;
-    line-height: 1;
     text-align: center;
     width: 100%;
   }
 
   .metric-label {
-    font-size: 1rem;
-    color: #5c5f62;
-    margin: 0 0 16px 0;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 10px;
     justify-content: center;
     text-align: center;
     width: 100%;
   }
 
-  .metric-change {
-    font-size: 0.9rem;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 20px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    justify-content: center;
-    text-align: center;
-  }
-
-  /* ==================== LAST 7 DAYS PERFORMANCE MOBILE FIXES ==================== */
   .last7days-section {
-    background: white;
-    border-radius: 16px;
     padding: 20px;
     margin: 20px 0;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    border-left: 6px solid #6f42c1;
-    width: 100%;
   }
 
   .last7days-section h3 {
-    font-size: 1.25rem; /* Smaller heading */
-    font-weight: 700;
-    color: #2d3748;
-    margin: 0 0 20px 0;
-    padding-bottom: 12px;
-    border-bottom: 2px solid #e2e8f0;
-    text-align: center; /* Center the heading */
-    width: 100%;
+    font-size: 1.5rem;
   }
 
   .last7days-grid {
@@ -1326,45 +1902,9 @@
     margin-bottom: 20px;
   }
 
-  .last7days-total-card {
-    padding: 20px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    text-align: center;
-    background: linear-gradient(135deg, #ffffff, #f7fafc);
-  }
-
-  .last7days-total-value {
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin: 0 0 12px 0;
-    line-height: 1;
-    text-align: center;
-  }
-
-  .last7days-total-label {
-    font-size: 0.8rem;
-    text-align: center;
-  }
-
-  /* Daily Cards */
   .daily-cards-container {
     grid-template-columns: 1fr;
     gap: 12px;
-  }
-
-  .daily-card {
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    text-align: center;
-    background: linear-gradient(135deg, #ffffff, #f8fafc);
-  }
-
-  /* ==================== WEEKLY FINANCIAL BREAKDOWN MOBILE FIXES ==================== */
-  .financial-metrics h3 {
-    font-size: 1.25rem; /* Smaller heading for mobile */
-    text-align: center;
   }
 
   .financial-metrics-grid {
@@ -1372,194 +1912,15 @@
     gap: 16px;
   }
 
-  .financial-metric-card {
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    text-align: center;
-    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  .weekly-financial-breakdown,
+  .monthly-financial-breakdown,
+  .weekly-breakdown,
+  .monthly-breakdown {
+    padding: 20px;
+    margin: 20px 0;
+    border-left-width: 4px;
   }
 
-  /* Weekly Financial Details - Proper Box and Lines */
-  .weekly-financial-breakdown h4 {
-    font-size: 1rem; /* Smaller subheading */
-    text-align: center;
-    margin-bottom: 1rem;
-  }
-
-  .weekly-financial-cards {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .weekly-financial-card {
-    background: white;
-    padding: 1.25rem;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  }
-
-  .weekly-financial-header {
-    margin-bottom: 1rem;
-    text-align: center;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid #f3f4f6;
-  }
-
-  .weekly-financial-label {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 0.25rem;
-  }
-
-  .weekly-financial-period {
-    font-size: 0.8rem;
-    color: #6b7280;
-  }
-
-  .weekly-financial-metrics {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .weekly-financial-metric {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #f8fafc;
-    gap: 0.5rem;
-  }
-
-  .weekly-financial-metric:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  .weekly-financial-label {
-    font-size: 0.8rem;
-    color: #6b7280;
-    font-weight: 600;
-    min-width: 120px;
-    text-align: left;
-    flex-shrink: 0;
-  }
-
-  .weekly-financial-value {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: #1f2937;
-    text-align: right;
-    flex: 1;
-  }
-
-  .weekly-financial-rate {
-    font-size: 0.7rem;
-    color: #9ca3af;
-    white-space: nowrap;
-    margin-left: 0.5rem;
-  }
-
-  /* ==================== MONTHLY FINANCIAL DETAILS MOBILE FIXES ==================== */
-  .monthly-financial-breakdown h4 {
-    font-size: 1rem; /* Smaller subheading */
-    text-align: center;
-    margin-bottom: 1rem;
-  }
-
-  .monthly-financial-cards {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .monthly-financial-card {
-    background: white;
-    padding: 1.25rem;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    position: relative;
-  }
-
-  .monthly-financial-header {
-    margin-bottom: 1rem;
-    text-align: center;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid #f3f4f6;
-  }
-
-  .monthly-financial-label {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #1f2937;
-    margin-bottom: 0.25rem;
-  }
-
-  .monthly-financial-period {
-    font-size: 0.8rem;
-    color: #6b7280;
-  }
-
-  .monthly-financial-metrics {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .monthly-financial-metric {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid #f8fafc;
-    gap: 0.5rem;
-  }
-
-  .monthly-financial-metric:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  .monthly-financial-label {
-    font-size: 0.8rem;
-    color: #6b7280;
-    font-weight: 600;
-    min-width: 120px;
-    text-align: left;
-    flex-shrink: 0;
-  }
-
-  .monthly-financial-value {
-    font-size: 0.875rem;
-    font-weight: 700;
-    color: #1f2937;
-    text-align: right;
-    flex: 1;
-  }
-
-  .monthly-financial-rate {
-    font-size: 0.7rem;
-    color: #9ca3af;
-    white-space: nowrap;
-    margin-left: 0.5rem;
-  }
-
-  /* Performance badges for monthly cards */
-  .performance-badge {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 6px;
-    height: 100%;
-    border-radius: 0 12px 12px 0;
-  }
-
-
-  /* ==================== OTHER SECTIONS SINGLE COLUMN LAYOUT ==================== */
-  .fulfillment-metrics-grid,
   .customer-metrics-grid,
   .charts-grid,
   .weekly-grid,
@@ -1571,44 +1932,11 @@
     gap: 16px;
   }
 
-  /* Customer Metrics */
-  .customer-metrics {
-    padding: 20px;
+  .mismatch-summary-content {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
-  .customer-metrics h3 {
-    font-size: 1.25rem;
-    text-align: center;
-  }
-
-  .customer-metric-card {
-    padding: 20px;
-    text-align: center;
-  }
-
-  .customer-metric-value {
-    font-size: 2rem;
-    text-align: center;
-  }
-
-  /* Charts Section */
-  .charts-section h2 {
-    font-size: 1.25rem;
-    text-align: center;
-  }
-
-  .chart-container {
-    padding: 1rem;
-  }
-
-  /* Weekly & Monthly Performance */
-  .weekly-performance h3,
-  .monthly-performance h3 {
-    font-size: 1.25rem;
-    text-align: center;
-  }
-
-  /* Hide text in print button, show only icon */
   .print-button span {
     display: none;
   }
@@ -1640,7 +1968,6 @@
     padding: 16px;
   }
 
-  /* Even smaller headings for very small screens */
   .today-performance h2,
   .last7days-section h3,
   .customer-metrics h3,
@@ -1662,7 +1989,6 @@
     font-size: 1.375rem;
   }
 
-  /* Adjust financial detail boxes for very small screens */
   .weekly-financial-label,
   .monthly-financial-label {
     min-width: 100px;
@@ -1698,7 +2024,6 @@
     font-size: 1.5rem;
   }
 
-  /* Even more compact for very small screens */
   .weekly-financial-label,
   .monthly-financial-label {
     min-width: 90px;
@@ -1710,33 +2035,72 @@
     font-size: 0.75rem;
   }
 }
-/* ==================== HIDE PERCENTAGE RATES EVERYWHERE - ADD AT THE END ==================== */
 
-/* Hide the percentage rates in weekly financial breakdown - ALL SCREENS */
-.weekly-financial-rate {
-  display: none !important;
+/* ==================== 15.0 EMPTY STATE & UTILITY STYLES ==================== */
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 40px auto;
+  max-width: 500px;
 }
 
-/* Hide the percentage rates in monthly financial breakdown - ALL SCREENS */
-.monthly-financial-rate {
-  display: none !important;
+.empty-state h2 {
+  color: #2c3e50;
+  margin-bottom: 16px;
+  font-size: 24px;
 }
 
-/* Adjust the layout to account for the removed percentage column */
-.weekly-financial-metric,
-.monthly-financial-metric {
+.empty-state p {
+  color: #666;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.financial-data-display {
+  margin: 10px 0;
+  font-size: 12px;
+}
+
+.data-row {
+  display: flex;
   justify-content: space-between;
-  gap: 0.5rem;
+  padding: 2px 0;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.weekly-financial-value,
-.monthly-financial-value {
-  flex: 0 1 auto;
-  min-width: auto;
-}
-
-.weekly-financial-label,
-.monthly-financial-label {
-  min-width: 100px;
-  flex-shrink: 0;
+/* Responsive adjustments for event and mismatch components */
+@media (max-width: 768px) {
+  .event-summary-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .mismatch-summary-content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .event-summary-display,
+  .mismatch-summary-card {
+    padding: 24px;
+    margin: 24px 0;
+  }
+  
+  .event-summary-display h3,
+  .mismatch-summary-card h3 {
+    font-size: 1.375rem;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+  }
+  
+  .event-value {
+    font-size: 1.5rem;
+  }
+  
+  .mismatch-value {
+    font-size: 1.75rem;
+  }
 }

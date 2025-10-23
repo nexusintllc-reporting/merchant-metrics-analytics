@@ -12,35 +12,48 @@ export class DailyEmailScheduler {
   }
 
   async sendDailyReport() {
-    try {
-      // Collect analytics data
-      const collector = new AnalyticsCollector(this.session);
-      const analyticsData = await collector.collectDailyAnalytics();
-      
-      // Check if we have meaningful data to send
-      if (analyticsData.ordersLoaded === 0) {
-        return {
-          success: true,
-          message: 'No order data available',
-          skipped: true
-        };
-      }
+  try {
+    console.log('🔍 [SCHEDULER DEBUG] Starting daily report for:', this.shop);
+    
+    // Collect analytics data
+    const collector = new AnalyticsCollector(this.session);
+    const analyticsData = await collector.collectDailyAnalytics();
+    
+    console.log('🔍 [SCHEDULER DEBUG] Data from collector:', {
+      ordersLoaded: analyticsData.ordersLoaded,
+      todayRevenue: analyticsData.todayRevenue,
+      todayOrders: analyticsData.todayOrders,
+      totalRevenue: analyticsData.totalRevenue
+    });
 
-      // Send email with analytics
-      const emailService = new AnalyticsEmailService(this.shop);
-      const emailResult = await emailService.sendDailyAnalytics(analyticsData);
-
+    // Check if we have meaningful data to send
+    if (analyticsData.ordersLoaded === 0) {
+      console.log('❌ [SCHEDULER DEBUG] No order data available');
       return {
         success: true,
-        message: 'Daily analytics email sent successfully',
-        data: {
-          ordersAnalyzed: analyticsData.ordersLoaded,
-          todayRevenue: analyticsData.todayRevenue,
-          todayOrders: analyticsData.todayOrders,
-          totalCustomers: analyticsData.totalCustomers
-        }
+        message: 'No order data available',
+        skipped: true
       };
+    }
 
+    console.log('🔍 [SCHEDULER DEBUG] Sending to email service...');
+    
+    // Send email with analytics
+    const emailService = new AnalyticsEmailService(this.shop);
+    const emailResult = await emailService.sendDailyAnalytics(analyticsData);
+
+    console.log('✅ [SCHEDULER DEBUG] Email sent successfully');
+    
+    return {
+      success: true,
+      message: 'Daily analytics email sent successfully',
+      data: {
+        ordersAnalyzed: analyticsData.ordersLoaded,
+        todayRevenue: analyticsData.todayRevenue,
+        todayOrders: analyticsData.todayOrders,
+        totalCustomers: analyticsData.totalCustomers
+      }
+    };
     } catch (error: any) {
       // Provide specific error messages
       let errorMessage = 'Failed to send daily email';

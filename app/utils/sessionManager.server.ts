@@ -98,6 +98,27 @@
 //     scope: process.env.SCOPES || "read_orders,read_customers,read_products",
 //   });
 // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import { Session, GraphqlClient } from "@shopify/shopify-api";
 import { sessionStorage } from "../shopify.server";
 import prisma from "../db.server";
