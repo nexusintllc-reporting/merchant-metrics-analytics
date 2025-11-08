@@ -1,650 +1,216 @@
-// // // import { Session } from "@shopify/shopify-api";
-
-// // // export interface OrderData {
-// // //   totalOrders: number;
-// // //   fulfilledOrders: number;
-// // //   unfulfilledOrders: number;
-// // //   totalRevenue: number;
-// // //   totalItems: number;
-// // //   averageOrderValue: number;
-// // //   averageItemsPerOrder: number;
-// // //   dailySales: Array<{ date: string; revenue: number; orders: number; items: number }>;
-// // //   weeklySales: Array<{ week: string; revenue: number; orders: number; items: number }>;
-// // //   monthlySales: Array<{ month: string; revenue: number; orders: number; items: number }>;
-// // //   todayRevenue: number;
-// // //   todayOrders: number;
-// // //   todayItems: number;
-// // //   yesterdayRevenue: number;
-// // //   yesterdayOrders: number;
-// // //   yesterdayItems: number;
-// // //   lastWeekRevenue: number;
-// // //   lastWeekOrders: number;
-// // //   lastWeekItems: number;
-// // //   todayFulfilled: number;
-// // //   todayUnfulfilled: number;
-// // //   last7DaysFulfilled: number;
-// // //   last7DaysUnfulfilled: number;
-// // //   fulfillmentRate: number;
-// // //   revenueChangeVsYesterday: number;
-// // //   ordersChangeVsYesterday: number;
-// // //   itemsChangeVsYesterday: number;
-// // //   revenueChangeVsLastWeek: number;
-// // //   bestDay: { date: string; revenue: number; orders: number; items: number };
-// // //   averageDailyRevenue: number;
-// // //   totalCustomers: number;
-// // //   repeatCustomers: number;
-// // //   newCustomers: number;
-// // //   repeatCustomerRate: number;
-// // //   last7DaysTotalCustomers: number;
-// // //   last7DaysRepeatCustomers: number;
-// // //   last7DaysNewCustomers: number;
-// // //   last7DaysRepeatCustomerRate: number;
-// // //   customerTypeData: { new: number; repeat: number };
-// // //   fulfillmentStatusData: { fulfilled: number; unfulfilled: number };
-// // //   weeklyRevenueTrend: Array<{ week: string; revenue: number }>;
-// // //   monthlyComparison: Array<{ month: string; revenue: number; orders: number }>;
-// // //   dailyPerformance: Array<{ day: string; revenue: number; orders: number }>;
-// // //   ordersLoaded: number;
-// // // }
-
-// // // export class AnalyticsCollector {
-// // //   private session: Session;
-
-// // //   constructor(session: Session) {
-// // //     this.session = session;
-// // //   }
-
-// // //   async collectDailyAnalytics(): Promise<OrderData> {
-// // //     try {
-// // //       console.log('📊 [AnalyticsCollector] Collecting real data for:', this.session.shop);
-
-// // //       // Use REST API approach since we don't have direct GraphQL access
-// // //       const orders = await this.fetchAllOrders();
-      
-// // //       // Return empty data if no orders
-// // //       if (orders.length === 0) {
-// // //         return this.getEmptyData();
-// // //       }
-
-// // //       // Process orders data
-// // //       const processedData = this.processOrdersData(orders);
-// // //       return processedData;
-      
-// // //     } catch (error: any) {
-// // //       console.error('❌ [AnalyticsCollector] Error collecting data:', error);
-// // //       throw new Error(`Failed to collect analytics: ${error.message}`);
-// // //     }
-// // //   }
-
-// // //   private async fetchAllOrders(): Promise<any[]> {
-// // //     const allOrders: any[] = [];
-// // //     let sinceId: string | null = null;
-// // //     let hasMore = true;
-// // //     const limit = 250;
-
-// // //     while (hasMore && allOrders.length < 1000) {
-// // //       try {
-// // //         // Build the API URL
-// // //         let url = `https://${this.session.shop}/admin/api/2024-01/orders.json?limit=${limit}&status=any`;
-// // //         if (sinceId) {
-// // //           url += `&since_id=${sinceId}`;
-// // //         }
-
-// // //         const response = await fetch(url, {
-// // //           headers: {
-// // //             'X-Shopify-Access-Token': this.session.accessToken!,
-// // //             'Content-Type': 'application/json',
-// // //           },
-// // //         });
-
-// // //         if (!response.ok) {
-// // //           throw new Error(`HTTP error! status: ${response.status}`);
-// // //         }
-
-// // //         const data = await response.json();
-// // //         const orders = data.orders || [];
-
-// // //         if (orders.length === 0) {
-// // //           hasMore = false;
-// // //           break;
-// // //         }
-
-// // //         allOrders.push(...orders);
-// // //         sinceId = orders[orders.length - 1].id;
-
-// // //         // Stop if we've reached the limit or if there are no more orders
-// // //         if (orders.length < limit) {
-// // //           hasMore = false;
-// // //         }
-
-// // //       } catch (error) {
-// // //         console.error('❌ Error fetching orders:', error);
-// // //         hasMore = false;
-// // //       }
-// // //     }
-
-// // //     return allOrders;
-// // //   }
-
-// // //   private getEmptyData(): OrderData {
-// // //     return {
-// // //       totalOrders: 0,
-// // //       fulfilledOrders: 0,
-// // //       unfulfilledOrders: 0,
-// // //       totalRevenue: 0,
-// // //       totalItems: 0,
-// // //       averageOrderValue: 0,
-// // //       averageItemsPerOrder: 0,
-// // //       dailySales: [],
-// // //       weeklySales: [],
-// // //       monthlySales: [],
-// // //       todayRevenue: 0,
-// // //       todayOrders: 0,
-// // //       todayItems: 0,
-// // //       yesterdayRevenue: 0,
-// // //       yesterdayOrders: 0,
-// // //       yesterdayItems: 0,
-// // //       lastWeekRevenue: 0,
-// // //       lastWeekOrders: 0,
-// // //       lastWeekItems: 0,
-// // //       todayFulfilled: 0,
-// // //       todayUnfulfilled: 0,
-// // //       last7DaysFulfilled: 0,
-// // //       last7DaysUnfulfilled: 0,
-// // //       fulfillmentRate: 0,
-// // //       revenueChangeVsYesterday: 0,
-// // //       ordersChangeVsYesterday: 0,
-// // //       itemsChangeVsYesterday: 0,
-// // //       revenueChangeVsLastWeek: 0,
-// // //       bestDay: { date: '', revenue: 0, orders: 0, items: 0 },
-// // //       averageDailyRevenue: 0,
-// // //       totalCustomers: 0,
-// // //       repeatCustomers: 0,
-// // //       newCustomers: 0,
-// // //       repeatCustomerRate: 0,
-// // //       last7DaysTotalCustomers: 0,
-// // //       last7DaysRepeatCustomers: 0,
-// // //       last7DaysNewCustomers: 0,
-// // //       last7DaysRepeatCustomerRate: 0,
-// // //       customerTypeData: { new: 0, repeat: 0 },
-// // //       fulfillmentStatusData: { fulfilled: 0, unfulfilled: 0 },
-// // //       weeklyRevenueTrend: [],
-// // //       monthlyComparison: [],
-// // //       dailyPerformance: [],
-// // //       ordersLoaded: 0
-// // //     };
-// // //   }
-
-// // //   private processOrdersData(orders: any[]): OrderData {
-// // //     // Core metrics
-// // //     const totalOrders = orders.length;
-// // //     const fulfilledOrders = orders.filter((order: any) => 
-// // //       order.fulfillment_status === "fulfilled" || order.fulfillments?.length > 0
-// // //     ).length;
-// // //     const unfulfilledOrders = totalOrders - fulfilledOrders;
-
-// // //     const totalRevenue = orders.reduce((sum: number, order: any) => {
-// // //       const amount = parseFloat(order.total_price || '0');
-// // //       return sum + (isNaN(amount) ? 0 : amount);
-// // //     }, 0);
-
-// // //     const totalItems = orders.reduce((sum: number, order: any) => {
-// // //       const lineItems = order.line_items || [];
-// // //       const itemsInOrder = lineItems.reduce((itemSum: number, item: any) => {
-// // //         return itemSum + (item.quantity || 0);
-// // //       }, 0);
-// // //       return sum + itemsInOrder;
-// // //     }, 0);
-
-// // //     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-// // //     const averageItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
-
-// // //     // Time-based metrics
-// // //     const salesByDay: Record<string, { revenue: number; orders: number; items: number }> = {};
-// // //     const salesByWeek: Record<string, { revenue: number; orders: number; items: number }> = {};
-// // //     const salesByMonth: Record<string, { revenue: number; orders: number; items: number }> = {};
-
-// // //     const today = new Date();
-// // //     const todayKey = today.toISOString().split("T")[0];
-// // //     const yesterday = new Date(today);
-// // //     yesterday.setDate(yesterday.getDate() - 1);
-// // //     const yesterdayKey = yesterday.toISOString().split("T")[0];
-// // //     const lastWeek = new Date(today);
-// // //     lastWeek.setDate(lastWeek.getDate() - 7);
-// // //     const lastWeekKey = lastWeek.toISOString().split("T")[0];
-
-// // //     let todayRevenue = 0;
-// // //     let todayOrders = 0;
-// // //     let todayItems = 0;
-// // //     let yesterdayRevenue = 0;
-// // //     let yesterdayOrders = 0;
-// // //     let yesterdayItems = 0;
-// // //     let lastWeekRevenue = 0;
-// // //     let lastWeekOrders = 0;
-// // //     let lastWeekItems = 0;
-
-// // //     let todayFulfilled = 0;
-// // //     let todayUnfulfilled = 0;
-// // //     let last7DaysFulfilled = 0;
-// // //     let last7DaysUnfulfilled = 0;
-
-// // //     // Process each order
-// // //     orders.forEach((order: any) => {
-// // //       const createdAt = new Date(order.created_at);
-// // //       const revenue = parseFloat(order.total_price || '0');
-      
-// // //       const lineItems = order.line_items || [];
-// // //       const itemsInOrder = lineItems.reduce((sum: number, item: any) => {
-// // //         return sum + (item.quantity || 0);
-// // //       }, 0);
-      
-// // //       const dateKey = createdAt.toISOString().split("T")[0];
-// // //       const isToday = dateKey === todayKey;
-// // //       const isYesterday = dateKey === yesterdayKey;
-// // //       const isLastWeekSameDay = dateKey === lastWeekKey;
-// // //       const isLast7Days = (today.getTime() - createdAt.getTime()) <= (7 * 24 * 60 * 60 * 1000);
-
-// // //       // Today's metrics
-// // //       if (isToday) {
-// // //         todayRevenue += revenue;
-// // //         todayOrders += 1;
-// // //         todayItems += itemsInOrder;
-        
-// // //         if (order.fulfillment_status === "fulfilled" || order.fulfillments?.length > 0) {
-// // //           todayFulfilled += 1;
-// // //         } else {
-// // //           todayUnfulfilled += 1;
-// // //         }
-// // //       }
-      
-// // //       // Yesterday's metrics
-// // //       if (isYesterday) {
-// // //         yesterdayRevenue += revenue;
-// // //         yesterdayOrders += 1;
-// // //         yesterdayItems += itemsInOrder;
-// // //       }
-      
-// // //       // Last week metrics
-// // //       if (isLastWeekSameDay) {
-// // //         lastWeekRevenue += revenue;
-// // //         lastWeekOrders += 1;
-// // //         lastWeekItems += itemsInOrder;
-// // //       }
-
-// // //       // Last 7 days fulfillment
-// // //       if (isLast7Days) {
-// // //         if (order.fulfillment_status === "fulfilled" || order.fulfillments?.length > 0) {
-// // //           last7DaysFulfilled += 1;
-// // //         } else {
-// // //           last7DaysUnfulfilled += 1;
-// // //         }
-// // //       }
-
-// // //       // Daily aggregation
-// // //       if (!salesByDay[dateKey]) {
-// // //         salesByDay[dateKey] = { revenue: 0, orders: 0, items: 0 };
-// // //       }
-// // //       salesByDay[dateKey].revenue += revenue;
-// // //       salesByDay[dateKey].orders += 1;
-// // //       salesByDay[dateKey].items += itemsInOrder;
-
-// // //       // Weekly aggregation
-// // //       const weekKey = `${createdAt.getFullYear()}-W${Math.ceil((createdAt.getDate() - createdAt.getDay() + 1) / 7)}`;
-// // //       if (!salesByWeek[weekKey]) {
-// // //         salesByWeek[weekKey] = { revenue: 0, orders: 0, items: 0 };
-// // //       }
-// // //       salesByWeek[weekKey].revenue += revenue;
-// // //       salesByWeek[weekKey].orders += 1;
-// // //       salesByWeek[weekKey].items += itemsInOrder;
-
-// // //       // Monthly aggregation
-// // //       const monthKey = `${createdAt.getFullYear()}-${(createdAt.getMonth() + 1).toString().padStart(2, "0")}`;
-// // //       if (!salesByMonth[monthKey]) {
-// // //         salesByMonth[monthKey] = { revenue: 0, orders: 0, items: 0 };
-// // //       }
-// // //       salesByMonth[monthKey].revenue += revenue;
-// // //       salesByMonth[monthKey].orders += 1;
-// // //       salesByMonth[monthKey].items += itemsInOrder;
-// // //     });
-
-// // //     // Customer analytics
-// // //     const customerOrderCount: Record<string, number> = {};
-// // //     orders.forEach((order: any) => {
-// // //       const customerId = order.customer?.id;
-// // //       if (customerId) {
-// // //         customerOrderCount[customerId] = (customerOrderCount[customerId] || 0) + 1;
-// // //       }
-// // //     });
-
-// // //     const totalCustomers = Object.keys(customerOrderCount).length;
-// // //     const repeatCustomers = Object.values(customerOrderCount).filter(count => count > 1).length;
-// // //     const repeatCustomerRate = totalCustomers > 0 ? (repeatCustomers / totalCustomers) * 100 : 0;
-// // //     const newCustomers = totalCustomers - repeatCustomers;
-
-// // //     // Last 7 days customer analytics
-// // //     const last7DaysCustomers: Record<string, number> = {};
-// // //     orders.forEach((order: any) => {
-// // //       const createdAt = new Date(order.created_at);
-// // //       const isLast7Days = (today.getTime() - createdAt.getTime()) <= (7 * 24 * 60 * 60 * 1000);
-      
-// // //       if (isLast7Days) {
-// // //         const customerId = order.customer?.id;
-// // //         if (customerId) {
-// // //           last7DaysCustomers[customerId] = (last7DaysCustomers[customerId] || 0) + 1;
-// // //         }
-// // //       }
-// // //     });
-
-// // //     const last7DaysTotalCustomers = Object.keys(last7DaysCustomers).length;
-// // //     const last7DaysRepeatCustomers = Object.values(last7DaysCustomers).filter(count => count > 1).length;
-// // //     const last7DaysRepeatCustomerRate = last7DaysTotalCustomers > 0 ? (last7DaysRepeatCustomers / last7DaysTotalCustomers) * 100 : 0;
-// // //     const last7DaysNewCustomers = last7DaysTotalCustomers - last7DaysRepeatCustomers;
-
-// // //     // Process daily data (last 7 days)
-// // //     const last7Days = Array.from({ length: 7 }, (_, i) => {
-// // //       const date = new Date();
-// // //       date.setDate(date.getDate() - i);
-// // //       return date.toISOString().split("T")[0];
-// // //     }).reverse();
-
-// // //     const dailySales = last7Days.map(date => {
-// // //       const dayData = salesByDay[date] || { revenue: 0, orders: 0, items: 0 };
-// // //       return {
-// // //         date,
-// // //         revenue: dayData.revenue,
-// // //         orders: dayData.orders,
-// // //         items: dayData.items
-// // //       };
-// // //     });
-
-// // //     // Process weekly data (last 8 weeks)
-// // //     const weeklyEntries = Object.entries(salesByWeek)
-// // //       .sort((a, b) => a[0].localeCompare(b[0]))
-// // //       .slice(-8);
-
-// // //     const weeklySales = weeklyEntries.map(([week, data]) => ({
-// // //       week,
-// // //       revenue: data.revenue,
-// // //       orders: data.orders,
-// // //       items: data.items
-// // //     }));
-
-// // //     // Process monthly data (last 6 months)
-// // //     const monthlyEntries = Object.entries(salesByMonth)
-// // //       .sort((a, b) => a[0].localeCompare(b[0]))
-// // //       .slice(-6);
-
-// // //     const monthlySales = monthlyEntries.map(([month, data]) => ({
-// // //       month,
-// // //       revenue: data.revenue,
-// // //       orders: data.orders,
-// // //       items: data.items
-// // //     }));
-
-// // //     // Additional metrics
-// // //     const fulfillmentRate = totalOrders > 0 ? (fulfilledOrders / totalOrders) * 100 : 0;
-    
-// // //     const revenueChangeVsYesterday = yesterdayRevenue > 0 
-// // //       ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 
-// // //       : 0;
-    
-// // //     const ordersChangeVsYesterday = yesterdayOrders > 0 
-// // //       ? ((todayOrders - yesterdayOrders) / yesterdayOrders) * 100 
-// // //       : 0;
-
-// // //     const itemsChangeVsYesterday = yesterdayItems > 0 
-// // //       ? ((todayItems - yesterdayItems) / yesterdayItems) * 100 
-// // //       : 0;
-    
-// // //     const revenueChangeVsLastWeek = lastWeekRevenue > 0 
-// // //       ? ((todayRevenue - lastWeekRevenue) / lastWeekRevenue) * 100 
-// // //       : 0;
-
-// // //     const bestDay = dailySales.reduce((best, current) => 
-// // //       current.revenue > best.revenue ? current : best, { date: '', revenue: 0, orders: 0, items: 0 }
-// // //     );
-
-// // //     const averageDailyRevenue = dailySales.length > 0 
-// // //       ? dailySales.reduce((sum, day) => sum + day.revenue, 0) / dailySales.length 
-// // //       : 0;
-
-// // //     // Chart data
-// // //     const customerTypeData = {
-// // //       new: newCustomers,
-// // //       repeat: repeatCustomers
-// // //     };
-
-// // //     const fulfillmentStatusData = {
-// // //       fulfilled: fulfilledOrders,
-// // //       unfulfilled: unfulfilledOrders
-// // //     };
-
-// // //     const weeklyRevenueTrend = weeklySales.map(week => ({
-// // //       week: `Week ${week.week.split('-W')[1]}`,
-// // //       revenue: week.revenue
-// // //     }));
-
-// // //     const monthlyComparison = monthlySales.map(month => {
-// // //       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-// // //       const monthNumber = parseInt(month.month.split('-')[1]);
-// // //       return {
-// // //         month: monthNames[monthNumber - 1],
-// // //         revenue: month.revenue,
-// // //         orders: month.orders
-// // //       };
-// // //     });
-
-// // //     const dailyPerformance = dailySales.map(day => {
-// // //       const date = new Date(day.date);
-// // //       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-// // //       return {
-// // //         day: dayNames[date.getDay()],
-// // //         revenue: day.revenue,
-// // //         orders: day.orders
-// // //       };
-// // //     });
-
-// // //     return {
-// // //       // Core metrics
-// // //       totalOrders,
-// // //       fulfilledOrders,
-// // //       unfulfilledOrders,
-// // //       totalRevenue,
-// // //       totalItems,
-// // //       averageOrderValue,
-// // //       averageItemsPerOrder,
-// // //       dailySales,
-// // //       weeklySales,
-// // //       monthlySales,
-      
-// // //       // Today's performance metrics
-// // //       todayRevenue,
-// // //       todayOrders,
-// // //       todayItems,
-// // //       yesterdayRevenue,
-// // //       yesterdayOrders,
-// // //       yesterdayItems,
-// // //       lastWeekRevenue,
-// // //       lastWeekOrders,
-// // //       lastWeekItems,
-      
-// // //       // Fulfillment metrics
-// // //       todayFulfilled,
-// // //       todayUnfulfilled,
-// // //       last7DaysFulfilled,
-// // //       last7DaysUnfulfilled,
-      
-// // //       // Calculated metrics
-// // //       fulfillmentRate,
-// // //       revenueChangeVsYesterday,
-// // //       ordersChangeVsYesterday,
-// // //       itemsChangeVsYesterday,
-// // //       revenueChangeVsLastWeek,
-// // //       bestDay,
-// // //       averageDailyRevenue,
-
-// // //       // Customer metrics
-// // //       totalCustomers,
-// // //       repeatCustomers,
-// // //       newCustomers,
-// // //       repeatCustomerRate,
-
-// // //       // 7-Day Customer metrics
-// // //       last7DaysTotalCustomers,
-// // //       last7DaysRepeatCustomers,
-// // //       last7DaysNewCustomers, 
-// // //       last7DaysRepeatCustomerRate,
-
-// // //       // Chart data
-// // //       customerTypeData,
-// // //       fulfillmentStatusData,
-// // //       weeklyRevenueTrend,
-// // //       monthlyComparison,
-// // //       dailyPerformance,
-
-// // //       // Debug info
-// // //       ordersLoaded: orders.length,
-// // //     };
-// // //   }
-// // // }
-
-
-
-
 // import { Session } from "@shopify/shopify-api";
 
-// export interface OrderData {
-//   totalOrders: number;
-//   fulfilledOrders: number;
-//   unfulfilledOrders: number;
-//   totalRevenue: number;
-//   totalItems: number;
-//   averageOrderValue: number;
-//   averageItemsPerOrder: number;
-//   dailySales: Array<{ date: string; revenue: number; orders: number; items: number }>;
-//   weeklySales: Array<{ week: string; revenue: number; orders: number; items: number }>;
-//   monthlySales: Array<{ month: string; revenue: number; orders: number; items: number }>;
-//   todayRevenue: number;
-//   todayOrders: number;
-//   todayItems: number;
-//   yesterdayRevenue: number;
-//   yesterdayOrders: number;
-//   yesterdayItems: number;
-//   lastWeekRevenue: number;
-//   lastWeekOrders: number;
-//   lastWeekItems: number;
-//   todayFulfilled: number;
-//   todayUnfulfilled: number;
-//   last7DaysFulfilled: number;
-//   last7DaysUnfulfilled: number;
-//   fulfillmentRate: number;
-//   revenueChangeVsYesterday: number;
-//   ordersChangeVsYesterday: number;
-//   itemsChangeVsYesterday: number;
-//   revenueChangeVsLastWeek: number;
-//   bestDay: { date: string; revenue: number; orders: number; items: number };
-//   averageDailyRevenue: number;
-//   totalCustomers: number;
-//   repeatCustomers: number;
-//   newCustomers: number;
-//   repeatCustomerRate: number;
-//   last7DaysTotalCustomers: number;
-//   last7DaysRepeatCustomers: number;
-//   last7DaysNewCustomers: number;
-//   last7DaysRepeatCustomerRate: number;
-//   customerTypeData: { new: number; repeat: number };
-//   fulfillmentStatusData: { fulfilled: number; unfulfilled: number };
-//   weeklyRevenueTrend: Array<{ week: string; revenue: number }>;
-//   monthlyComparison: Array<{ month: string; revenue: number; orders: number }>;
-//   dailyPerformance: Array<{ day: string; revenue: number; orders: number }>;
-//   ordersLoaded: number;
-// }
+// // Import all our extracted core modules
+// import type { OrderStats, CustomerData } from '../types/analytics';
+// import type { EmailOrderData } from '../types/emailAnalytics';
+
+// import { fetchOrdersForPeriod } from '../services/shopifyApi.server';
+// import { processOrderToStats, mergeStats } from '../core/financialCalculator.server';
+// import { buildCustomerOrderMap, analyzeCustomerBehavior, calculateOverallCustomerData } from '../core/customerAnalytics.server';
+// import { getMonthRanges, getLastNDays, getLast8Weeks, formatWeekDisplay } from '../utils/analyticsHelpers';
+
+
+// import { calculateOrderEventSummary, mergeEventSummaries } from '../core/eventDetection.server';
+
+
+
 
 // export class AnalyticsCollector {
 //   private session: Session;
+//   private SHOPIFY_API_VERSION = '2024-04';
 
 //   constructor(session: Session) {
 //     this.session = session;
 //   }
 
-//   async collectDailyAnalytics(): Promise<OrderData> {
+//   async collectDailyAnalytics(): Promise<EmailOrderData> {
 //     try {
-//       const orders = await this.fetchAllOrders();
+//       console.log(`🔄 Starting analytics collection for ${this.session.shop}`);
+      
+//       // Get shop timezone and currency first
+//       const { shopTimezone, shopCurrency } = await this.getShopInfo();
+//       console.log(`📍 Shop timezone: ${shopTimezone}, currency: ${shopCurrency}`);
+      
+//       // Use the same date ranges as main dashboard
+//       const monthRanges = getMonthRanges(shopTimezone);
+//       const startDate = monthRanges[0].start;
+//       const endDate = monthRanges[monthRanges.length - 1].end;
+      
+//       const orders = await fetchOrdersForPeriod(
+//         this.session.shop, 
+//         this.session.accessToken!, 
+//         startDate, 
+//         endDate
+//       );
+      
+//       console.log(`📦 Fetched ${orders.length} orders`);
       
 //       if (orders.length === 0) {
-//         return this.getEmptyData();
+//         console.log('❌ No orders found, returning empty data');
+//         return this.getEmptyData(shopTimezone, shopCurrency);
 //       }
 
-//       const processedData = this.processOrdersData(orders);
+//       const processedData = this.processOrdersData(orders, shopTimezone, shopCurrency);
+//       console.log(`✅ Successfully processed analytics data`);
+      
 //       return processedData;
       
 //     } catch (error: any) {
-//       throw new Error('Failed to collect analytics data');
+//       console.error('❌ Error in analytics collection:', error);
+//       return this.getEmptyData('UTC', 'USD');
 //     }
 //   }
 
-//   private async fetchAllOrders(): Promise<any[]> {
-//     const allOrders: any[] = [];
-//     let sinceId: string | null = null;
-//     let hasMore = true;
-//     const limit = 250;
+//   private async getShopInfo(): Promise<{ shopTimezone: string; shopCurrency: string }> {
+//     try {
+//       const url = `https://${this.session.shop}/admin/api/${this.SHOPIFY_API_VERSION}/shop.json`;
+//       const response = await fetch(url, {
+//         headers: {
+//           'X-Shopify-Access-Token': this.session.accessToken!,
+//           'Content-Type': 'application/json',
+//         },
+//       });
 
-//     while (hasMore && allOrders.length < 1000) {
-//       try {
-//         let url = `https://${this.session.shop}/admin/api/2024-01/orders.json?limit=${limit}&status=any`;
-//         if (sinceId) {
-//           url += `&since_id=${sinceId}`;
-//         }
-
-//         const response = await fetch(url, {
-//           headers: {
-//             'X-Shopify-Access-Token': this.session.accessToken!,
-//             'Content-Type': 'application/json',
-//           },
-//         });
-
-//         if (!response.ok) {
-//           throw new Error(`HTTP error! status: ${response.status}`);
-//         }
-
+//       if (response.ok) {
 //         const data = await response.json();
-//         const orders = data.orders || [];
-
-//         if (orders.length === 0) {
-//           hasMore = false;
-//           break;
-//         }
-
-//         allOrders.push(...orders);
-//         sinceId = orders[orders.length - 1].id;
-
-//         if (orders.length < limit) {
-//           hasMore = false;
-//         }
-
-//       } catch (error) {
-//         hasMore = false;
+//         return {
+//           shopTimezone: data.shop.iana_timezone || 'UTC',
+//           shopCurrency: data.shop.currency || 'USD'
+//         };
 //       }
+//     } catch (error) {
+//       console.error('Error fetching shop info:', error);
 //     }
-
-//     return allOrders;
+//     return { shopTimezone: 'UTC', shopCurrency: 'USD' };
 //   }
 
-//   private getEmptyData(): OrderData {
+//   private getEmptyOrderStats(): OrderStats {
 //     return {
+//       total: 0,
+//       items: 0,
+//       fulfilled: 0,
+//       unfulfilled: 0,
+//       discounts: 0,
+//       shipping: 0,
+//       taxes: 0,
+//       returns: 0,
+//       orderCount: 0,
+//       netSales: 0,
+//       extraFees: 0,
+//       totalSales: 0,
+//       shippingRefunds: 0,
+//       netReturns: 0,
+//       totalRefund: 0,
+//       hasSubsequentEvents: false,
+//       eventSummary: null,
+//       refundsCount: 0,
+//       financialStatus: 'pending'
+//     };
+//   }
+
+//   private getEmptyData(shopTimezone: string, shopCurrency: string): EmailOrderData {
+//     const currentDateInShopTZ = this.getLocalDateKey(new Date(), shopTimezone);
+    
+//     return {
+//       // Core metrics
 //       totalOrders: 0,
-//       fulfilledOrders: 0,
-//       unfulfilledOrders: 0,
+//       totalCustomers: 0,
+//       fulfillmentRate: 0,
+//       totalRevenue: 0,
+//       netRevenue: 0,
+//       averageOrderValue: 0,
+//       totalItems: 0,
+//       todayOrders: 0,
+//       todayRevenue: 0,
+//       todayItems: 0,
+//        last7DaysOrders: 0,
+//   last7DaysRevenue: 0, 
+//   last7DaysItems: 0,
+//       ordersChangeVsYesterday: 0,
+//       revenueChangeVsYesterday: 0,
+//       itemsChangeVsYesterday: 0,
+//       newCustomers: 0,
+//       repeatCustomers: 0,
+//       customerRetentionRate: 0,
+//       averageOrderFrequency: 0,
+//       shopTimezone,
+//       shopCurrency,
+//       totalRefunds: 0,
+//       totalExchanges: 0,
+//       totalPartialRefunds: 0,
+//       totalEvents: 0,
+//       ordersWithEvents: 0,
+//       netEventValue: 0,
+
+//       last7DaysTotalRevenue: 0,
+//   last7DaysTotalDiscounts: 0,
+//   last7DaysTotalReturns: 0,
+//   last7DaysTotalExtraFees: 0,
+//   last7DaysTotalNetSales: 0,
+//   last7DaysTotalShipping: 0,
+//   last7DaysTotalTaxes: 0,
+//   last7DaysTotalTotalSales: 0,
+//   dailyFinancials: [],
+
+
+//   weeklyTotalOrders: 0,
+// weeklyTotalRevenue: 0, 
+// weeklyTotalItems: 0,
+
+
+
+//   weeklyTotalDiscounts: 0,
+//   weeklyTotalReturns: 0,
+//   weeklyTotalExtraFees: 0,
+//   weeklyTotalNetSales: 0,
+//   weeklyTotalShipping: 0,
+//   weeklyTotalTaxes: 0,
+//   weeklyTotalTotalSales: 0,
+//   weeklyFinancials: [],
+
+
+  
+
+
+
+
+//     monthlyFinancials: {
+//       totalOrders: 0,
 //       totalRevenue: 0,
 //       totalItems: 0,
-//       averageOrderValue: 0,
+//       totalDiscounts: 0,
+//       totalReturns: 0,
+//       totalExtraFees: 0,
+//       totalNetSales: 0,
+//       totalShipping: 0,
+//       totalTaxes: 0,
+//       totalTotalSales: 0
+//     },
+//     monthRanges: [],
+//     monthlyTotals: {},
+
+
+    
+
+
+
+
+//       // Extended email fields
+//       fulfilledOrders: 0,
+//       unfulfilledOrders: 0,
+//       totalDiscounts: 0,
+//       totalShipping: 0,
+//       totalTaxes: 0,
+//       totalReturns: 0,
+//       returnFees: 0,
+//       discountRate: 0,
+//       shippingRate: 0,
+//       taxRate: 0,
+//       returnRate: 0,
 //       averageItemsPerOrder: 0,
 //       dailySales: [],
 //       weeklySales: [],
 //       monthlySales: [],
-//       todayRevenue: 0,
-//       todayOrders: 0,
-//       todayItems: 0,
 //       yesterdayRevenue: 0,
 //       yesterdayOrders: 0,
 //       yesterdayItems: 0,
@@ -655,17 +221,9 @@
 //       todayUnfulfilled: 0,
 //       last7DaysFulfilled: 0,
 //       last7DaysUnfulfilled: 0,
-//       fulfillmentRate: 0,
-//       revenueChangeVsYesterday: 0,
-//       ordersChangeVsYesterday: 0,
-//       itemsChangeVsYesterday: 0,
 //       revenueChangeVsLastWeek: 0,
 //       bestDay: { date: '', revenue: 0, orders: 0, items: 0 },
 //       averageDailyRevenue: 0,
-//       totalCustomers: 0,
-//       repeatCustomers: 0,
-//       newCustomers: 0,
-//       repeatCustomerRate: 0,
 //       last7DaysTotalCustomers: 0,
 //       last7DaysRepeatCustomers: 0,
 //       last7DaysNewCustomers: 0,
@@ -675,325 +233,882 @@
 //       weeklyRevenueTrend: [],
 //       monthlyComparison: [],
 //       dailyPerformance: [],
-//       ordersLoaded: 0
+//       ordersLoaded: 0,
+//       currentDateInShopTZ
 //     };
 //   }
 
-//   private processOrdersData(orders: any[]): OrderData {
-//     // Core metrics
-//     const totalOrders = orders.length;
-//     const fulfilledOrders = orders.filter((order: any) => 
-//       order.fulfillment_status === "fulfilled" || order.fulfillments?.length > 0
-//     ).length;
-//     const unfulfilledOrders = totalOrders - fulfilledOrders;
+//   // Helper function to match main code behavior
+//   private getLocalDateKey(utcDate: Date, timezone: string): string {
+//     try {
+//       return utcDate.toLocaleDateString('en-CA', { 
+//         timeZone: timezone,
+//         year: 'numeric',
+//         month: '2-digit',
+//         day: '2-digit'
+//       });
+//     } catch (error) {
+//       return utcDate.toISOString().split('T')[0];
+//     }
+//   }
 
-//     const totalRevenue = orders.reduce((sum: number, order: any) => {
-//       const amount = parseFloat(order.total_price || '0');
-//       return sum + (isNaN(amount) ? 0 : amount);
-//     }, 0);
+//   private getPreviousDate(currentDate: string, timezone: string): string {
+//     try {
+//       const current = new Date(currentDate + 'T00:00:00');
+//       const previous = new Date(current);
+//       previous.setDate(previous.getDate() - 1);
+//       return this.getLocalDateKey(previous, timezone);
+//     } catch (error) {
+//       const current = new Date(currentDate + 'T00:00:00Z');
+//       const previous = new Date(current);
+//       previous.setUTCDate(previous.getUTCDate() - 1);
+//       return previous.toISOString().split('T')[0];
+//     }
+//   }
 
-//     const totalItems = orders.reduce((sum: number, order: any) => {
-//       const lineItems = order.line_items || [];
-//       const itemsInOrder = lineItems.reduce((itemSum: number, item: any) => {
-//         return itemSum + (item.quantity || 0);
-//       }, 0);
-//       return sum + itemsInOrder;
-//     }, 0);
 
-//     const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-//     const averageItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
 
-//     // Time-based metrics
-//     const salesByDay: Record<string, { revenue: number; orders: number; items: number }> = {};
-//     const salesByWeek: Record<string, { revenue: number; orders: number; items: number }> = {};
-//     const salesByMonth: Record<string, { revenue: number; orders: number; items: number }> = {};
 
-//     const today = new Date();
-//     const todayKey = today.toISOString().split("T")[0];
-//     const yesterday = new Date(today);
-//     yesterday.setDate(yesterday.getDate() - 1);
-//     const yesterdayKey = yesterday.toISOString().split("T")[0];
-//     const lastWeek = new Date(today);
-//     lastWeek.setDate(lastWeek.getDate() - 7);
-//     const lastWeekKey = lastWeek.toISOString().split("T")[0];
 
-//     let todayRevenue = 0;
-//     let todayOrders = 0;
-//     let todayItems = 0;
-//     let yesterdayRevenue = 0;
-//     let yesterdayOrders = 0;
-//     let yesterdayItems = 0;
-//     let lastWeekRevenue = 0;
-//     let lastWeekOrders = 0;
-//     let lastWeekItems = 0;
 
-//     let todayFulfilled = 0;
-//     let todayUnfulfilled = 0;
-//     let last7DaysFulfilled = 0;
-//     let last7DaysUnfulfilled = 0;
 
-//     // Process each order
-//     orders.forEach((order: any) => {
-//       const createdAt = new Date(order.created_at);
-//       const revenue = parseFloat(order.total_price || '0');
-      
-//       const lineItems = order.line_items || [];
-//       const itemsInOrder = lineItems.reduce((sum: number, item: any) => {
-//         return sum + (item.quantity || 0);
-//       }, 0);
-      
-//       const dateKey = createdAt.toISOString().split("T")[0];
-//       const isToday = dateKey === todayKey;
-//       const isYesterday = dateKey === yesterdayKey;
-//       const isLastWeekSameDay = dateKey === lastWeekKey;
-//       const isLast7Days = (today.getTime() - createdAt.getTime()) <= (7 * 24 * 60 * 60 * 1000);
 
-//       // Today's metrics
-//       if (isToday) {
-//         todayRevenue += revenue;
-//         todayOrders += 1;
-//         todayItems += itemsInOrder;
-        
-//         if (order.fulfillment_status === "fulfilled" || order.fulfillments?.length > 0) {
-//           todayFulfilled += 1;
-//         } else {
-//           todayUnfulfilled += 1;
-//         }
-//       }
-      
-//       // Yesterday's metrics
-//       if (isYesterday) {
-//         yesterdayRevenue += revenue;
-//         yesterdayOrders += 1;
-//         yesterdayItems += itemsInOrder;
-//       }
-      
-//       // Last week metrics
-//       if (isLastWeekSameDay) {
-//         lastWeekRevenue += revenue;
-//         lastWeekOrders += 1;
-//         lastWeekItems += itemsInOrder;
-//       }
 
-//       // Last 7 days fulfillment
-//       if (isLast7Days) {
-//         if (order.fulfillment_status === "fulfilled" || order.fulfillments?.length > 0) {
-//           last7DaysFulfilled += 1;
-//         } else {
-//           last7DaysUnfulfilled += 1;
-//         }
-//       }
 
-//       // Daily aggregation
-//       if (!salesByDay[dateKey]) {
-//         salesByDay[dateKey] = { revenue: 0, orders: 0, items: 0 };
-//       }
-//       salesByDay[dateKey].revenue += revenue;
-//       salesByDay[dateKey].orders += 1;
-//       salesByDay[dateKey].items += itemsInOrder;
 
-//       // Weekly aggregation
-//       const weekKey = `${createdAt.getFullYear()}-W${Math.ceil((createdAt.getDate() - createdAt.getDay() + 1) / 7)}`;
-//       if (!salesByWeek[weekKey]) {
-//         salesByWeek[weekKey] = { revenue: 0, orders: 0, items: 0 };
-//       }
-//       salesByWeek[weekKey].revenue += revenue;
-//       salesByWeek[weekKey].orders += 1;
-//       salesByWeek[weekKey].items += itemsInOrder;
 
-//       // Monthly aggregation
-//       const monthKey = `${createdAt.getFullYear()}-${(createdAt.getMonth() + 1).toString().padStart(2, "0")}`;
-//       if (!salesByMonth[monthKey]) {
-//         salesByMonth[monthKey] = { revenue: 0, orders: 0, items: 0 };
-//       }
-//       salesByMonth[monthKey].revenue += revenue;
-//       salesByMonth[monthKey].orders += 1;
-//       salesByMonth[monthKey].items += itemsInOrder;
-//     });
 
-//     // Customer analytics
-//     const customerOrderCount: Record<string, number> = {};
-//     orders.forEach((order: any) => {
-//       const customerId = order.customer?.id;
-//       if (customerId) {
-//         customerOrderCount[customerId] = (customerOrderCount[customerId] || 0) + 1;
-//       }
-//     });
 
-//     const totalCustomers = Object.keys(customerOrderCount).length;
-//     const repeatCustomers = Object.values(customerOrderCount).filter(count => count > 1).length;
-//     const repeatCustomerRate = totalCustomers > 0 ? (repeatCustomers / totalCustomers) * 100 : 0;
-//     const newCustomers = totalCustomers - repeatCustomers;
 
-//     // Last 7 days customer analytics
-//     const last7DaysCustomers: Record<string, number> = {};
-//     orders.forEach((order: any) => {
-//       const createdAt = new Date(order.created_at);
-//       const isLast7Days = (today.getTime() - createdAt.getTime()) <= (7 * 24 * 60 * 60 * 1000);
-      
-//       if (isLast7Days) {
-//         const customerId = order.customer?.id;
-//         if (customerId) {
-//           last7DaysCustomers[customerId] = (last7DaysCustomers[customerId] || 0) + 1;
-//         }
-//       }
-//     });
 
-//     const last7DaysTotalCustomers = Object.keys(last7DaysCustomers).length;
-//     const last7DaysRepeatCustomers = Object.values(last7DaysCustomers).filter(count => count > 1).length;
-//     const last7DaysRepeatCustomerRate = last7DaysTotalCustomers > 0 ? (last7DaysRepeatCustomers / last7DaysTotalCustomers) * 100 : 0;
-//     const last7DaysNewCustomers = last7DaysTotalCustomers - last7DaysRepeatCustomers;
 
-//     // Process daily data (last 7 days)
-//     const last7Days = Array.from({ length: 7 }, (_, i) => {
-//       const date = new Date();
-//       date.setDate(date.getDate() - i);
-//       return date.toISOString().split("T")[0];
-//     }).reverse();
+// // Add these helper methods to your AnalyticsCollector class
 
-//     const dailySales = last7Days.map(date => {
-//       const dayData = salesByDay[date] || { revenue: 0, orders: 0, items: 0 };
-//       return {
-//         date,
-//         revenue: dayData.revenue,
-//         orders: dayData.orders,
-//         items: dayData.items
-//       };
-//     });
+// private calculateMismatchSummary(data: any[], periodType: 'day' | 'week' | 'month'): { 
+//   totalMismatches: number; 
+//   totalDifference: number; 
+//   hasMismatches: boolean; 
+// } {
+//   let totalMismatches = 0;
+//   let totalDifference = 0;
 
-//     // Process weekly data (last 8 weeks)
-//     const weeklyEntries = Object.entries(salesByWeek)
-//       .sort((a, b) => a[0].localeCompare(b[0]))
-//       .slice(-8);
+//   console.log(`🔍 [MISMATCH DEBUG] Calculating ${periodType} mismatch summary for ${data.length} periods`);
 
-//     const weeklySales = weeklyEntries.map(([week, data]) => ({
-//       week,
-//       revenue: data.revenue,
-//       orders: data.orders,
-//       items: data.items
-//     }));
-
-//     // Process monthly data (last 6 months)
-//     const monthlyEntries = Object.entries(salesByMonth)
-//       .sort((a, b) => a[0].localeCompare(b[0]))
-//       .slice(-6);
-
-//     const monthlySales = monthlyEntries.map(([month, data]) => ({
-//       month,
-//       revenue: data.revenue,
-//       orders: data.orders,
-//       items: data.items
-//     }));
-
-//     // Additional metrics
-//     const fulfillmentRate = totalOrders > 0 ? (fulfilledOrders / totalOrders) * 100 : 0;
+//   data.forEach((periodData: any, index: number) => {
+//     if (!periodData) {
+//       console.log(`❌ [MISMATCH DEBUG] Period ${index} has no data`);
+//       return;
+//     }
     
-//     const revenueChangeVsYesterday = yesterdayRevenue > 0 
-//       ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 
-//       : 0;
+//     const calculatedTotal = periodData.netSales + periodData.shipping + periodData.taxes + (periodData.extraFees || 0);
+//     const actualTotal = periodData.totalSales;
+//     const difference = Math.abs(actualTotal - calculatedTotal);
+//     const mismatch = difference > 0.01;
     
-//     const ordersChangeVsYesterday = yesterdayOrders > 0 
-//       ? ((todayOrders - yesterdayOrders) / yesterdayOrders) * 100 
-//       : 0;
-
-//     const itemsChangeVsYesterday = yesterdayItems > 0 
-//       ? ((todayItems - yesterdayItems) / yesterdayItems) * 100 
-//       : 0;
+//     console.log(`🔍 [MISMATCH DEBUG] ${periodType} ${index}:`);
+//     console.log(`   Net Sales: ${periodData.netSales}`);
+//     console.log(`   Shipping: ${periodData.shipping}`);
+//     console.log(`   Taxes: ${periodData.taxes}`);
+//     console.log(`   Extra Fees: ${periodData.extraFees || 0}`);
+//     console.log(`   Calculated Total: ${calculatedTotal}`);
+//     console.log(`   Actual Total: ${actualTotal}`);
+//     console.log(`   Difference: ${difference}`);
+//     console.log(`   Mismatch: ${mismatch}`);
     
-//     const revenueChangeVsLastWeek = lastWeekRevenue > 0 
-//       ? ((todayRevenue - lastWeekRevenue) / lastWeekRevenue) * 100 
-//       : 0;
+//     if (mismatch) {
+//       totalMismatches++;
+//       totalDifference += (calculatedTotal - actualTotal);
+//       console.log(`⚠️ [MISMATCH FOUND] ${periodType} ${index} has mismatch: ${difference}`);
+//     }
+//   });
 
-//     const bestDay = dailySales.reduce((best, current) => 
-//       current.revenue > best.revenue ? current : best, { date: '', revenue: 0, orders: 0, items: 0 }
-//     );
+//   const result = {
+//     totalMismatches,
+//     totalDifference: parseFloat(totalDifference.toFixed(2)),
+//     hasMismatches: totalMismatches > 0
+//   };
 
-//     const averageDailyRevenue = dailySales.length > 0 
-//       ? dailySales.reduce((sum, day) => sum + day.revenue, 0) / dailySales.length 
-//       : 0;
+//   console.log(`📊 [MISMATCH RESULT] ${periodType}:`, result);
+//   return result;
+// }
 
-//     // Chart data
-//     const customerTypeData = {
-//       new: newCustomers,
-//       repeat: repeatCustomers
-//     };
+// private getTodayMismatchSummary(data: any): { 
+//   totalMismatches: number; 
+//   totalDifference: number; 
+//   hasMismatches: boolean; 
+// } {
+//   const todayData = data.dailyFinancials?.find((day: any) => day.date === data.currentDateInShopTZ);
+  
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Looking for today: ${data.currentDateInShopTZ}`);
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Available dates:`, data.dailyFinancials?.map((d: any) => d.date));
+  
+//   if (!todayData) {
+//     console.log(`❌ [TODAY MISMATCH DEBUG] No data found for today`);
+//     return { totalMismatches: 0, totalDifference: 0, hasMismatches: false };
+//   }
 
-//     const fulfillmentStatusData = {
-//       fulfilled: fulfilledOrders,
-//       unfulfilled: unfulfilledOrders
-//     };
+//   const calculatedTotal = todayData.netSales + todayData.shipping + todayData.taxes + (todayData.extraFees || 0);
+//   const actualTotal = todayData.totalSales;
+//   const difference = Math.abs(actualTotal - calculatedTotal);
+//   const mismatch = difference > 0.01;
+  
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Today's data:`, todayData);
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Calculated: ${calculatedTotal}, Actual: ${actualTotal}, Difference: ${difference}, Mismatch: ${mismatch}`);
 
-//     const weeklyRevenueTrend = weeklySales.map(week => ({
-//       week: `Week ${week.week.split('-W')[1]}`,
-//       revenue: week.revenue
-//     }));
+//   const result = {
+//     totalMismatches: mismatch ? 1 : 0,
+//     totalDifference: mismatch ? parseFloat((calculatedTotal - actualTotal).toFixed(2)) : 0,
+//     hasMismatches: mismatch
+//   };
 
-//     const monthlyComparison = monthlySales.map(month => {
-//       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-//       const monthNumber = parseInt(month.month.split('-')[1]);
-//       return {
-//         month: monthNames[monthNumber - 1],
-//         revenue: month.revenue,
-//         orders: month.orders
-//       };
-//     });
+//   console.log(`📊 [TODAY MISMATCH RESULT]:`, result);
+//   return result;
+// }
 
-//     const dailyPerformance = dailySales.map(day => {
-//       const date = new Date(day.date);
-//       const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-//       return {
-//         day: dayNames[date.getDay()],
-//         revenue: day.revenue,
-//         orders: day.orders
-//       };
-//     });
 
+
+
+  
+// private processOrdersData(orders: any[], shopTimezone: string, shopCurrency: string): EmailOrderData {
+//   console.log(`🔧 Processing ${orders.length} orders for analytics`);
+  
+//   const currentDateInShopTZ = this.getLocalDateKey(new Date(), shopTimezone);
+//   const yesterdayInShopTZ = this.getPreviousDate(currentDateInShopTZ, shopTimezone);
+
+//   // Initialize data structures - USING EXTRACTED HELPERS
+//   const last7DaysKeys = getLastNDays(7, shopTimezone);
+//   const last8WeeksKeys = getLast8Weeks(shopTimezone);
+//   const monthRanges = getMonthRanges(shopTimezone);
+
+//   // Get last week same day for comparison
+//   const todayDate = new Date(currentDateInShopTZ + 'T00:00:00');
+//   const lastWeekDate = new Date(todayDate);
+//   lastWeekDate.setDate(todayDate.getDate() - 7);
+//   const lastWeekSameDayInShopTZ = this.getLocalDateKey(lastWeekDate, shopTimezone);
+
+//   const dailyStats: Record<string, OrderStats> = {};
+//   const weeklyStats: Record<string, OrderStats> = {};
+//   const monthlyStats: Record<string, OrderStats> = {};
+//   const dailyCustomerStats: Record<string, CustomerData> = {};
+//   const weeklyCustomerStats: Record<string, CustomerData> = {};
+//   const monthlyCustomerStats: Record<string, CustomerData> = {};
+
+//   // Initialize all periods with empty stats
+//   last7DaysKeys.forEach(date => {
+//     dailyStats[date] = this.getEmptyOrderStats();
+//     dailyCustomerStats[date] = { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//   });
+
+//   last8WeeksKeys.forEach(week => {
+//     weeklyStats[week] = this.getEmptyOrderStats();
+//     weeklyCustomerStats[week] = { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//   });
+
+//   monthRanges.forEach(month => {
+//     monthlyStats[month.key] = this.getEmptyOrderStats();
+//     monthlyCustomerStats[month.key] = { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//   });
+
+//   // Process customer data - USING EXTRACTED CUSTOMER ANALYTICS
+//   const customerOrderMap = buildCustomerOrderMap(orders, shopTimezone);
+//   const dailyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimezone, last7DaysKeys, 'daily');
+//   const weeklyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimezone, last8WeeksKeys, 'weekly');
+//   const monthlyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimezone, monthRanges.map(r => r.key), 'monthly');
+//   const totalCustomerData = calculateOverallCustomerData(customerOrderMap);
+
+//   console.log(`👥 Customer analytics: ${totalCustomerData.totalCustomers} total customers`);
+
+//   // Process each order - USING EXTRACTED FINANCIAL CALCULATOR
+//   let processedOrders = 0;
+//   orders.forEach((order: any) => {
+//     try {
+//       const date = new Date(order.created_at);
+//       const monthKey = date.toLocaleString("default", { month: "short", year: "numeric", timeZone: shopTimezone });
+//       const dayKey = this.getLocalDateKey(date, shopTimezone);
+      
+//       const monday = new Date(date);
+//       monday.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+//       const weekKey = `Week of ${this.getLocalDateKey(monday, shopTimezone)}`;
+
+//       const orderStats = processOrderToStats(order);
+
+//       // Aggregate data - USING EXTRACTED MERGE FUNCTION
+//       if (dailyStats[dayKey]) {
+//         dailyStats[dayKey] = mergeStats(dailyStats[dayKey], orderStats);
+//         dailyCustomerStats[dayKey] = dailyCustomerAnalytics[dayKey] || { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//       }
+
+//       if (weeklyStats[weekKey]) {
+//         weeklyStats[weekKey] = mergeStats(weeklyStats[weekKey], orderStats);
+//         weeklyCustomerStats[weekKey] = weeklyCustomerAnalytics[weekKey] || { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//       }
+
+//       if (monthlyStats[monthKey]) {
+//         monthlyStats[monthKey] = mergeStats(monthlyStats[monthKey], orderStats);
+//         monthlyCustomerStats[monthKey] = monthlyCustomerAnalytics[monthKey] || { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//       }
+      
+//       processedOrders++;
+//     } catch (error) {
+//       console.error('Error processing order:', error);
+//     }
+//   });
+
+//   console.log(`✅ Processed ${processedOrders} orders for analytics`);
+
+//   // Calculate today's and yesterday's data
+//   const todayData = dailyStats[currentDateInShopTZ] || this.getEmptyOrderStats();
+//   const yesterdayData = dailyStats[yesterdayInShopTZ] || this.getEmptyOrderStats();
+//   const lastWeekData = dailyStats[lastWeekSameDayInShopTZ] || this.getEmptyOrderStats();
+
+//   // ⬇️⬇️⬇️ EVENT SUMMARY CALCULATIONS - ADDED IN CORRECT LOCATION ⬇️⬇️⬇️
+// // ⬇️⬇️⬇️ EVENT SUMMARY CALCULATIONS - ADDED IN CORRECT LOCATION ⬇️⬇️⬇️
+
+// // Today's event summary - from todayData (handle null case)
+// const todayEventSummary = todayData.eventSummary || {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// // Last 7 days event summary - aggregate from dailyStats
+// let last7DaysEventSummary = {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// last7DaysKeys.forEach(date => {
+//   const dayData = dailyStats[date];
+//   if (dayData && dayData.eventSummary) {
+//     const merged = mergeEventSummaries(last7DaysEventSummary, dayData.eventSummary);
+//     if (merged) {
+//       last7DaysEventSummary = merged;
+//     }
+//   }
+// });
+
+// // Last 8 weeks event summary - aggregate from weeklyStats
+// let last8WeeksEventSummary = {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// last8WeeksKeys.forEach(week => {
+//   const weekData = weeklyStats[week];
+//   if (weekData && weekData.eventSummary) {
+//     const merged = mergeEventSummaries(last8WeeksEventSummary, weekData.eventSummary);
+//     if (merged) {
+//       last8WeeksEventSummary = merged;
+//     }
+//   }
+// });
+
+
+// // Calculate weekly totals - CORRECTED VERSION
+// let weeklyTotalOrders = 0;
+// let weeklyPerformanceRevenue = 0; // For Weekly Performance section
+// let weeklyTotalItems = 0;
+
+// // For Weekly Financial Breakdown - USE THE SAME LOGIC AS FINANCIAL CALCULATOR
+// let weeklyTotalRevenue = 0;        // Gross Sales (use 'total' property)
+// let weeklyTotalDiscounts = 0;
+// let weeklyTotalReturns = 0;
+// let weeklyTotalExtraFees = 0;
+// let weeklyTotalNetSales = 0;
+// let weeklyTotalShipping = 0;
+// let weeklyTotalTaxes = 0;
+// let weeklyTotalTotalSales = 0;    // Final Total
+
+// last8WeeksKeys.forEach(week => {
+//   const weekData = weeklyStats[week];
+//   if (weekData) {
+//     weeklyTotalOrders += weekData.orderCount;
+//     weeklyPerformanceRevenue += weekData.totalSales; // For Weekly Performance
+//     weeklyTotalItems += weekData.items;
+    
+//     // ✅ CORRECT: Use the same properties as your financial calculator
+//     weeklyTotalRevenue += weekData.total;           // Gross Sales
+//     weeklyTotalDiscounts += weekData.discounts;
+//     weeklyTotalReturns += weekData.returns;
+//     weeklyTotalExtraFees += weekData.extraFees || 0;
+    
+//     weeklyTotalNetSales += weekData.netSales;
+//     weeklyTotalShipping += weekData.shipping;
+//     weeklyTotalTaxes += weekData.taxes;
+//     weeklyTotalTotalSales += weekData.totalSales;   // Final Total
+//   }
+// });
+
+// // Verify the math makes sense - THIS SHOULD MATCH YOUR FINANCIAL CALCULATOR LOGIC
+// console.log('🔍 WEEKLY FINANCIAL VERIFICATION:');
+// console.log('Gross Sales (total):', weeklyTotalRevenue);
+// console.log('Discounts:', weeklyTotalDiscounts);
+// console.log('Returns:', weeklyTotalReturns);
+// console.log('Extra Fees:', weeklyTotalExtraFees);
+// console.log('Net Sales:', weeklyTotalNetSales);
+// console.log('Total Sales (totalSales):', weeklyTotalTotalSales);
+
+// // Check if the calculation matches: Gross - Discounts + Returns + Extra Fees ≈ Net Sales
+// const calculatedNet = weeklyTotalRevenue - weeklyTotalDiscounts + weeklyTotalReturns + weeklyTotalExtraFees;
+// console.log('Expected Net (Gross - Discounts + Returns + Extra Fees):', calculatedNet);
+// console.log('Actual Net Sales from data:', weeklyTotalNetSales);
+// console.log('Difference:', Math.abs(calculatedNet - weeklyTotalNetSales));
+
+
+
+
+// // Create weekly financials array
+// const weeklyFinancials = last8WeeksKeys.map(week => {
+//   const weekData = weeklyStats[week] || this.getEmptyOrderStats();
+//   return {
+//     week,
+//     total: weekData.total,
+//     discounts: weekData.discounts,
+//     returns: weekData.returns,
+//     netSales: weekData.netSales,
+//     shipping: weekData.shipping,
+//     extraFees: weekData.extraFees || 0,
+//     taxes: weekData.taxes,
+//     totalSales: weekData.totalSales
+//   };
+// });
+
+
+
+
+
+
+
+
+// // Last 6 months event summary - aggregate from monthlyStats
+// let last6MonthsEventSummary = {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// monthRanges.forEach(month => {
+//   const monthData = monthlyStats[month.key];
+//   if (monthData && monthData.eventSummary) {
+//     const merged = mergeEventSummaries(last6MonthsEventSummary, monthData.eventSummary);
+//     if (merged) {
+//       last6MonthsEventSummary = merged;
+//     }
+//   }
+// });
+
+//   // Debug the event summaries
+//   console.log('🔍 EVENT SUMMARIES FROM PROCESSED DATA:');
+//   console.log('Today Events:', todayEventSummary.totalEvents, 'Refunds:', todayEventSummary.refunds.count);
+//   console.log('Last 7 Days Events:', last7DaysEventSummary.totalEvents, 'Refunds:', last7DaysEventSummary.refunds.count);
+//   console.log('Last 8 Weeks Events:', last8WeeksEventSummary.totalEvents, 'Refunds:', last8WeeksEventSummary.refunds.count);
+//   console.log('Last 6 Months Events:', last6MonthsEventSummary.totalEvents, 'Refunds:', last6MonthsEventSummary.refunds.count);
+
+//   // ⬆️⬆️⬆️ END EVENT SUMMARY CALCULATIONS ⬆️⬆️⬆️
+
+//   // Calculate 7-day totals
+//   let last7DaysStats = this.getEmptyOrderStats();
+//   let last7DaysTotalCustomers = 0;
+//   let last7DaysRepeatCustomers = 0;
+//   let last7DaysNewCustomers = 0;
+
+//   last7DaysKeys.forEach(date => {
+//     const dayData = dailyStats[date];
+//     const customerData = dailyCustomerStats[date];
+    
+//     if (dayData) {
+//       last7DaysStats = mergeStats(last7DaysStats, dayData);
+//     }
+    
+//     last7DaysTotalCustomers += customerData.totalCustomers;
+//     last7DaysRepeatCustomers += customerData.repeatedCustomers;
+//     last7DaysNewCustomers += customerData.newCustomers;
+//   });
+
+//   let last7DaysTotalRevenue = 0;
+//   let last7DaysTotalDiscounts = 0;
+//   let last7DaysTotalReturns = 0;
+//   let last7DaysTotalExtraFees = 0;
+//   let last7DaysTotalNetSales = 0;
+//   let last7DaysTotalShipping = 0;
+//   let last7DaysTotalTaxes = 0;
+//   let last7DaysTotalTotalSales = 0;
+
+//   last7DaysKeys.forEach(date => {
+//     const dayData = dailyStats[date];
+//     if (dayData) {
+//       last7DaysTotalRevenue += dayData.total;
+//       last7DaysTotalDiscounts += dayData.discounts;
+//       last7DaysTotalReturns += dayData.returns;
+//       last7DaysTotalExtraFees += dayData.extraFees || 0;
+//       last7DaysTotalNetSales += dayData.netSales;
+//       last7DaysTotalShipping += dayData.shipping;
+//       last7DaysTotalTaxes += dayData.taxes;
+//       last7DaysTotalTotalSales += dayData.totalSales;
+//     }
+//   });
+
+
+
+  
+//   // Daily financials array
+// const dailyFinancials = last7DaysKeys.map(date => {
+//   const dayData = dailyStats[date] || this.getEmptyOrderStats();
+//   return {
+//     date,
+//     total: dayData.total,
+//     discounts: dayData.discounts,
+//     returns: dayData.returns,
+//     netSales: dayData.netSales,
+//     shipping: dayData.shipping,
+//     extraFees: dayData.extraFees || 0,
+//     taxes: dayData.taxes,
+//     totalSales: dayData.totalSales
+//   };
+// });
+
+
+// //   // Calculate weekly financial totals for last 8 weeks
+// // let weeklyTotalOrders = 0;
+// // let weeklyTotalRevenue = 0;
+// // let weeklyTotalItems = 0;
+
+// // last8WeeksKeys.forEach(week => {
+// //   const weekData = weeklyStats[week];
+// //   if (weekData) {
+// //     weeklyTotalOrders += weekData.orderCount;
+// //     weeklyTotalRevenue += weekData.totalSales;
+// //     weeklyTotalItems += weekData.items;
+// //   }
+// // });
+
+// //   // Create daily financials array
+// //   const dailyFinancials = last7DaysKeys.map(date => {
+// //     const dayData = dailyStats[date] || this.getEmptyOrderStats();
+// //     return {
+// //       date,
+// //       total: dayData.total,
+// //       discounts: dayData.discounts,
+// //       returns: dayData.returns,
+// //       netSales: dayData.netSales,
+// //       shipping: dayData.shipping,
+// //       extraFees: dayData.extraFees || 0,
+// //       taxes: dayData.taxes,
+// //       totalSales: dayData.totalSales
+// //     };
+// //   });
+
+
+
+
+
+
+
+
+// // Add this after the weekly calculations in processOrdersData method
+// // In processOrdersData method - COMPLETE MONTHLY CALCULATIONS
+
+// // ==================== MONTHLY FINANCIAL CALCULATIONS ====================
+
+// // Calculate monthly financial totals from monthlyStats
+// let monthlyTotalOrders = 0;
+// let monthlyTotalRevenue = 0;
+// let monthlyTotalItems = 0;
+// let monthlyTotalDiscounts = 0;
+// let monthlyTotalReturns = 0;
+// let monthlyTotalExtraFees = 0;
+// let monthlyTotalNetSales = 0;
+// let monthlyTotalShipping = 0;
+// let monthlyTotalTaxes = 0;
+// let monthlyTotalTotalSales = 0;
+
+// // Calculate from monthlyStats (which has the processed financial data)
+// monthRanges.forEach(month => {
+//   const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+  
+//   monthlyTotalOrders += monthData.orderCount;
+//   monthlyTotalRevenue += monthData.total;           // Gross Sales
+//   monthlyTotalItems += monthData.items;
+//   monthlyTotalDiscounts += monthData.discounts;
+//   monthlyTotalReturns += monthData.returns;
+//   monthlyTotalExtraFees += monthData.extraFees || 0;
+//   monthlyTotalNetSales += monthData.netSales;
+//   monthlyTotalShipping += monthData.shipping;
+//   monthlyTotalTaxes += monthData.taxes;
+//   monthlyTotalTotalSales += monthData.totalSales;
+// });
+
+// // Create monthlyFinancials object with ALL calculated metrics
+// const monthlyFinancials = {
+//   totalOrders: monthlyTotalOrders,
+//   totalRevenue: monthlyTotalRevenue,
+//   totalItems: monthlyTotalItems,
+//   totalDiscounts: monthlyTotalDiscounts,
+//   totalReturns: monthlyTotalReturns,
+//   totalExtraFees: monthlyTotalExtraFees,
+//   totalNetSales: monthlyTotalNetSales,
+//   totalShipping: monthlyTotalShipping,
+//   totalTaxes: monthlyTotalTaxes,
+//   totalTotalSales: monthlyTotalTotalSales
+// };
+
+// // Create monthlyTotals object for the details section
+// const monthlyTotals: Record<string, any> = {};
+// monthRanges.forEach(month => {
+//   const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+//   monthlyTotals[month.key] = {
+//     total: monthData.total,
+//     discounts: monthData.discounts,
+//     returns: monthData.returns,
+//     netSales: monthData.netSales,
+//     shipping: monthData.shipping,
+//     taxes: monthData.taxes,
+//     extraFees: monthData.extraFees || 0,
+//     totalSales: monthData.totalSales,
+//     orderCount: monthData.orderCount,
+//     items: monthData.items
+//   };
+// });
+
+// // Debug to verify calculations
+// console.log('🔍 MONTHLY FINANCIAL CALCULATIONS:');
+// console.log('Gross Sales (totalRevenue):', monthlyTotalRevenue);
+// console.log('Discounts:', monthlyTotalDiscounts);
+// console.log('Returns:', monthlyTotalReturns);
+// console.log('Extra Fees:', monthlyTotalExtraFees);
+// console.log('Net Sales:', monthlyTotalNetSales);
+// console.log('Shipping:', monthlyTotalShipping);
+// console.log('Taxes:', monthlyTotalTaxes);
+// console.log('Total Sales:', monthlyTotalTotalSales);
+
+
+
+//   // Calculate overall totals from monthly data
+//   let overallStats = this.getEmptyOrderStats();
+//   monthRanges.forEach(month => {
+//     const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+//     overallStats = mergeStats(overallStats, monthData);
+//   });
+
+//   console.log(`📊 Overall totals: ${overallStats.orderCount} orders, ${this.formatCurrency(overallStats.totalSales, shopCurrency)} revenue`);
+
+//   // Format data for response
+//   const dailySales = last7DaysKeys.map(date => {
+//     const dayData = dailyStats[date] || this.getEmptyOrderStats();
+//     const customerData = dailyCustomerStats[date];
+    
 //     return {
-//       totalOrders,
-//       fulfilledOrders,
-//       unfulfilledOrders,
-//       totalRevenue,
-//       totalItems,
-//       averageOrderValue,
-//       averageItemsPerOrder,
-//       dailySales,
-//       weeklySales,
-//       monthlySales,
-//       todayRevenue,
-//       todayOrders,
-//       todayItems,
-//       yesterdayRevenue,
-//       yesterdayOrders,
-//       yesterdayItems,
-//       lastWeekRevenue,
-//       lastWeekOrders,
-//       lastWeekItems,
-//       todayFulfilled,
-//       todayUnfulfilled,
-//       last7DaysFulfilled,
-//       last7DaysUnfulfilled,
-//       fulfillmentRate,
-//       revenueChangeVsYesterday,
-//       ordersChangeVsYesterday,
-//       itemsChangeVsYesterday,
-//       revenueChangeVsLastWeek,
-//       bestDay,
-//       averageDailyRevenue,
-//       totalCustomers,
-//       repeatCustomers,
-//       newCustomers,
-//       repeatCustomerRate,
-//       last7DaysTotalCustomers,
-//       last7DaysRepeatCustomers,
-//       last7DaysNewCustomers, 
-//       last7DaysRepeatCustomerRate,
-//       customerTypeData,
-//       fulfillmentStatusData,
-//       weeklyRevenueTrend,
-//       monthlyComparison,
-//       dailyPerformance,
-//       ordersLoaded: orders.length,
+//       date,
+//       revenue: dayData.totalSales,
+//       orders: dayData.orderCount,
+//       items: dayData.items,
+//       fulfilled: dayData.fulfilled
 //     };
+//   });
+
+//   const weeklySales = last8WeeksKeys.map(week => {
+//     const weekData = weeklyStats[week] || this.getEmptyOrderStats();
+//     const customerData = weeklyCustomerStats[week];
+    
+//     return {
+//       week,
+//       revenue: weekData.totalSales,
+//       orders: weekData.orderCount,
+//       items: weekData.items
+//     };
+//   });
+
+//   const monthlySales = monthRanges.map(month => {
+//     const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+//     const customerData = monthlyCustomerStats[month.key];
+    
+//     return {
+//       month: month.key,
+//       revenue: monthData.totalSales,
+//       orders: monthData.orderCount,
+//       items: monthData.items
+//     };
+//   });
+
+//   // Calculate percentage changes - SAME CALCULATIONS AS MAIN CODE
+//   const revenueChangeVsYesterday = yesterdayData.totalSales > 0 
+//     ? ((todayData.totalSales - yesterdayData.totalSales) / yesterdayData.totalSales) * 100 
+//     : (todayData.totalSales > 0 ? 100 : 0);
+
+//   const ordersChangeVsYesterday = yesterdayData.orderCount > 0 
+//     ? ((todayData.orderCount - yesterdayData.orderCount) / yesterdayData.orderCount) * 100 
+//     : (todayData.orderCount > 0 ? 100 : 0);
+
+//   const itemsChangeVsYesterday = yesterdayData.items > 0 
+//     ? ((todayData.items - yesterdayData.items) / yesterdayData.items) * 100 
+//     : (todayData.items > 0 ? 100 : 0);
+
+//   const revenueChangeVsLastWeek = lastWeekData.totalSales > 0 
+//     ? ((todayData.totalSales - lastWeekData.totalSales) / lastWeekData.totalSales) * 100 
+//     : (todayData.totalSales > 0 ? 100 : 0);
+
+//   // Additional metrics
+//   const bestDay = dailySales.reduce((best, current) => 
+//     current.revenue > best.revenue ? current : best, 
+//     { date: '', revenue: 0, orders: 0, items: 0, fulfilled: 0 }
+//   );
+
+//   const averageDailyRevenue = dailySales.length > 0 
+//     ? dailySales.reduce((sum, day) => sum + day.revenue, 0) / dailySales.length 
+//     : 0;
+
+//   const fulfillmentRate = last7DaysStats.orderCount > 0 
+//     ? (last7DaysStats.fulfilled / last7DaysStats.orderCount) * 100 
+//     : 0;
+
+//   const last7DaysRepeatCustomerRate = last7DaysTotalCustomers > 0 
+//     ? (last7DaysRepeatCustomers / last7DaysTotalCustomers) * 100 
+//     : 0;
+
+//   // Financial rates
+//   const discountRate = overallStats.total > 0 ? (overallStats.discounts / overallStats.total) * 100 : 0;
+//   const shippingRate = overallStats.total > 0 ? (overallStats.shipping / overallStats.total) * 100 : 0;
+//   const taxRate = overallStats.total > 0 ? (overallStats.taxes / overallStats.total) * 100 : 0;
+//   const returnRate = overallStats.total > 0 ? (overallStats.returns / overallStats.total) * 100 : 0;
+
+//   // Chart data - USING EXTRACTED FORMATTING
+//   const weeklyRevenueTrend = weeklySales.map(week => ({
+//     week: formatWeekDisplay(week.week),
+//     revenue: week.revenue
+//   }));
+
+//   const monthlyComparison = monthlySales.map(month => ({
+//     month: month.month.split(' ')[0],
+//     revenue: month.revenue,
+//     orders: month.orders
+//   }));
+
+//   const dailyPerformance = dailySales.map(day => {
+//     const date = new Date(day.date);
+//     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+//     return {
+//       day: dayNames[date.getDay()],
+//       revenue: day.revenue,
+//       orders: day.orders
+//     };
+//   });
+
+
+
+
+
+
+
+// console.log('🔍 Starting mismatch calculations...');
+  
+//   // Today's mismatch
+//   const todayMismatchSummary = this.getTodayMismatchSummary({
+//     dailyFinancials: dailyFinancials,
+//     currentDateInShopTZ: currentDateInShopTZ
+//   });
+
+//   // Last 7 days mismatch
+//   const last7DaysMismatchSummary = this.calculateMismatchSummary(dailyFinancials, 'day');
+  
+//   // Weekly mismatch
+//   const weeklyMismatchSummary = this.calculateMismatchSummary(weeklyFinancials, 'week');
+  
+//   // Monthly mismatch - FIX THIS PART
+//   const monthlyData = monthRanges.map(month => {
+//     const monthData = monthlyTotals[month.key];
+//     if (monthData) {
+//       return {
+//         netSales: monthData.netSales || 0,
+//         shipping: monthData.shipping || 0,
+//         taxes: monthData.taxes || 0,
+//         extraFees: monthData.extraFees || 0,
+//         totalSales: monthData.totalSales || 0
+//       };
+//     }
+//     return null;
+//   }).filter(Boolean);
+  
+//   const monthlyMismatchSummary = this.calculateMismatchSummary(monthlyData, 'month');
+
+//   console.log('📊 FINAL MISMATCH RESULTS:');
+//   console.log('Today:', todayMismatchSummary);
+//   console.log('Last 7 Days:', last7DaysMismatchSummary);
+//   console.log('Weekly:', weeklyMismatchSummary);
+//   console.log('Monthly:', monthlyMismatchSummary);
+
+
+
+
+
+
+//   // Calculate additional metrics
+//   const averageOrderValue = overallStats.orderCount > 0 ? overallStats.totalSales / overallStats.orderCount : 0;
+//   const averageItemsPerOrder = overallStats.orderCount > 0 ? overallStats.items / overallStats.orderCount : 0;
+//   const customerRetentionRate = totalCustomerData.totalCustomers > 0 ? 
+//     (totalCustomerData.repeatedCustomers / totalCustomerData.totalCustomers) * 100 : 0;
+//   const averageOrderFrequency = totalCustomerData.totalCustomers > 0 ? 
+//     overallStats.orderCount / totalCustomerData.totalCustomers : 0;
+
+//   // Calculate last 7 days totals from dailySales
+//   const last7DaysOrders = (dailySales || []).reduce((sum, day) => sum + (day.orders || 0), 0);
+//   const last7DaysRevenue = (dailySales || []).reduce((sum, day) => sum + (day.revenue || 0), 0);
+//   const last7DaysItems = (dailySales || []).reduce((sum, day) => sum + (day.items || 0), 0);
+
+//   console.log(`🎯 Final analytics prepared for email`);
+
+//   // Return complete EmailOrderData with all required fields
+//   return {
+//     // Core metrics
+//     totalOrders: overallStats.orderCount,
+//     totalCustomers: totalCustomerData.totalCustomers,
+//     fulfillmentRate,
+//     totalRevenue: overallStats.total,
+//     netRevenue: overallStats.netSales,
+//     averageOrderValue,
+//     totalItems: overallStats.items,
+//     todayOrders: todayData.orderCount,
+//     todayRevenue: todayData.totalSales,
+//     todayItems: todayData.items,
+    
+//     // Event summaries
+//     todayEventSummary: todayEventSummary,
+//     last7DaysEventSummary: last7DaysEventSummary,
+//     last8WeeksEventSummary: last8WeeksEventSummary,
+//     last6MonthsEventSummary: last6MonthsEventSummary,
+    
+//     last7DaysOrders,
+//     last7DaysRevenue, 
+//     last7DaysItems,
+
+   
+
+
+
+// last7DaysTotalRevenue,
+//   last7DaysTotalDiscounts,
+//   last7DaysTotalReturns,
+//   last7DaysTotalExtraFees,
+//   last7DaysTotalNetSales,
+//   last7DaysTotalShipping,
+//   last7DaysTotalTaxes,
+//   last7DaysTotalTotalSales,
+  
+  
+
+
+
+//   weeklyTotalOrders: weeklyTotalOrders,
+//   weeklyTotalRevenue: weeklyTotalRevenue, // Map your calculated value to the type property
+//   weeklyTotalItems: weeklyTotalItems,
+  
+//   // Weekly Financial Breakdown - Use EXACT property names
+//   weeklyTotalDiscounts: weeklyTotalDiscounts,
+//   weeklyTotalReturns: weeklyTotalReturns,
+//   weeklyTotalExtraFees: weeklyTotalExtraFees,
+//   weeklyTotalNetSales: weeklyTotalNetSales,
+//   weeklyTotalShipping: weeklyTotalShipping,
+//   weeklyTotalTaxes: weeklyTotalTaxes,
+//   weeklyTotalTotalSales: weeklyTotalTotalSales,
+//   weeklyFinancials: weeklyFinancials,
+  
+//   // Daily Financial Data
+//   dailyFinancials: dailyFinancials,
+  
+  
+
+//   // ✅ CORRECT - Use the calculated values!
+// monthlyFinancials: monthlyFinancials,
+// monthRanges: monthRanges.map(m => m.key),
+// monthlyTotals: monthlyTotals,
+
+
+
+
+
+// todayMismatchSummary,
+//     last7DaysMismatchSummary,
+//     weeklyMismatchSummary,
+//     monthlyMismatchSummary,
+
+
+  
+
+//     ordersChangeVsYesterday,
+//     revenueChangeVsYesterday,
+//     itemsChangeVsYesterday,
+//     newCustomers: totalCustomerData.newCustomers,
+//     repeatCustomers: totalCustomerData.repeatedCustomers,
+//     customerRetentionRate,
+//     averageOrderFrequency,
+//     shopTimezone,
+//     shopCurrency,
+//     totalRefunds: overallStats.returns,
+//     totalExchanges: 0,
+//     totalPartialRefunds: 0,
+//     totalEvents: 0,
+//     ordersWithEvents: 0,
+//     netEventValue: 0,
+
+//     // Extended email fields
+//     fulfilledOrders: overallStats.fulfilled,
+//     unfulfilledOrders: overallStats.unfulfilled,
+//     totalDiscounts: overallStats.discounts,
+//     totalShipping: overallStats.shipping,
+//     totalTaxes: overallStats.taxes,
+//     totalReturns: overallStats.returns,
+//     returnFees: overallStats.returnFees || 0,
+//     discountRate,
+//     shippingRate,
+//     taxRate,
+//     returnRate,
+//     averageItemsPerOrder,
+//     dailySales,
+//     weeklySales,
+//     monthlySales,
+//     yesterdayRevenue: yesterdayData.totalSales,
+//     yesterdayOrders: yesterdayData.orderCount,
+//     yesterdayItems: yesterdayData.items,
+//     lastWeekRevenue: lastWeekData.totalSales,
+//     lastWeekOrders: lastWeekData.orderCount,
+//     lastWeekItems: lastWeekData.items,
+//     todayFulfilled: todayData.fulfilled,
+//     todayUnfulfilled: todayData.unfulfilled,
+//     last7DaysFulfilled: last7DaysStats.fulfilled,
+//     last7DaysUnfulfilled: last7DaysStats.unfulfilled,
+//     revenueChangeVsLastWeek,
+//     bestDay: { date: bestDay.date, revenue: bestDay.revenue, orders: bestDay.orders, items: bestDay.items },
+//     averageDailyRevenue,
+//     last7DaysTotalCustomers,
+//     last7DaysRepeatCustomers,
+//     last7DaysNewCustomers,
+//     last7DaysRepeatCustomerRate,
+//     customerTypeData: { new: totalCustomerData.newCustomers, repeat: totalCustomerData.repeatedCustomers },
+//     fulfillmentStatusData: { fulfilled: overallStats.fulfilled, unfulfilled: overallStats.unfulfilled },
+//     weeklyRevenueTrend,
+//     monthlyComparison,
+//     dailyPerformance,
+//     ordersLoaded: orders.length,
+//     currentDateInShopTZ,
+//   };
+
+// }
+
+//   private formatCurrency(amount: number, currency: string): string {
+//     return amount.toLocaleString('en-US', { 
+//       style: 'currency', 
+//       currency: currency,
+//       minimumFractionDigits: 2 
+//     });
 //   }
 // }
 
@@ -1015,674 +1130,3527 @@
 
 
 
-import { Session } from "@shopify/shopify-api";
 
-export interface OrderData {
-  // Core metrics
-  totalOrders: number;
-  fulfilledOrders: number;
-  unfulfilledOrders: number;
-  totalRevenue: number;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { Session } from "@shopify/shopify-api";
+// import type { OrderStats, CustomerData } from '../types/analytics';
+// import type { EmailOrderData } from '../types/emailAnalytics';
+// import { fetchOrdersForPeriod } from '../services/shopifyApi.server';
+// import { processOrderToStats, mergeStats } from '../core/financialCalculator.server';
+// import { buildCustomerOrderMap, analyzeCustomerBehavior, calculateOverallCustomerData } from '../core/customerAnalytics.server';
+// import { getMonthRanges, getLastNDays, getLast8Weeks, formatWeekDisplay } from '../utils/analyticsHelpers';
+// import { calculateOrderEventSummary, mergeEventSummaries } from '../core/eventDetection.server';
+
+// export class AnalyticsCollector {
+//   private session: Session;
+//   private SHOPIFY_API_VERSION = '2024-04';
+//   private shopCurrency: string = 'USD'; // ✅ Cache the currency
+//   private shopTimezone: string = 'UTC'; // ✅ Cache the timezone
+
+//   constructor(session: Session) {
+//     this.session = session;
+//   }
+
+//   async collectDailyAnalytics(): Promise<EmailOrderData> {
+//     try {
+//       console.log(`🔄 Starting analytics collection for ${this.session.shop}`);
+      
+//       // ✅ STEP 1: Get shop timezone and currency FIRST
+//       const { shopTimezone, shopCurrency } = await this.getShopInfo();
+//       this.shopTimezone = shopTimezone;
+//       this.shopCurrency = shopCurrency;
+      
+//       console.log(`📍 Shop timezone: ${this.shopTimezone}, currency: ${this.shopCurrency}`);
+      
+//       // Use the same date ranges as main dashboard
+//       const monthRanges = getMonthRanges(this.shopTimezone);
+//       const startDate = monthRanges[0].start;
+//       const endDate = monthRanges[monthRanges.length - 1].end;
+      
+//       const orders = await fetchOrdersForPeriod(
+//         this.session.shop, 
+//         this.session.accessToken!, 
+//         startDate, 
+//         endDate
+//       );
+      
+//       console.log(`📦 Fetched ${orders.length} orders`);
+      
+//       if (orders.length === 0) {
+//         console.log('❌ No orders found, returning empty data');
+//         return this.getEmptyData(this.shopTimezone, this.shopCurrency);
+//       }
+
+//       const processedData = this.processOrdersData(orders, this.shopTimezone, this.shopCurrency);
+//       console.log(`✅ Successfully processed analytics data`);
+      
+//       return processedData;
+      
+//     } catch (error: any) {
+//       console.error('❌ Error in analytics collection:', error);
+//       return this.getEmptyData('UTC', 'USD');
+//     }
+//   }
+
+//   private async getShopInfo(): Promise<{ shopTimezone: string; shopCurrency: string }> {
+//     try {
+//       const url = `https://${this.session.shop}/admin/api/${this.SHOPIFY_API_VERSION}/shop.json`;
+//       const response = await fetch(url, {
+//         headers: {
+//           'X-Shopify-Access-Token': this.session.accessToken!,
+//           'Content-Type': 'application/json',
+//         },
+//       });
+
+//       if (response.ok) {
+//         const data = await response.json();
+//         console.log(`🏪 Shop API Response - Currency: ${data.shop.currency}, Timezone: ${data.shop.iana_timezone}`);
+//         return {
+//           shopTimezone: data.shop.iana_timezone || 'UTC',
+//           shopCurrency: data.shop.currency || 'USD'
+//         };
+//       } else {
+//         console.error(`❌ Shop API failed: ${response.status}`);
+//       }
+//     } catch (error) {
+//       console.error('❌ Error fetching shop info:', error);
+//     }
+    
+//     // Fallback values
+//     return { shopTimezone: 'UTC', shopCurrency: 'USD' };
+//   }
+
+//   // ✅ REMOVED the duplicate formatCurrency method - you already have one at the bottom
+
+//   // Your existing methods continue unchanged...
+//   private getEmptyOrderStats(): OrderStats {
+//     return {
+//       total: 0,
+//       items: 0,
+//       fulfilled: 0,
+//       unfulfilled: 0,
+//       discounts: 0,
+//       shipping: 0,
+//       taxes: 0,
+//       returns: 0,
+//       orderCount: 0,
+//       netSales: 0,
+//       extraFees: 0,
+//       totalSales: 0,
+//       shippingRefunds: 0,
+//       netReturns: 0,
+//       totalRefund: 0,
+//       hasSubsequentEvents: false,
+//       eventSummary: null,
+//       refundsCount: 0,
+//       financialStatus: 'pending'
+//     };
+//   }
+
+//   private getEmptyData(shopTimezone: string, shopCurrency: string): EmailOrderData {
+//     const currentDateInShopTZ = this.getLocalDateKey(new Date(), shopTimezone);
+    
+//     return {
+//       // Core metrics
+//       totalOrders: 0,
+//       totalCustomers: 0,
+//       fulfillmentRate: 0,
+//       totalRevenue: 0,
+//       netRevenue: 0,
+//       averageOrderValue: 0,
+//       totalItems: 0,
+//       todayOrders: 0,
+//       todayRevenue: 0,
+//       todayItems: 0,
+//       last7DaysOrders: 0,
+//       last7DaysRevenue: 0, 
+//       last7DaysItems: 0,
+//       ordersChangeVsYesterday: 0,
+//       revenueChangeVsYesterday: 0,
+//       itemsChangeVsYesterday: 0,
+//       newCustomers: 0,
+//       repeatCustomers: 0,
+//       customerRetentionRate: 0,
+//       averageOrderFrequency: 0,
+//       shopTimezone, // ✅ Now properly set
+//       shopCurrency, // ✅ Now properly set
+//       totalRefunds: 0,
+//       totalExchanges: 0,
+//       totalPartialRefunds: 0,
+//       totalEvents: 0,
+//       ordersWithEvents: 0,
+//       netEventValue: 0,
+
+//       // ... rest of your existing empty data structure
+//       last7DaysTotalRevenue: 0,
+//       last7DaysTotalDiscounts: 0,
+//       last7DaysTotalReturns: 0,
+//       last7DaysTotalExtraFees: 0,
+//       last7DaysTotalNetSales: 0,
+//       last7DaysTotalShipping: 0,
+//       last7DaysTotalTaxes: 0,
+//       last7DaysTotalTotalSales: 0,
+//       dailyFinancials: [],
+
+//       weeklyTotalOrders: 0,
+//       weeklyTotalRevenue: 0, 
+//       weeklyTotalItems: 0,
+//       weeklyTotalDiscounts: 0,
+//       weeklyTotalReturns: 0,
+//       weeklyTotalExtraFees: 0,
+//       weeklyTotalNetSales: 0,
+//       weeklyTotalShipping: 0,
+//       weeklyTotalTaxes: 0,
+//       weeklyTotalTotalSales: 0,
+//       weeklyFinancials: [],
+
+//       monthlyFinancials: {
+//         totalOrders: 0,
+//         totalRevenue: 0,
+//         totalItems: 0,
+//         totalDiscounts: 0,
+//         totalReturns: 0,
+//         totalExtraFees: 0,
+//         totalNetSales: 0,
+//         totalShipping: 0,
+//         totalTaxes: 0,
+//         totalTotalSales: 0
+//       },
+//       monthRanges: [],
+//       monthlyTotals: {},
+
+//       // In your return statement, add:
+// daysLeftInWeek:0,
+
+//       // Extended email fields
+//       fulfilledOrders: 0,
+//       unfulfilledOrders: 0,
+//       totalDiscounts: 0,
+//       totalShipping: 0,
+//       totalTaxes: 0,
+//       totalReturns: 0,
+//       returnFees: 0,
+//       discountRate: 0,
+//       shippingRate: 0,
+//       taxRate: 0,
+//       returnRate: 0,
+//       averageItemsPerOrder: 0,
+//       dailySales: [],
+//       weeklySales: [],
+//       monthlySales: [],
+//       yesterdayRevenue: 0,
+//       yesterdayOrders: 0,
+//       yesterdayItems: 0,
+//       lastWeekRevenue: 0,
+//       lastWeekOrders: 0,
+//       lastWeekItems: 0,
+//       todayFulfilled: 0,
+//       todayUnfulfilled: 0,
+//       last7DaysFulfilled: 0,
+//       last7DaysUnfulfilled: 0,
+//       revenueChangeVsLastWeek: 0,
+//       bestDay: { date: '', revenue: 0, orders: 0, items: 0 },
+//       averageDailyRevenue: 0,
+//       last7DaysTotalCustomers: 0,
+//       last7DaysRepeatCustomers: 0,
+//       last7DaysNewCustomers: 0,
+//       last7DaysRepeatCustomerRate: 0,
+//       customerTypeData: { new: 0, repeat: 0 },
+//       fulfillmentStatusData: { fulfilled: 0, unfulfilled: 0 },
+//       weeklyRevenueTrend: [],
+//       monthlyComparison: [],
+//       dailyPerformance: [],
+//       ordersLoaded: 0,
+//       currentDateInShopTZ,
+
+//       // Event summaries
+//       todayEventSummary: {
+//         refunds: { count: 0, value: 0 },
+//         exchanges: { count: 0, value: 0 },
+//         partialRefunds: { count: 0, value: 0 },
+//         totalEvents: 0,
+//         netValue: 0
+//       },
+//       last7DaysEventSummary: {
+//         refunds: { count: 0, value: 0 },
+//         exchanges: { count: 0, value: 0 },
+//         partialRefunds: { count: 0, value: 0 },
+//         totalEvents: 0,
+//         netValue: 0
+//       },
+//       last8WeeksEventSummary: {
+//         refunds: { count: 0, value: 0 },
+//         exchanges: { count: 0, value: 0 },
+//         partialRefunds: { count: 0, value: 0 },
+//         totalEvents: 0,
+//         netValue: 0
+//       },
+//       last6MonthsEventSummary: {
+//         refunds: { count: 0, value: 0 },
+//         exchanges: { count: 0, value: 0 },
+//         partialRefunds: { count: 0, value: 0 },
+//         totalEvents: 0,
+//         netValue: 0
+//       },
+
+//       // Mismatch summaries
+//       todayMismatchSummary: {
+//         totalMismatches: 0,
+//         totalDifference: 0,
+//         hasMismatches: false
+//       },
+//       last7DaysMismatchSummary: {
+//         totalMismatches: 0,
+//         totalDifference: 0,
+//         hasMismatches: false
+//       },
+//       weeklyMismatchSummary: {
+//         totalMismatches: 0,
+//         totalDifference: 0,
+//         hasMismatches: false
+//       },
+//       monthlyMismatchSummary: {
+//         totalMismatches: 0,
+//         totalDifference: 0,
+//         hasMismatches: false
+//       }
+//     };
+//   }
+
+//   // Your existing helper methods continue here...
+//   private getLocalDateKey(utcDate: Date, timezone: string): string {
+//     try {
+//       return utcDate.toLocaleDateString('en-CA', { 
+//         timeZone: timezone,
+//         year: 'numeric',
+//         month: '2-digit',
+//         day: '2-digit'
+//       });
+//     } catch (error) {
+//       return utcDate.toISOString().split('T')[0];
+//     }
+//   }
+
+//   private getPreviousDate(currentDate: string, timezone: string): string {
+//     try {
+//       const current = new Date(currentDate + 'T00:00:00');
+//       const previous = new Date(current);
+//       previous.setDate(previous.getDate() - 1);
+//       return this.getLocalDateKey(previous, timezone);
+//     } catch (error) {
+//       const current = new Date(currentDate + 'T00:00:00Z');
+//       const previous = new Date(current);
+//       previous.setUTCDate(previous.getUTCDate() - 1);
+//       return previous.toISOString().split('T')[0];
+//     }
+//   }
   
-  // New financial metrics
-  totalDiscounts: number;
-  totalShipping: number;
-  totalTaxes: number;
-  totalReturns: number;
-  returnFees: number;
-  netRevenue: number;
-  discountRate: number;
-  shippingRate: number;
-  taxRate: number;
-  returnRate: number;
+// // Add these helper methods to your AnalyticsCollector class
 
-  totalItems: number;
-  averageOrderValue: number;
-  averageItemsPerOrder: number;
-  dailySales: Array<{ date: string; revenue: number; orders: number; items: number }>;
-  weeklySales: Array<{ week: string; revenue: number; orders: number; items: number }>;
-  monthlySales: Array<{ month: string; revenue: number; orders: number; items: number }>;
-  todayRevenue: number;
-  todayOrders: number;
-  todayItems: number;
-  yesterdayRevenue: number;
-  yesterdayOrders: number;
-  yesterdayItems: number;
-  lastWeekRevenue: number;
-  lastWeekOrders: number;
-  lastWeekItems: number;
-  todayFulfilled: number;
-  todayUnfulfilled: number;
-  last7DaysFulfilled: number;
-  last7DaysUnfulfilled: number;
-  fulfillmentRate: number;
-  revenueChangeVsYesterday: number;
-  ordersChangeVsYesterday: number;
-  itemsChangeVsYesterday: number;
-  revenueChangeVsLastWeek: number;
-  bestDay: { date: string; revenue: number; orders: number; items: number };
-  averageDailyRevenue: number;
-  totalCustomers: number;
-  repeatCustomers: number;
-  newCustomers: number;
-  repeatCustomerRate: number;
-  last7DaysTotalCustomers: number;
-  last7DaysRepeatCustomers: number;
-  last7DaysNewCustomers: number;
-  last7DaysRepeatCustomerRate: number;
-  customerTypeData: { new: number; repeat: number };
-  fulfillmentStatusData: { fulfilled: number; unfulfilled: number };
-  weeklyRevenueTrend: Array<{ week: string; revenue: number }>;
-  monthlyComparison: Array<{ month: string; revenue: number; orders: number }>;
-  dailyPerformance: Array<{ day: string; revenue: number; orders: number }>;
-  ordersLoaded: number;
-  shopTimezone: string;
-  currentDateInShopTZ: string;
-  shopCurrency: string;
-}
+// private calculateMismatchSummary(data: any[], periodType: 'day' | 'week' | 'month'): { 
+//   totalMismatches: number; 
+//   totalDifference: number; 
+//   hasMismatches: boolean; 
+// } {
+//   let totalMismatches = 0;
+//   let totalDifference = 0;
 
-// Timezone helper for consistent date calculations
-class TimezoneHelper {
-  static getLocalDateKey(utcDate: Date, timezone: string): string {
-    try {
-      return utcDate.toLocaleDateString('en-CA', { 
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
-    } catch (error) {
-      return utcDate.toISOString().split('T')[0];
-    }
-  }
+//   console.log(`🔍 [MISMATCH DEBUG] Calculating ${periodType} mismatch summary for ${data.length} periods`);
 
-  static getCurrentDateInTimezone(timezone: string): string {
-    return this.getLocalDateKey(new Date(), timezone);
-  }
-
-  static getPreviousDate(currentDate: string, timezone: string): string {
-    try {
-      const current = new Date(currentDate + 'T00:00:00');
-      const previous = new Date(current);
-      previous.setDate(previous.getDate() - 1);
-      return this.getLocalDateKey(previous, timezone);
-    } catch (error) {
-      const current = new Date(currentDate + 'T00:00:00Z');
-      const previous = new Date(current);
-      previous.setUTCDate(previous.getUTCDate() - 1);
-      return previous.toISOString().split('T')[0];
-    }
-  }
-
-  static getDateRangeInTimezone(timezone: string, days: number): string[] {
-    const dates: string[] = [];
-    const now = new Date();
+//   data.forEach((periodData: any, index: number) => {
+//     if (!periodData) {
+//       console.log(`❌ [MISMATCH DEBUG] Period ${index} has no data`);
+//       return;
+//     }
     
-    for (let i = 0; i < days; i++) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      dates.push(this.getLocalDateKey(date, timezone));
-    }
+//     const calculatedTotal = periodData.netSales + periodData.shipping + periodData.taxes + (periodData.extraFees || 0);
+//     const actualTotal = periodData.totalSales;
+//     const difference = Math.abs(actualTotal - calculatedTotal);
+//     const mismatch = difference > 0.01;
     
-    return dates.reverse();
-  }
-
-  static getWeekStartDate(date: Date, timezone: string): Date {
-    const localDateKey = this.getLocalDateKey(date, timezone);
-    const localDate = new Date(localDateKey + 'T00:00:00');
-    const dayOfWeek = localDate.getDay();
-    const weekStart = new Date(localDate);
-    weekStart.setDate(localDate.getDate() - dayOfWeek);
-    return weekStart;
-  }
-
-  static getMonthKey(date: Date, timezone: string): string {
-    const localDateKey = this.getLocalDateKey(date, timezone);
-    const localDate = new Date(localDateKey + 'T00:00:00');
-    return `${localDate.getFullYear()}-${(localDate.getMonth() + 1).toString().padStart(2, "0")}`;
-  }
-}
-
-export class AnalyticsCollector {
-  private session: Session;
-
-  constructor(session: Session) {
-    this.session = session;
-  }
-
-  async collectDailyAnalytics(): Promise<OrderData> {
-    try {
-      // Get shop timezone and currency first
-      const { shopTimezone, shopCurrency } = await this.getShopInfo();
-      const orders = await this.fetchAllOrders();
-      
-      if (orders.length === 0) {
-        return this.getEmptyData(shopTimezone, shopCurrency);
-      }
-
-      const processedData = this.processOrdersData(orders, shopTimezone, shopCurrency);
-      return processedData;
-      
-    } catch (error: any) {
-      console.error('Error in analytics collection:', error);
-      return this.getEmptyData('UTC', 'USD');
-    }
-  }
-
-  private async getShopInfo(): Promise<{ shopTimezone: string; shopCurrency: string }> {
-    try {
-      const url = `https://${this.session.shop}/admin/api/2024-01/shop.json`;
-      const response = await fetch(url, {
-        headers: {
-          'X-Shopify-Access-Token': this.session.accessToken!,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        return {
-          shopTimezone: data.shop.iana_timezone || 'UTC',
-          shopCurrency: data.shop.currency || 'USD'
-        };
-      }
-    } catch (error) {
-      console.error('Error fetching shop info:', error);
-    }
-    return { shopTimezone: 'UTC', shopCurrency: 'USD' };
-  }
-
-  private async fetchAllOrders(): Promise<any[]> {
-    const allOrders: any[] = [];
-    let sinceId: string | null = null;
-    let hasMore = true;
-    const limit = 250;
-
-    while (hasMore && allOrders.length < 1000) {
-      try {
-        let url = `https://${this.session.shop}/admin/api/2024-01/orders.json?limit=${limit}&status=any`;
-        if (sinceId) {
-          url += `&since_id=${sinceId}`;
-        }
-
-        const response = await fetch(url, {
-          headers: {
-            'X-Shopify-Access-Token': this.session.accessToken!,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const orders = data.orders || [];
-
-        if (orders.length === 0) {
-          hasMore = false;
-          break;
-        }
-
-        allOrders.push(...orders);
-        sinceId = orders[orders.length - 1].id;
-
-        if (orders.length < limit) {
-          hasMore = false;
-        }
-
-      } catch (error) {
-        console.error('Error fetching orders:', error);
-        hasMore = false;
-      }
-    }
-
-    return allOrders;
-  }
-
-  private getEmptyData(shopTimezone: string, shopCurrency: string): OrderData {
-    const currentDateInShopTZ = TimezoneHelper.getCurrentDateInTimezone(shopTimezone);
+//     console.log(`🔍 [MISMATCH DEBUG] ${periodType} ${index}:`);
+//     console.log(`   Net Sales: ${periodData.netSales}`);
+//     console.log(`   Shipping: ${periodData.shipping}`);
+//     console.log(`   Taxes: ${periodData.taxes}`);
+//     console.log(`   Extra Fees: ${periodData.extraFees || 0}`);
+//     console.log(`   Calculated Total: ${calculatedTotal}`);
+//     console.log(`   Actual Total: ${actualTotal}`);
+//     console.log(`   Difference: ${difference}`);
+//     console.log(`   Mismatch: ${mismatch}`);
     
-    return {
-      // Core metrics
-      totalOrders: 0,
-      fulfilledOrders: 0,
-      unfulfilledOrders: 0,
-      totalRevenue: 0,
+//     if (mismatch) {
+//       totalMismatches++;
+//       totalDifference += (calculatedTotal - actualTotal);
+//       console.log(`⚠️ [MISMATCH FOUND] ${periodType} ${index} has mismatch: ${difference}`);
+//     }
+//   });
+
+//   const result = {
+//     totalMismatches,
+//     totalDifference: parseFloat(totalDifference.toFixed(2)),
+//     hasMismatches: totalMismatches > 0
+//   };
+
+//   console.log(`📊 [MISMATCH RESULT] ${periodType}:`, result);
+//   return result;
+// }
+
+// private getTodayMismatchSummary(data: any): { 
+//   totalMismatches: number; 
+//   totalDifference: number; 
+//   hasMismatches: boolean; 
+// } {
+//   const todayData = data.dailyFinancials?.find((day: any) => day.date === data.currentDateInShopTZ);
+  
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Looking for today: ${data.currentDateInShopTZ}`);
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Available dates:`, data.dailyFinancials?.map((d: any) => d.date));
+  
+//   if (!todayData) {
+//     console.log(`❌ [TODAY MISMATCH DEBUG] No data found for today`);
+//     return { totalMismatches: 0, totalDifference: 0, hasMismatches: false };
+//   }
+
+//   const calculatedTotal = todayData.netSales + todayData.shipping + todayData.taxes + (todayData.extraFees || 0);
+//   const actualTotal = todayData.totalSales;
+//   const difference = Math.abs(actualTotal - calculatedTotal);
+//   const mismatch = difference > 0.01;
+  
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Today's data:`, todayData);
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Calculated: ${calculatedTotal}, Actual: ${actualTotal}, Difference: ${difference}, Mismatch: ${mismatch}`);
+
+//   const result = {
+//     totalMismatches: mismatch ? 1 : 0,
+//     totalDifference: mismatch ? parseFloat((calculatedTotal - actualTotal).toFixed(2)) : 0,
+//     hasMismatches: mismatch
+//   };
+
+//   console.log(`📊 [TODAY MISMATCH RESULT]:`, result);
+//   return result;
+// }
+
+
+
+
+  
+// private processOrdersData(orders: any[], shopTimezone: string, shopCurrency: string): EmailOrderData {
+//   console.log(`🔧 Processing ${orders.length} orders for analytics`);
+  
+//   const currentDateInShopTZ = this.getLocalDateKey(new Date(), shopTimezone);
+//   const yesterdayInShopTZ = this.getPreviousDate(currentDateInShopTZ, shopTimezone);
+
+//   // Initialize data structures - USING EXTRACTED HELPERS
+//   const last7DaysKeys = getLastNDays(7, shopTimezone);
+//   const last8WeeksKeys = getLast8Weeks(shopTimezone);
+//   const monthRanges = getMonthRanges(shopTimezone);
+
+//   // Get last week same day for comparison
+//   const todayDate = new Date(currentDateInShopTZ + 'T00:00:00');
+//   const lastWeekDate = new Date(todayDate);
+//   lastWeekDate.setDate(todayDate.getDate() - 7);
+//   const lastWeekSameDayInShopTZ = this.getLocalDateKey(lastWeekDate, shopTimezone);
+
+
+//    console.log(`📅 Date Debug:`);
+//   console.log(`   Today: ${currentDateInShopTZ}`);
+//   console.log(`   Last Week Same Day: ${lastWeekSameDayInShopTZ}`);
+//   console.log(`   Yesterday: ${yesterdayInShopTZ}`);
+
+//   const dailyStats: Record<string, OrderStats> = {};
+//   const weeklyStats: Record<string, OrderStats> = {};
+//   const monthlyStats: Record<string, OrderStats> = {};
+//   const dailyCustomerStats: Record<string, CustomerData> = {};
+//   const weeklyCustomerStats: Record<string, CustomerData> = {};
+//   const monthlyCustomerStats: Record<string, CustomerData> = {};
+
+//   // Initialize all periods with empty stats
+//   last7DaysKeys.forEach(date => {
+//     dailyStats[date] = this.getEmptyOrderStats();
+//     dailyCustomerStats[date] = { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//   });
+
+//   last8WeeksKeys.forEach(week => {
+//     weeklyStats[week] = this.getEmptyOrderStats();
+//     weeklyCustomerStats[week] = { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//   });
+
+//   monthRanges.forEach(month => {
+//     monthlyStats[month.key] = this.getEmptyOrderStats();
+//     monthlyCustomerStats[month.key] = { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//   });
+
+//   // Process customer data - USING EXTRACTED CUSTOMER ANALYTICS
+//   const customerOrderMap = buildCustomerOrderMap(orders, shopTimezone);
+//   const dailyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimezone, last7DaysKeys, 'daily');
+//   const weeklyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimezone, last8WeeksKeys, 'weekly');
+//   const monthlyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimezone, monthRanges.map(r => r.key), 'monthly');
+//   const totalCustomerData = calculateOverallCustomerData(customerOrderMap);
+
+//   console.log(`👥 Customer analytics: ${totalCustomerData.totalCustomers} total customers`);
+
+//   // Process each order - USING EXTRACTED FINANCIAL CALCULATOR
+//   let processedOrders = 0;
+//   orders.forEach((order: any) => {
+//     try {
+//       const date = new Date(order.created_at);
+//       const monthKey = date.toLocaleString("default", { month: "short", year: "numeric", timeZone: shopTimezone });
+//       const dayKey = this.getLocalDateKey(date, shopTimezone);
       
-      // New financial metrics
-      totalDiscounts: 0,
-      totalShipping: 0,
-      totalTaxes: 0,
-      totalReturns: 0,
-      returnFees: 0,
-      netRevenue: 0,
-      discountRate: 0,
-      shippingRate: 0,
-      taxRate: 0,
-      returnRate: 0,
+//       const monday = new Date(date);
+//       monday.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+//       const weekKey = `Week of ${this.getLocalDateKey(monday, shopTimezone)}`;
 
-      totalItems: 0,
-      averageOrderValue: 0,
-      averageItemsPerOrder: 0,
-      dailySales: [],
-      weeklySales: [],
-      monthlySales: [],
-      todayRevenue: 0,
-      todayOrders: 0,
-      todayItems: 0,
-      yesterdayRevenue: 0,
-      yesterdayOrders: 0,
-      yesterdayItems: 0,
-      lastWeekRevenue: 0,
-      lastWeekOrders: 0,
-      lastWeekItems: 0,
-      todayFulfilled: 0,
-      todayUnfulfilled: 0,
-      last7DaysFulfilled: 0,
-      last7DaysUnfulfilled: 0,
-      fulfillmentRate: 0,
-      revenueChangeVsYesterday: 0,
-      ordersChangeVsYesterday: 0,
-      itemsChangeVsYesterday: 0,
-      revenueChangeVsLastWeek: 0,
-      bestDay: { date: '', revenue: 0, orders: 0, items: 0 },
-      averageDailyRevenue: 0,
-      totalCustomers: 0,
-      repeatCustomers: 0,
-      newCustomers: 0,
-      repeatCustomerRate: 0,
-      last7DaysTotalCustomers: 0,
-      last7DaysRepeatCustomers: 0,
-      last7DaysNewCustomers: 0,
-      last7DaysRepeatCustomerRate: 0,
-      customerTypeData: { new: 0, repeat: 0 },
-      fulfillmentStatusData: { fulfilled: 0, unfulfilled: 0 },
-      weeklyRevenueTrend: [],
-      monthlyComparison: [],
-      dailyPerformance: [],
-      ordersLoaded: 0,
-      shopTimezone,
-      currentDateInShopTZ,
-      shopCurrency
-    };
-  }
+//       const orderStats = processOrderToStats(order);
 
-  private processOrdersData(orders: any[], shopTimezone: string, shopCurrency: string): OrderData {
-    // Core metrics
-    const totalOrders = orders.length;
-    const fulfilledOrders = orders.filter((order: any) => 
-      order.fulfillment_status === "fulfilled" || order.fulfillments?.length > 0
-    ).length;
-    const unfulfilledOrders = totalOrders - fulfilledOrders;
+//       // Aggregate data - USING EXTRACTED MERGE FUNCTION
+//       if (dailyStats[dayKey]) {
+//         dailyStats[dayKey] = mergeStats(dailyStats[dayKey], orderStats);
+//         dailyCustomerStats[dayKey] = dailyCustomerAnalytics[dayKey] || { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//       }
 
-    const totalRevenue = orders.reduce((sum: number, order: any) => {
-      const amount = parseFloat(order.total_price || '0');
-      return sum + (isNaN(amount) ? 0 : amount);
-    }, 0);
+//       if (weeklyStats[weekKey]) {
+//         weeklyStats[weekKey] = mergeStats(weeklyStats[weekKey], orderStats);
+//         weeklyCustomerStats[weekKey] = weeklyCustomerAnalytics[weekKey] || { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//       }
 
-    // NEW: Calculate additional financial metrics
-    const totalDiscounts = orders.reduce((sum: number, order: any) => {
-      const amount = parseFloat(order.total_discounts || '0');
-      return sum + (isNaN(amount) ? 0 : amount);
-    }, 0);
+//       if (monthlyStats[monthKey]) {
+//         monthlyStats[monthKey] = mergeStats(monthlyStats[monthKey], orderStats);
+//         monthlyCustomerStats[monthKey] = monthlyCustomerAnalytics[monthKey] || { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//       }
+      
+//       processedOrders++;
+//     } catch (error) {
+//       console.error('Error processing order:', error);
+//     }
+//   });
 
-    const totalShipping = orders.reduce((sum: number, order: any) => {
-      const shippingLines = order.shipping_lines || [];
-      const shippingAmount = shippingLines.reduce((shippingSum: number, shipping: any) => {
-        return shippingSum + parseFloat(shipping.price || '0');
-      }, 0);
-      return sum + shippingAmount;
-    }, 0);
+//   console.log(`✅ Processed ${processedOrders} orders for analytics`);
 
-    const totalTaxes = orders.reduce((sum: number, order: any) => {
-      const amount = parseFloat(order.total_tax || '0');
-      return sum + (isNaN(amount) ? 0 : amount);
-    }, 0);
+//   // Calculate today's and yesterday's data
+//   const todayData = dailyStats[currentDateInShopTZ] || this.getEmptyOrderStats();
+//   const yesterdayData = dailyStats[yesterdayInShopTZ] || this.getEmptyOrderStats();
+//   const lastWeekData = dailyStats[lastWeekSameDayInShopTZ] || this.getEmptyOrderStats();
 
-    const totalReturns = orders.reduce((sum: number, order: any) => {
-      const refunds = order.refunds || [];
-      const refundAmount = refunds.reduce((refundSum: number, refund: any) => {
-        return refundSum + parseFloat(refund.total_refunded || '0');
-      }, 0);
-      return sum + refundAmount;
-    }, 0);
 
-    // Calculate derived metrics
-    const netRevenue = totalRevenue - totalReturns;
-    const discountRate = totalRevenue > 0 ? (totalDiscounts / totalRevenue) * 100 : 0;
-    const shippingRate = totalRevenue > 0 ? (totalShipping / totalRevenue) * 100 : 0;
-    const taxRate = totalRevenue > 0 ? (totalTaxes / totalRevenue) * 100 : 0;
-    const returnRate = totalRevenue > 0 ? (totalReturns / totalRevenue) * 100 : 0;
+//   console.log(`📊 Data Availability:`);
+//   console.log(`   Today Data:`, todayData);
+//   console.log(`   Last Week Data:`, lastWeekData);
+//   console.log(`   Today Revenue: ${todayData.totalSales}`);
+//   console.log(`   Last Week Revenue: ${lastWeekData.totalSales}`);
 
-    const totalItems = orders.reduce((sum: number, order: any) => {
-      const lineItems = order.line_items || [];
-      const itemsInOrder = lineItems.reduce((itemSum: number, item: any) => {
-        return itemSum + (item.quantity || 0);
-      }, 0);
-      return sum + itemsInOrder;
-    }, 0);
+  
 
-    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-    const averageItemsPerOrder = totalOrders > 0 ? totalItems / totalOrders : 0;
 
-    // Time-based metrics with proper timezone handling
-    const salesByDay: Record<string, { revenue: number; orders: number; items: number }> = {};
-    const salesByWeek: Record<string, { revenue: number; orders: number; items: number }> = {};
-    const salesByMonth: Record<string, { revenue: number; orders: number; items: number }> = {};
+//   // ⬇️⬇️⬇️ EVENT SUMMARY CALCULATIONS - ADDED IN CORRECT LOCATION ⬇️⬇️⬇️
+// // ⬇️⬇️⬇️ EVENT SUMMARY CALCULATIONS - ADDED IN CORRECT LOCATION ⬇️⬇️⬇️
 
-    const currentDateInShopTZ = TimezoneHelper.getCurrentDateInTimezone(shopTimezone);
-    const yesterdayInShopTZ = TimezoneHelper.getPreviousDate(currentDateInShopTZ, shopTimezone);
+// // Today's event summary - from todayData (handle null case)
+// const todayEventSummary = todayData.eventSummary || {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// // Last 7 days event summary - aggregate from dailyStats
+// let last7DaysEventSummary = {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// last7DaysKeys.forEach(date => {
+//   const dayData = dailyStats[date];
+//   if (dayData && dayData.eventSummary) {
+//     const merged = mergeEventSummaries(last7DaysEventSummary, dayData.eventSummary);
+//     if (merged) {
+//       last7DaysEventSummary = merged;
+//     }
+//   }
+// });
+
+// // Last 8 weeks event summary - aggregate from weeklyStats
+// let last8WeeksEventSummary = {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// last8WeeksKeys.forEach(week => {
+//   const weekData = weeklyStats[week];
+//   if (weekData && weekData.eventSummary) {
+//     const merged = mergeEventSummaries(last8WeeksEventSummary, weekData.eventSummary);
+//     if (merged) {
+//       last8WeeksEventSummary = merged;
+//     }
+//   }
+// });
+
+
+// // Calculate weekly totals - CORRECTED VERSION
+// let weeklyTotalOrders = 0;
+// let weeklyPerformanceRevenue = 0; // For Weekly Performance section
+// let weeklyTotalItems = 0;
+
+// // For Weekly Financial Breakdown - USE THE SAME LOGIC AS FINANCIAL CALCULATOR
+// let weeklyTotalRevenue = 0;        // Gross Sales (use 'total' property)
+// let weeklyTotalDiscounts = 0;
+// let weeklyTotalReturns = 0;
+// let weeklyTotalExtraFees = 0;
+// let weeklyTotalNetSales = 0;
+// let weeklyTotalShipping = 0;
+// let weeklyTotalTaxes = 0;
+// let weeklyTotalTotalSales = 0;    // Final Total
+
+// last8WeeksKeys.forEach(week => {
+//   const weekData = weeklyStats[week];
+//   if (weekData) {
+//     weeklyTotalOrders += weekData.orderCount;
+//     weeklyPerformanceRevenue += weekData.totalSales; // For Weekly Performance
+//     weeklyTotalItems += weekData.items;
     
-    // For last week comparison, we want the same day last week
-    const todayDate = new Date(currentDateInShopTZ + 'T00:00:00');
-    const lastWeekDate = new Date(todayDate);
-    lastWeekDate.setDate(todayDate.getDate() - 7);
-    const lastWeekSameDayInShopTZ = TimezoneHelper.getLocalDateKey(lastWeekDate, shopTimezone);
+//     // ✅ CORRECT: Use the same properties as your financial calculator
+//     weeklyTotalRevenue += weekData.total;           // Gross Sales
+//     weeklyTotalDiscounts += weekData.discounts;
+//     weeklyTotalReturns += weekData.returns;
+//     weeklyTotalExtraFees += weekData.extraFees || 0;
     
-    const last7DaysKeys = TimezoneHelper.getDateRangeInTimezone(shopTimezone, 7);
+//     weeklyTotalNetSales += weekData.netSales;
+//     weeklyTotalShipping += weekData.shipping;
+//     weeklyTotalTaxes += weekData.taxes;
+//     weeklyTotalTotalSales += weekData.totalSales;   // Final Total
+//   }
+// });
 
-    let todayRevenue = 0;
-    let todayOrders = 0;
-    let todayItems = 0;
-    let yesterdayRevenue = 0;
-    let yesterdayOrders = 0;
-    let yesterdayItems = 0;
-    let lastWeekRevenue = 0;
-    let lastWeekOrders = 0;
-    let lastWeekItems = 0;
+// // Verify the math makes sense - THIS SHOULD MATCH YOUR FINANCIAL CALCULATOR LOGIC
+// console.log('🔍 WEEKLY FINANCIAL VERIFICATION:');
+// console.log('Gross Sales (total):', weeklyTotalRevenue);
+// console.log('Discounts:', weeklyTotalDiscounts);
+// console.log('Returns:', weeklyTotalReturns);
+// console.log('Extra Fees:', weeklyTotalExtraFees);
+// console.log('Net Sales:', weeklyTotalNetSales);
+// console.log('Total Sales (totalSales):', weeklyTotalTotalSales);
 
-    let todayFulfilled = 0;
-    let todayUnfulfilled = 0;
-    let last7DaysFulfilled = 0;
-    let last7DaysUnfulfilled = 0;
+// // Check if the calculation matches: Gross - Discounts + Returns + Extra Fees ≈ Net Sales
+// const calculatedNet = weeklyTotalRevenue - weeklyTotalDiscounts + weeklyTotalReturns + weeklyTotalExtraFees;
+// console.log('Expected Net (Gross - Discounts + Returns + Extra Fees):', calculatedNet);
+// console.log('Actual Net Sales from data:', weeklyTotalNetSales);
+// console.log('Difference:', Math.abs(calculatedNet - weeklyTotalNetSales));
 
-    // Track which orders are being counted to debug duplicates
-    const countedTodayOrders = new Set();
-    const countedYesterdayOrders = new Set();
-    const countedLastWeekOrders = new Set();
 
-    // Process each order with proper timezone conversion
-    orders.forEach((order: any) => {
-      const createdAtUTC = new Date(order.created_at);
-      const revenue = parseFloat(order.total_price || '0');
+
+
+// // Create weekly financials array
+// const weeklyFinancials = last8WeeksKeys.map(week => {
+//   const weekData = weeklyStats[week] || this.getEmptyOrderStats();
+//   return {
+//     week,
+//     total: weekData.total,
+//     discounts: weekData.discounts,
+//     returns: weekData.returns,
+//     netSales: weekData.netSales,
+//     shipping: weekData.shipping,
+//     extraFees: weekData.extraFees || 0,
+//     taxes: weekData.taxes,
+//     totalSales: weekData.totalSales
+//   };
+// });
+
+
+
+
+
+
+
+
+// // Last 6 months event summary - aggregate from monthlyStats
+// let last6MonthsEventSummary = {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// monthRanges.forEach(month => {
+//   const monthData = monthlyStats[month.key];
+//   if (monthData && monthData.eventSummary) {
+//     const merged = mergeEventSummaries(last6MonthsEventSummary, monthData.eventSummary);
+//     if (merged) {
+//       last6MonthsEventSummary = merged;
+//     }
+//   }
+// });
+
+//   // Debug the event summaries
+//   console.log('🔍 EVENT SUMMARIES FROM PROCESSED DATA:');
+//   console.log('Today Events:', todayEventSummary.totalEvents, 'Refunds:', todayEventSummary.refunds.count);
+//   console.log('Last 7 Days Events:', last7DaysEventSummary.totalEvents, 'Refunds:', last7DaysEventSummary.refunds.count);
+//   console.log('Last 8 Weeks Events:', last8WeeksEventSummary.totalEvents, 'Refunds:', last8WeeksEventSummary.refunds.count);
+//   console.log('Last 6 Months Events:', last6MonthsEventSummary.totalEvents, 'Refunds:', last6MonthsEventSummary.refunds.count);
+
+//   // ⬆️⬆️⬆️ END EVENT SUMMARY CALCULATIONS ⬆️⬆️⬆️
+
+//   // Calculate 7-day totals
+//   let last7DaysStats = this.getEmptyOrderStats();
+//   let last7DaysTotalCustomers = 0;
+//   let last7DaysRepeatCustomers = 0;
+//   let last7DaysNewCustomers = 0;
+
+//   last7DaysKeys.forEach(date => {
+//     const dayData = dailyStats[date];
+//     const customerData = dailyCustomerStats[date];
+    
+//     if (dayData) {
+//       last7DaysStats = mergeStats(last7DaysStats, dayData);
+//     }
+    
+//     last7DaysTotalCustomers += customerData.totalCustomers;
+//     last7DaysRepeatCustomers += customerData.repeatedCustomers;
+//     last7DaysNewCustomers += customerData.newCustomers;
+//   });
+
+//   let last7DaysTotalRevenue = 0;
+//   let last7DaysTotalDiscounts = 0;
+//   let last7DaysTotalReturns = 0;
+//   let last7DaysTotalExtraFees = 0;
+//   let last7DaysTotalNetSales = 0;
+//   let last7DaysTotalShipping = 0;
+//   let last7DaysTotalTaxes = 0;
+//   let last7DaysTotalTotalSales = 0;
+
+//   last7DaysKeys.forEach(date => {
+//     const dayData = dailyStats[date];
+//     if (dayData) {
+//       last7DaysTotalRevenue += dayData.total;
+//       last7DaysTotalDiscounts += dayData.discounts;
+//       last7DaysTotalReturns += dayData.returns;
+//       last7DaysTotalExtraFees += dayData.extraFees || 0;
+//       last7DaysTotalNetSales += dayData.netSales;
+//       last7DaysTotalShipping += dayData.shipping;
+//       last7DaysTotalTaxes += dayData.taxes;
+//       last7DaysTotalTotalSales += dayData.totalSales;
+//     }
+//   });
+
+
+
+  
+//   // Daily financials array
+// const dailyFinancials = last7DaysKeys.map(date => {
+//   const dayData = dailyStats[date] || this.getEmptyOrderStats();
+//   return {
+//     date,
+//     total: dayData.total,
+//     discounts: dayData.discounts,
+//     returns: dayData.returns,
+//     netSales: dayData.netSales,
+//     shipping: dayData.shipping,
+//     extraFees: dayData.extraFees || 0,
+//     taxes: dayData.taxes,
+//     totalSales: dayData.totalSales
+//   };
+// });
+
+
+// //   // Calculate weekly financial totals for last 8 weeks
+// // let weeklyTotalOrders = 0;
+// // let weeklyTotalRevenue = 0;
+// // let weeklyTotalItems = 0;
+
+// // last8WeeksKeys.forEach(week => {
+// //   const weekData = weeklyStats[week];
+// //   if (weekData) {
+// //     weeklyTotalOrders += weekData.orderCount;
+// //     weeklyTotalRevenue += weekData.totalSales;
+// //     weeklyTotalItems += weekData.items;
+// //   }
+// // });
+
+// //   // Create daily financials array
+// //   const dailyFinancials = last7DaysKeys.map(date => {
+// //     const dayData = dailyStats[date] || this.getEmptyOrderStats();
+// //     return {
+// //       date,
+// //       total: dayData.total,
+// //       discounts: dayData.discounts,
+// //       returns: dayData.returns,
+// //       netSales: dayData.netSales,
+// //       shipping: dayData.shipping,
+// //       extraFees: dayData.extraFees || 0,
+// //       taxes: dayData.taxes,
+// //       totalSales: dayData.totalSales
+// //     };
+// //   });
+
+
+
+
+
+
+
+
+// // Add this after the weekly calculations in processOrdersData method
+// // In processOrdersData method - COMPLETE MONTHLY CALCULATIONS
+
+// // ==================== MONTHLY FINANCIAL CALCULATIONS ====================
+
+// // Calculate monthly financial totals from monthlyStats
+// let monthlyTotalOrders = 0;
+// let monthlyTotalRevenue = 0;
+// let monthlyTotalItems = 0;
+// let monthlyTotalDiscounts = 0;
+// let monthlyTotalReturns = 0;
+// let monthlyTotalExtraFees = 0;
+// let monthlyTotalNetSales = 0;
+// let monthlyTotalShipping = 0;
+// let monthlyTotalTaxes = 0;
+// let monthlyTotalTotalSales = 0;
+
+// // Calculate from monthlyStats (which has the processed financial data)
+// monthRanges.forEach(month => {
+//   const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+  
+//   monthlyTotalOrders += monthData.orderCount;
+//   monthlyTotalRevenue += monthData.total;           // Gross Sales
+//   monthlyTotalItems += monthData.items;
+//   monthlyTotalDiscounts += monthData.discounts;
+//   monthlyTotalReturns += monthData.returns;
+//   monthlyTotalExtraFees += monthData.extraFees || 0;
+//   monthlyTotalNetSales += monthData.netSales;
+//   monthlyTotalShipping += monthData.shipping;
+//   monthlyTotalTaxes += monthData.taxes;
+//   monthlyTotalTotalSales += monthData.totalSales;
+// });
+
+// // Create monthlyFinancials object with ALL calculated metrics
+// const monthlyFinancials = {
+//   totalOrders: monthlyTotalOrders,
+//   totalRevenue: monthlyTotalRevenue,
+//   totalItems: monthlyTotalItems,
+//   totalDiscounts: monthlyTotalDiscounts,
+//   totalReturns: monthlyTotalReturns,
+//   totalExtraFees: monthlyTotalExtraFees,
+//   totalNetSales: monthlyTotalNetSales,
+//   totalShipping: monthlyTotalShipping,
+//   totalTaxes: monthlyTotalTaxes,
+//   totalTotalSales: monthlyTotalTotalSales
+// };
+
+// // Create monthlyTotals object for the details section
+// const monthlyTotals: Record<string, any> = {};
+// monthRanges.forEach(month => {
+//   const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+//   monthlyTotals[month.key] = {
+//     total: monthData.total,
+//     discounts: monthData.discounts,
+//     returns: monthData.returns,
+//     netSales: monthData.netSales,
+//     shipping: monthData.shipping,
+//     taxes: monthData.taxes,
+//     extraFees: monthData.extraFees || 0,
+//     totalSales: monthData.totalSales,
+//     orderCount: monthData.orderCount,
+//     items: monthData.items
+//   };
+// });
+
+// // Debug to verify calculations
+// console.log('🔍 MONTHLY FINANCIAL CALCULATIONS:');
+// console.log('Gross Sales (totalRevenue):', monthlyTotalRevenue);
+// console.log('Discounts:', monthlyTotalDiscounts);
+// console.log('Returns:', monthlyTotalReturns);
+// console.log('Extra Fees:', monthlyTotalExtraFees);
+// console.log('Net Sales:', monthlyTotalNetSales);
+// console.log('Shipping:', monthlyTotalShipping);
+// console.log('Taxes:', monthlyTotalTaxes);
+// console.log('Total Sales:', monthlyTotalTotalSales);
+
+
+
+//   // Calculate overall totals from monthly data
+//   let overallStats = this.getEmptyOrderStats();
+//   monthRanges.forEach(month => {
+//     const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+//     overallStats = mergeStats(overallStats, monthData);
+//   });
+
+//   console.log(`📊 Overall totals: ${overallStats.orderCount} orders, ${this.formatCurrency(overallStats.totalSales, shopCurrency)} revenue`);
+
+//   // Format data for response
+//   const dailySales = last7DaysKeys.map(date => {
+//     const dayData = dailyStats[date] || this.getEmptyOrderStats();
+//     const customerData = dailyCustomerStats[date];
+    
+//     return {
+//       date,
+//       revenue: dayData.totalSales,
+//       orders: dayData.orderCount,
+//       items: dayData.items,
+//       fulfilled: dayData.fulfilled
+//     };
+//   });
+
+//   const weeklySales = last8WeeksKeys.map(week => {
+//     const weekData = weeklyStats[week] || this.getEmptyOrderStats();
+//     const customerData = weeklyCustomerStats[week];
+    
+//     return {
+//       week,
+//       revenue: weekData.totalSales,
+//       orders: weekData.orderCount,
+//       items: weekData.items
+//     };
+//   });
+
+//   const monthlySales = monthRanges.map(month => {
+//     const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+//     const customerData = monthlyCustomerStats[month.key];
+    
+//     return {
+//       month: month.key,
+//       revenue: monthData.totalSales,
+//       orders: monthData.orderCount,
+//       items: monthData.items
+//     };
+//   });
+
+//   // Calculate percentage changes - SAME CALCULATIONS AS MAIN CODE
+//   const revenueChangeVsYesterday = yesterdayData.totalSales > 0 
+//     ? ((todayData.totalSales - yesterdayData.totalSales) / yesterdayData.totalSales) * 100 
+//     : (todayData.totalSales > 0 ? 100 : 0);
+
+//   const ordersChangeVsYesterday = yesterdayData.orderCount > 0 
+//     ? ((todayData.orderCount - yesterdayData.orderCount) / yesterdayData.orderCount) * 100 
+//     : (todayData.orderCount > 0 ? 100 : 0);
+
+//   const itemsChangeVsYesterday = yesterdayData.items > 0 
+//     ? ((todayData.items - yesterdayData.items) / yesterdayData.items) * 100 
+//     : (todayData.items > 0 ? 100 : 0);
+
+//   // const revenueChangeVsLastWeek = lastWeekData.totalSales > 0 
+//   //   ? ((todayData.totalSales - lastWeekData.totalSales) / lastWeekData.totalSales) * 100 
+//   //   : (todayData.totalSales > 0 ? 100 : 0);
+
+//  const getWeekOverWeekChange = () => {
+//   try {
+//     console.log('🔄 DEBUG: Starting Week-over-Week Calculation');
+    
+//     // Get the weekly data keys and REVERSE them to get most recent first
+//     const weeklyKeys = getLast8Weeks(shopTimezone).reverse(); // 🆕 ADD .reverse() here
+//     console.log('📅 DEBUG: Weekly keys (REVERSED - most recent first):', weeklyKeys);
+    
+//     // Debug: Show ALL weekly data available
+//     console.log('🔍 DEBUG: All Weekly Stats Data:');
+//     weeklyKeys.forEach((weekKey, index) => {
+//       const weekData = weeklyStats[weekKey];
+//       if (weekData) {
+//         console.log(`   ✅ Week ${index + 1} (${weekKey}):`, {
+//           revenue: weekData.totalSales,
+//           orders: weekData.orderCount,
+//           items: weekData.items,
+//           total: weekData.total,
+//           netSales: weekData.netSales
+//         });
+//       } else {
+//         console.log(`   ❌ Week ${index + 1} (${weekKey}): NO DATA`);
+//       }
+//     });
+    
+//     if (weeklyKeys.length < 2) {
+//       console.log('❌ DEBUG: Not enough weekly data available');
+//       return 0;
+//     }
+    
+//     // Current week (most recent week) - NOW CORRECT!
+//     const currentWeekKey = weeklyKeys[0]; // First item after reverse = most recent
+//     const currentWeekData = weeklyStats[currentWeekKey];
+//     const currentWeekRevenue = currentWeekData?.totalSales || 0;
+    
+//     // Previous week (week before current week) - NOW CORRECT!
+//     const previousWeekKey = weeklyKeys[1]; // Second item after reverse = previous week
+//     const previousWeekData = weeklyStats[previousWeekKey];
+//     const previousWeekRevenue = previousWeekData?.totalSales || 0;
+    
+//     console.log('🎯 DEBUG: Calculation Details (CORRECTED):');
+//     console.log(`   Current Week Key: "${currentWeekKey}"`);
+//     console.log(`   Current Week Revenue: ${currentWeekRevenue}`);
+//     console.log(`   Previous Week Key: "${previousWeekKey}"`);
+//     console.log(`   Previous Week Revenue: ${previousWeekRevenue}`);
+    
+//     // Calculate percentage change
+//     if (previousWeekRevenue > 0 && currentWeekRevenue > 0) {
+//       const change = ((currentWeekRevenue - previousWeekRevenue) / previousWeekRevenue) * 100;
+//       console.log(`   ✅ Change Calculation: ((${currentWeekRevenue} - ${previousWeekRevenue}) / ${previousWeekRevenue}) * 100 = ${change.toFixed(1)}%`);
+//       return change;
+//     } else if (currentWeekRevenue > 0 && previousWeekRevenue === 0) {
+//       console.log(`   ℹ️ Change: 100% (current week has revenue, previous week has none)`);
+//       return 100;
+//     } else if (currentWeekRevenue === 0 && previousWeekRevenue > 0) {
+//       const change = -100;
+//       console.log(`   ℹ️ Change: ${change}% (current week has no revenue, previous week had revenue)`);
+//       return change;
+//     } else {
+//       console.log(`   ℹ️ Change: 0% (both weeks have no revenue or both have zero revenue)`);
+//       return 0;
+//     }
+//   } catch (error) {
+//     console.error('❌ Error calculating week-over-week change:', error);
+//     return 0;
+//   }
+// };
+
+// const revenueChangeVsLastWeek = getWeekOverWeekChange();
+
+
+// console.log(`📈 Week-over-Week Calculation:`);
+//   console.log(`   Formula: ((${todayData.totalSales} - ${lastWeekData.totalSales}) / ${lastWeekData.totalSales}) * 100`);
+//   console.log(`   Result: ${revenueChangeVsLastWeek}%`);
+
+
+//   // Additional metrics
+//   const bestDay = dailySales.reduce((best, current) => 
+//     current.revenue > best.revenue ? current : best, 
+//     { date: '', revenue: 0, orders: 0, items: 0, fulfilled: 0 }
+//   );
+
+//   const averageDailyRevenue = dailySales.length > 0 
+//     ? dailySales.reduce((sum, day) => sum + day.revenue, 0) / dailySales.length 
+//     : 0;
+
+//   const fulfillmentRate = last7DaysStats.orderCount > 0 
+//     ? (last7DaysStats.fulfilled / last7DaysStats.orderCount) * 100 
+//     : 0;
+
+//   const last7DaysRepeatCustomerRate = last7DaysTotalCustomers > 0 
+//     ? (last7DaysRepeatCustomers / last7DaysTotalCustomers) * 100 
+//     : 0;
+
+//   // Financial rates
+//   const discountRate = overallStats.total > 0 ? (overallStats.discounts / overallStats.total) * 100 : 0;
+//   const shippingRate = overallStats.total > 0 ? (overallStats.shipping / overallStats.total) * 100 : 0;
+//   const taxRate = overallStats.total > 0 ? (overallStats.taxes / overallStats.total) * 100 : 0;
+//   const returnRate = overallStats.total > 0 ? (overallStats.returns / overallStats.total) * 100 : 0;
+
+//   // Chart data - USING EXTRACTED FORMATTING
+//   const weeklyRevenueTrend = weeklySales.map(week => ({
+//     week: formatWeekDisplay(week.week),
+//     revenue: week.revenue
+//   }));
+
+//   const monthlyComparison = monthlySales.map(month => ({
+//     month: month.month.split(' ')[0],
+//     revenue: month.revenue,
+//     orders: month.orders
+//   }));
+
+//   const dailyPerformance = dailySales.map(day => {
+//     const date = new Date(day.date);
+//     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+//     return {
+//       day: dayNames[date.getDay()],
+//       revenue: day.revenue,
+//       orders: day.orders
+//     };
+//   });
+
+
+
+
+
+
+
+// console.log('🔍 Starting mismatch calculations...');
+  
+//   // Today's mismatch
+//   const todayMismatchSummary = this.getTodayMismatchSummary({
+//     dailyFinancials: dailyFinancials,
+//     currentDateInShopTZ: currentDateInShopTZ
+//   });
+
+//   // Last 7 days mismatch
+//   const last7DaysMismatchSummary = this.calculateMismatchSummary(dailyFinancials, 'day');
+  
+//   // Weekly mismatch
+//   const weeklyMismatchSummary = this.calculateMismatchSummary(weeklyFinancials, 'week');
+  
+//   // Monthly mismatch - FIX THIS PART
+//   const monthlyData = monthRanges.map(month => {
+//     const monthData = monthlyTotals[month.key];
+//     if (monthData) {
+//       return {
+//         netSales: monthData.netSales || 0,
+//         shipping: monthData.shipping || 0,
+//         taxes: monthData.taxes || 0,
+//         extraFees: monthData.extraFees || 0,
+//         totalSales: monthData.totalSales || 0
+//       };
+//     }
+//     return null;
+//   }).filter(Boolean);
+  
+//   const monthlyMismatchSummary = this.calculateMismatchSummary(monthlyData, 'month');
+
+//   console.log('📊 FINAL MISMATCH RESULTS:');
+//   console.log('Today:', todayMismatchSummary);
+//   console.log('Last 7 Days:', last7DaysMismatchSummary);
+//   console.log('Weekly:', weeklyMismatchSummary);
+//   console.log('Monthly:', monthlyMismatchSummary);
+
+
+
+
+
+
+//   // Calculate additional metrics
+//   const averageOrderValue = overallStats.orderCount > 0 ? overallStats.totalSales / overallStats.orderCount : 0;
+//   const averageItemsPerOrder = overallStats.orderCount > 0 ? overallStats.items / overallStats.orderCount : 0;
+//   const customerRetentionRate = totalCustomerData.totalCustomers > 0 ? 
+//     (totalCustomerData.repeatedCustomers / totalCustomerData.totalCustomers) * 100 : 0;
+//   const averageOrderFrequency = totalCustomerData.totalCustomers > 0 ? 
+//     overallStats.orderCount / totalCustomerData.totalCustomers : 0;
+
+//   // Calculate last 7 days totals from dailySales
+//   const last7DaysOrders = (dailySales || []).reduce((sum, day) => sum + (day.orders || 0), 0);
+//   const last7DaysRevenue = (dailySales || []).reduce((sum, day) => sum + (day.revenue || 0), 0);
+//   const last7DaysItems = (dailySales || []).reduce((sum, day) => sum + (day.items || 0), 0);
+
+//   console.log(`🎯 Final analytics prepared for email`);
+
+
+
+//   console.log(`🎯 Final analytics prepared for email`);
+
+// // 🆕 CALCULATE DAYS LEFT IN CURRENT WEEK
+// // 🆕 SIMPLE CORRECT CALCULATION
+// const today = new Date();
+// const dayOfWeek = today.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+
+// // If it's Sunday (0), 0 days left. Otherwise, 7 - dayOfWeek
+// const daysLeftInWeek = dayOfWeek === 0 ? 0 : (7 - dayOfWeek);
+
+// console.log(`📅 Days left in current week: ${daysLeftInWeek} (today: ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dayOfWeek]})`);
+
+
+
+//   // Return complete EmailOrderData with all required fields
+//   return {
+//     // Core metrics
+//     totalOrders: overallStats.orderCount,
+//     totalCustomers: totalCustomerData.totalCustomers,
+//     fulfillmentRate,
+//     totalRevenue: overallStats.total,
+//     netRevenue: overallStats.netSales,
+//     averageOrderValue,
+//     totalItems: overallStats.items,
+//     todayOrders: todayData.orderCount,
+//     todayRevenue: todayData.totalSales,
+//     todayItems: todayData.items,
+    
+//     // Event summaries
+//     todayEventSummary: todayEventSummary,
+//     last7DaysEventSummary: last7DaysEventSummary,
+//     last8WeeksEventSummary: last8WeeksEventSummary,
+//     last6MonthsEventSummary: last6MonthsEventSummary,
+    
+//     last7DaysOrders,
+//     last7DaysRevenue, 
+//     last7DaysItems,
+
+   
+
+
+
+// last7DaysTotalRevenue,
+//   last7DaysTotalDiscounts,
+//   last7DaysTotalReturns,
+//   last7DaysTotalExtraFees,
+//   last7DaysTotalNetSales,
+//   last7DaysTotalShipping,
+//   last7DaysTotalTaxes,
+//   last7DaysTotalTotalSales,
+  
+  
+
+
+
+//   weeklyTotalOrders: weeklyTotalOrders,
+//   weeklyTotalRevenue: weeklyTotalRevenue, // Map your calculated value to the type property
+//   weeklyTotalItems: weeklyTotalItems,
+  
+//   // Weekly Financial Breakdown - Use EXACT property names
+//   weeklyTotalDiscounts: weeklyTotalDiscounts,
+//   weeklyTotalReturns: weeklyTotalReturns,
+//   weeklyTotalExtraFees: weeklyTotalExtraFees,
+//   weeklyTotalNetSales: weeklyTotalNetSales,
+//   weeklyTotalShipping: weeklyTotalShipping,
+//   weeklyTotalTaxes: weeklyTotalTaxes,
+//   weeklyTotalTotalSales: weeklyTotalTotalSales,
+//   weeklyFinancials: weeklyFinancials,
+  
+//   // Daily Financial Data
+//   dailyFinancials: dailyFinancials,
+  
+  
+
+//   // ✅ CORRECT - Use the calculated values!
+// monthlyFinancials: monthlyFinancials,
+// monthRanges: monthRanges.map(m => m.key),
+// monthlyTotals: monthlyTotals,
+
+
+
+
+
+// todayMismatchSummary,
+//     last7DaysMismatchSummary,
+//     weeklyMismatchSummary,
+//     monthlyMismatchSummary,
+
+
+  
+
+
+//     // In your return statement, add:
+// daysLeftInWeek,
+
+
+
+//     ordersChangeVsYesterday,
+//     revenueChangeVsYesterday,
+//     itemsChangeVsYesterday,
+//     newCustomers: totalCustomerData.newCustomers,
+//     repeatCustomers: totalCustomerData.repeatedCustomers,
+//     customerRetentionRate,
+//     averageOrderFrequency,
+//     shopTimezone,
+//     shopCurrency,
+//     totalRefunds: overallStats.returns,
+//     totalExchanges: 0,
+//     totalPartialRefunds: 0,
+//     totalEvents: 0,
+//     ordersWithEvents: 0,
+//     netEventValue: 0,
+
+//     // Extended email fields
+//     fulfilledOrders: overallStats.fulfilled,
+//     unfulfilledOrders: overallStats.unfulfilled,
+//     totalDiscounts: overallStats.discounts,
+//     totalShipping: overallStats.shipping,
+//     totalTaxes: overallStats.taxes,
+//     totalReturns: overallStats.returns,
+//     returnFees: overallStats.returnFees || 0,
+//     discountRate,
+//     shippingRate,
+//     taxRate,
+//     returnRate,
+//     averageItemsPerOrder,
+//     dailySales,
+//     weeklySales,
+//     monthlySales,
+//     yesterdayRevenue: yesterdayData.totalSales,
+//     yesterdayOrders: yesterdayData.orderCount,
+//     yesterdayItems: yesterdayData.items,
+//     lastWeekRevenue: lastWeekData.totalSales,
+//     lastWeekOrders: lastWeekData.orderCount,
+//     lastWeekItems: lastWeekData.items,
+//     todayFulfilled: todayData.fulfilled,
+//     todayUnfulfilled: todayData.unfulfilled,
+//     last7DaysFulfilled: last7DaysStats.fulfilled,
+//     last7DaysUnfulfilled: last7DaysStats.unfulfilled,
+//     revenueChangeVsLastWeek,
+//     bestDay: { date: bestDay.date, revenue: bestDay.revenue, orders: bestDay.orders, items: bestDay.items },
+//     averageDailyRevenue,
+//     last7DaysTotalCustomers,
+//     last7DaysRepeatCustomers,
+//     last7DaysNewCustomers,
+//     last7DaysRepeatCustomerRate,
+//     customerTypeData: { new: totalCustomerData.newCustomers, repeat: totalCustomerData.repeatedCustomers },
+//     fulfillmentStatusData: { fulfilled: overallStats.fulfilled, unfulfilled: overallStats.unfulfilled },
+//     weeklyRevenueTrend,
+//     monthlyComparison,
+//     dailyPerformance,
+//     ordersLoaded: orders.length,
+//     currentDateInShopTZ,
+//   };
+
+// }
+
+//   private formatCurrency(amount: number, currency: string): string {
+//     return amount.toLocaleString('en-US', { 
+//       style: 'currency', 
+//       currency: currency,
+//       minimumFractionDigits: 2 
+//     });
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // analyticsCollector.server.ts - Updated imports
+// import { Session } from "@shopify/shopify-api";
+// import type { OrderStats, CustomerData } from '../types/analytics';
+// import type { EmailOrderData } from '../types/emailAnalytics';
+// import { fetchOrdersForPeriodGraphQL } from '../services/shopifyGraphql.server'; // Updated import
+// import { processOrderToStats, mergeStats } from '../core/financialCalculator.server';
+// import { buildCustomerOrderMap, analyzeCustomerBehavior, calculateOverallCustomerData } from '../core/customerAnalytics.server';
+// import { getMonthRanges, getLastNDays, getLast8Weeks, formatWeekDisplay } from '../utils/analyticsHelpers';
+// import { mergeEventSummaries } from '../core/eventDetection.server';
+
+// export class AnalyticsCollector {
+//   private session: Session;
+//   private SHOPIFY_API_VERSION = '2024-04';
+
+//   constructor(session: Session) {
+//     this.session = session;
+//   }
+
+//   async collectDailyAnalytics(): Promise<EmailOrderData> {
+//     try {
+//       console.log(`🔄 Starting GraphQL analytics collection for ${this.session.shop}`);
       
-      const lineItems = order.line_items || [];
-      const itemsInOrder = lineItems.reduce((sum: number, item: any) => {
-        return sum + (item.quantity || 0);
-      }, 0);
-      
-      // Convert UTC order date to shop's local date
-      const dateKey = TimezoneHelper.getLocalDateKey(createdAtUTC, shopTimezone);
-      
-      // Compare using shop's timezone dates
-      const isToday = dateKey === currentDateInShopTZ;
-      const isYesterday = dateKey === yesterdayInShopTZ;
-      const isLastWeekSameDay = dateKey === lastWeekSameDayInShopTZ;
-      const isLast7Days = last7DaysKeys.includes(dateKey);
+//       // Get shop info
+//       const { shopTimezone, shopCurrency } = await this.getShopInfo();
+//       console.log(`📍 Shop timezone: ${shopTimezone}, currency: ${shopCurrency}`);
 
-      // Today's metrics (in shop's timezone) - ONLY COUNT ONCE
-      if (isToday && !countedTodayOrders.has(order.id)) {
-        todayRevenue += revenue;
-        todayOrders += 1;
-        todayItems += itemsInOrder;
-        countedTodayOrders.add(order.id);
+//       // Use the same date ranges as main dashboard
+//       const monthRanges = getMonthRanges(shopTimezone);
+//       const startDate = monthRanges[0].start;
+//       const endDate = monthRanges[monthRanges.length - 1].end;
+
+//       // Use GraphQL instead of REST
+//       const orders = await fetchOrdersForPeriodGraphQL(
+//         this.session.shop,
+//         this.session.accessToken!,
+//         startDate,
+//         endDate
+//       );
+
+//       console.log(`📦 GraphQL fetched ${orders.length} orders`);
+
+//       if (orders.length === 0) {
+//         console.log('❌ No orders found, returning empty data');
+//         return this.getEmptyData(shopTimezone, shopCurrency);
+//       }
+
+//       const processedData = this.processOrdersData(orders, shopTimezone, shopCurrency);
+//       console.log(`✅ Successfully processed GraphQL analytics data`);
+//       return processedData;
+
+//     } catch (error: any) {
+//       console.error('❌ Error in GraphQL analytics collection:', error);
+//       return this.getEmptyData('UTC', 'USD');
+//     }
+//   }
+
+
+
+
+//   private async getShopInfo(): Promise<{ shopTimezone: string; shopCurrency: string }> {
+//     try {
+//       const url = `https://${this.session.shop}/admin/api/${this.SHOPIFY_API_VERSION}/shop.json`;
+//       const response = await fetch(url, {
+//         headers: {
+//           'X-Shopify-Access-Token': this.session.accessToken!,
+//           'Content-Type': 'application/json',
+//         },
+//       });
+
+//       if (response.ok) {
+//         const data = await response.json();
+//         console.log(`🏪 Shop API Response - Currency: ${data.shop.currency}, Timezone: ${data.shop.iana_timezone}`);
+//         return {
+//           shopTimezone: data.shop.iana_timezone || 'UTC',
+//           shopCurrency: data.shop.currency || 'USD'
+//         };
+//       } else {
+//         console.error(`❌ Shop API failed: ${response.status}`);
+//       }
+//     } catch (error) {
+//       console.error('❌ Error fetching shop info:', error);
+//     }
+    
+//     // Fallback values
+//     return { shopTimezone: 'UTC', shopCurrency: 'USD' };
+//   }
+
+//   // ✅ REMOVED the duplicate formatCurrency method - you already have one at the bottom
+
+//   // Your existing methods continue unchanged...
+//   private getEmptyOrderStats(): OrderStats {
+//     return {
+//       total: 0,
+//       items: 0,
+//       fulfilled: 0,
+//       unfulfilled: 0,
+//       discounts: 0,
+//       shipping: 0,
+//       taxes: 0,
+//       returns: 0,
+//       orderCount: 0,
+//       netSales: 0,
+//       extraFees: 0,
+//       totalSales: 0,
+//       shippingRefunds: 0,
+//       netReturns: 0,
+//       totalRefund: 0,
+//       hasSubsequentEvents: false,
+//       eventSummary: null,
+//       refundsCount: 0,
+//       financialStatus: 'pending'
+//     };
+//   }
+
+//   private getEmptyData(shopTimezone: string, shopCurrency: string): EmailOrderData {
+//     const currentDateInShopTZ = this.getLocalDateKey(new Date(), shopTimezone);
+    
+//     return {
+//       // Core metrics
+//       totalOrders: 0,
+//       totalCustomers: 0,
+//       fulfillmentRate: 0,
+//       totalRevenue: 0,
+//       netRevenue: 0,
+//       averageOrderValue: 0,
+//       totalItems: 0,
+//       todayOrders: 0,
+//       todayRevenue: 0,
+//       todayItems: 0,
+//       last7DaysOrders: 0,
+//       last7DaysRevenue: 0, 
+//       last7DaysItems: 0,
+//       ordersChangeVsYesterday: 0,
+//       revenueChangeVsYesterday: 0,
+//       itemsChangeVsYesterday: 0,
+//       newCustomers: 0,
+//       repeatCustomers: 0,
+//       customerRetentionRate: 0,
+//       averageOrderFrequency: 0,
+//       shopTimezone, // ✅ Now properly set
+//       shopCurrency, // ✅ Now properly set
+//       totalRefunds: 0,
+//       totalExchanges: 0,
+//       totalPartialRefunds: 0,
+//       totalEvents: 0,
+//       ordersWithEvents: 0,
+//       netEventValue: 0,
+
+//       // ... rest of your existing empty data structure
+//       last7DaysTotalRevenue: 0,
+//       last7DaysTotalDiscounts: 0,
+//       last7DaysTotalReturns: 0,
+//       last7DaysTotalExtraFees: 0,
+//       last7DaysTotalNetSales: 0,
+//       last7DaysTotalShipping: 0,
+//       last7DaysTotalTaxes: 0,
+//       last7DaysTotalTotalSales: 0,
+//       dailyFinancials: [],
+
+//       weeklyTotalOrders: 0,
+//       weeklyTotalRevenue: 0, 
+//       weeklyTotalItems: 0,
+//       weeklyTotalDiscounts: 0,
+//       weeklyTotalReturns: 0,
+//       weeklyTotalExtraFees: 0,
+//       weeklyTotalNetSales: 0,
+//       weeklyTotalShipping: 0,
+//       weeklyTotalTaxes: 0,
+//       weeklyTotalTotalSales: 0,
+//       weeklyFinancials: [],
+
+//       monthlyFinancials: {
+//         totalOrders: 0,
+//         totalRevenue: 0,
+//         totalItems: 0,
+//         totalDiscounts: 0,
+//         totalReturns: 0,
+//         totalExtraFees: 0,
+//         totalNetSales: 0,
+//         totalShipping: 0,
+//         totalTaxes: 0,
+//         totalTotalSales: 0
+//       },
+//       monthRanges: [],
+//       monthlyTotals: {},
+
+//       // In your return statement, add:
+// daysLeftInWeek:0,
+
+//       // Extended email fields
+//       fulfilledOrders: 0,
+//       unfulfilledOrders: 0,
+//       totalDiscounts: 0,
+//       totalShipping: 0,
+//       totalTaxes: 0,
+//       totalReturns: 0,
+//       returnFees: 0,
+//       discountRate: 0,
+//       shippingRate: 0,
+//       taxRate: 0,
+//       returnRate: 0,
+//       averageItemsPerOrder: 0,
+//       dailySales: [],
+//       weeklySales: [],
+//       monthlySales: [],
+//       yesterdayRevenue: 0,
+//       yesterdayOrders: 0,
+//       yesterdayItems: 0,
+//       lastWeekRevenue: 0,
+//       lastWeekOrders: 0,
+//       lastWeekItems: 0,
+//       todayFulfilled: 0,
+//       todayUnfulfilled: 0,
+//       last7DaysFulfilled: 0,
+//       last7DaysUnfulfilled: 0,
+//       revenueChangeVsLastWeek: 0,
+//       bestDay: { date: '', revenue: 0, orders: 0, items: 0 },
+//       averageDailyRevenue: 0,
+//       last7DaysTotalCustomers: 0,
+//       last7DaysRepeatCustomers: 0,
+//       last7DaysNewCustomers: 0,
+//       last7DaysRepeatCustomerRate: 0,
+//       customerTypeData: { new: 0, repeat: 0 },
+//       fulfillmentStatusData: { fulfilled: 0, unfulfilled: 0 },
+//       weeklyRevenueTrend: [],
+//       monthlyComparison: [],
+//       dailyPerformance: [],
+//       ordersLoaded: 0,
+//       currentDateInShopTZ,
+
+//       // Event summaries
+//       todayEventSummary: {
+//         refunds: { count: 0, value: 0 },
+//         exchanges: { count: 0, value: 0 },
+//         partialRefunds: { count: 0, value: 0 },
+//         totalEvents: 0,
+//         netValue: 0
+//       },
+//       last7DaysEventSummary: {
+//         refunds: { count: 0, value: 0 },
+//         exchanges: { count: 0, value: 0 },
+//         partialRefunds: { count: 0, value: 0 },
+//         totalEvents: 0,
+//         netValue: 0
+//       },
+//       last8WeeksEventSummary: {
+//         refunds: { count: 0, value: 0 },
+//         exchanges: { count: 0, value: 0 },
+//         partialRefunds: { count: 0, value: 0 },
+//         totalEvents: 0,
+//         netValue: 0
+//       },
+//       last6MonthsEventSummary: {
+//         refunds: { count: 0, value: 0 },
+//         exchanges: { count: 0, value: 0 },
+//         partialRefunds: { count: 0, value: 0 },
+//         totalEvents: 0,
+//         netValue: 0
+//       },
+
+//       // Mismatch summaries
+//       todayMismatchSummary: {
+//         totalMismatches: 0,
+//         totalDifference: 0,
+//         hasMismatches: false
+//       },
+//       last7DaysMismatchSummary: {
+//         totalMismatches: 0,
+//         totalDifference: 0,
+//         hasMismatches: false
+//       },
+//       weeklyMismatchSummary: {
+//         totalMismatches: 0,
+//         totalDifference: 0,
+//         hasMismatches: false
+//       },
+//       monthlyMismatchSummary: {
+//         totalMismatches: 0,
+//         totalDifference: 0,
+//         hasMismatches: false
+//       }
+//     };
+//   }
+
+//   // Your existing helper methods continue here...
+//   private getLocalDateKey(utcDate: Date, timezone: string): string {
+//     try {
+//       return utcDate.toLocaleDateString('en-CA', { 
+//         timeZone: timezone,
+//         year: 'numeric',
+//         month: '2-digit',
+//         day: '2-digit'
+//       });
+//     } catch (error) {
+//       return utcDate.toISOString().split('T')[0];
+//     }
+//   }
+
+//   private getPreviousDate(currentDate: string, timezone: string): string {
+//     try {
+//       const current = new Date(currentDate + 'T00:00:00');
+//       const previous = new Date(current);
+//       previous.setDate(previous.getDate() - 1);
+//       return this.getLocalDateKey(previous, timezone);
+//     } catch (error) {
+//       const current = new Date(currentDate + 'T00:00:00Z');
+//       const previous = new Date(current);
+//       previous.setUTCDate(previous.getUTCDate() - 1);
+//       return previous.toISOString().split('T')[0];
+//     }
+//   }
+  
+// // Add these helper methods to your AnalyticsCollector class
+
+// private calculateMismatchSummary(data: any[], periodType: 'day' | 'week' | 'month'): { 
+//   totalMismatches: number; 
+//   totalDifference: number; 
+//   hasMismatches: boolean; 
+// } {
+//   let totalMismatches = 0;
+//   let totalDifference = 0;
+
+//   console.log(`🔍 [MISMATCH DEBUG] Calculating ${periodType} mismatch summary for ${data.length} periods`);
+
+//   data.forEach((periodData: any, index: number) => {
+//     if (!periodData) {
+//       console.log(`❌ [MISMATCH DEBUG] Period ${index} has no data`);
+//       return;
+//     }
+    
+//     const calculatedTotal = periodData.netSales + periodData.shipping + periodData.taxes + (periodData.extraFees || 0);
+//     const actualTotal = periodData.totalSales;
+//     const difference = Math.abs(actualTotal - calculatedTotal);
+//     const mismatch = difference > 0.01;
+    
+//     console.log(`🔍 [MISMATCH DEBUG] ${periodType} ${index}:`);
+//     console.log(`   Net Sales: ${periodData.netSales}`);
+//     console.log(`   Shipping: ${periodData.shipping}`);
+//     console.log(`   Taxes: ${periodData.taxes}`);
+//     console.log(`   Extra Fees: ${periodData.extraFees || 0}`);
+//     console.log(`   Calculated Total: ${calculatedTotal}`);
+//     console.log(`   Actual Total: ${actualTotal}`);
+//     console.log(`   Difference: ${difference}`);
+//     console.log(`   Mismatch: ${mismatch}`);
+    
+//     if (mismatch) {
+//       totalMismatches++;
+//       totalDifference += (calculatedTotal - actualTotal);
+//       console.log(`⚠️ [MISMATCH FOUND] ${periodType} ${index} has mismatch: ${difference}`);
+//     }
+//   });
+
+//   const result = {
+//     totalMismatches,
+//     totalDifference: parseFloat(totalDifference.toFixed(2)),
+//     hasMismatches: totalMismatches > 0
+//   };
+
+//   console.log(`📊 [MISMATCH RESULT] ${periodType}:`, result);
+//   return result;
+// }
+
+// private getTodayMismatchSummary(data: any): { 
+//   totalMismatches: number; 
+//   totalDifference: number; 
+//   hasMismatches: boolean; 
+// } {
+//   const todayData = data.dailyFinancials?.find((day: any) => day.date === data.currentDateInShopTZ);
+  
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Looking for today: ${data.currentDateInShopTZ}`);
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Available dates:`, data.dailyFinancials?.map((d: any) => d.date));
+  
+//   if (!todayData) {
+//     console.log(`❌ [TODAY MISMATCH DEBUG] No data found for today`);
+//     return { totalMismatches: 0, totalDifference: 0, hasMismatches: false };
+//   }
+
+//   const calculatedTotal = todayData.netSales + todayData.shipping + todayData.taxes + (todayData.extraFees || 0);
+//   const actualTotal = todayData.totalSales;
+//   const difference = Math.abs(actualTotal - calculatedTotal);
+//   const mismatch = difference > 0.01;
+  
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Today's data:`, todayData);
+//   console.log(`🔍 [TODAY MISMATCH DEBUG] Calculated: ${calculatedTotal}, Actual: ${actualTotal}, Difference: ${difference}, Mismatch: ${mismatch}`);
+
+//   const result = {
+//     totalMismatches: mismatch ? 1 : 0,
+//     totalDifference: mismatch ? parseFloat((calculatedTotal - actualTotal).toFixed(2)) : 0,
+//     hasMismatches: mismatch
+//   };
+
+//   console.log(`📊 [TODAY MISMATCH RESULT]:`, result);
+//   return result;
+// }
+
+
+
+
+  
+// private processOrdersData(orders: any[], shopTimezone: string, shopCurrency: string): EmailOrderData {
+//   console.log(`🔧 Processing ${orders.length} orders for analytics`);
+  
+//   const currentDateInShopTZ = this.getLocalDateKey(new Date(), shopTimezone);
+//   const yesterdayInShopTZ = this.getPreviousDate(currentDateInShopTZ, shopTimezone);
+
+//   // Initialize data structures - USING EXTRACTED HELPERS
+//   const last7DaysKeys = getLastNDays(7, shopTimezone);
+//   const last8WeeksKeys = getLast8Weeks(shopTimezone);
+//   const monthRanges = getMonthRanges(shopTimezone);
+
+//   // Get last week same day for comparison
+//   const todayDate = new Date(currentDateInShopTZ + 'T00:00:00');
+//   const lastWeekDate = new Date(todayDate);
+//   lastWeekDate.setDate(todayDate.getDate() - 7);
+//   const lastWeekSameDayInShopTZ = this.getLocalDateKey(lastWeekDate, shopTimezone);
+
+
+//    console.log(`📅 Date Debug:`);
+//   console.log(`   Today: ${currentDateInShopTZ}`);
+//   console.log(`   Last Week Same Day: ${lastWeekSameDayInShopTZ}`);
+//   console.log(`   Yesterday: ${yesterdayInShopTZ}`);
+
+//   const dailyStats: Record<string, OrderStats> = {};
+//   const weeklyStats: Record<string, OrderStats> = {};
+//   const monthlyStats: Record<string, OrderStats> = {};
+//   const dailyCustomerStats: Record<string, CustomerData> = {};
+//   const weeklyCustomerStats: Record<string, CustomerData> = {};
+//   const monthlyCustomerStats: Record<string, CustomerData> = {};
+
+//   // Initialize all periods with empty stats
+//   last7DaysKeys.forEach(date => {
+//     dailyStats[date] = this.getEmptyOrderStats();
+//     dailyCustomerStats[date] = { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//   });
+
+//   last8WeeksKeys.forEach(week => {
+//     weeklyStats[week] = this.getEmptyOrderStats();
+//     weeklyCustomerStats[week] = { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//   });
+
+//   monthRanges.forEach(month => {
+//     monthlyStats[month.key] = this.getEmptyOrderStats();
+//     monthlyCustomerStats[month.key] = { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//   });
+
+//   // Process customer data - USING EXTRACTED CUSTOMER ANALYTICS
+//   const customerOrderMap = buildCustomerOrderMap(orders, shopTimezone);
+//   const dailyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimezone, last7DaysKeys, 'daily');
+//   const weeklyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimezone, last8WeeksKeys, 'weekly');
+//   const monthlyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimezone, monthRanges.map(r => r.key), 'monthly');
+//   const totalCustomerData = calculateOverallCustomerData(customerOrderMap);
+
+//   console.log(`👥 Customer analytics: ${totalCustomerData.totalCustomers} total customers`);
+
+//   // Process each order - USING EXTRACTED FINANCIAL CALCULATOR
+//   let processedOrders = 0;
+//   orders.forEach((order: any) => {
+//     try {
+//       const date = new Date(order.created_at);
+//       const monthKey = date.toLocaleString("default", { month: "short", year: "numeric", timeZone: shopTimezone });
+//       const dayKey = this.getLocalDateKey(date, shopTimezone);
+      
+//       const monday = new Date(date);
+//       monday.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+//       const weekKey = `Week of ${this.getLocalDateKey(monday, shopTimezone)}`;
+
+//       const orderStats = processOrderToStats(order);
+
+//       // Aggregate data - USING EXTRACTED MERGE FUNCTION
+//       if (dailyStats[dayKey]) {
+//         dailyStats[dayKey] = mergeStats(dailyStats[dayKey], orderStats);
+//         dailyCustomerStats[dayKey] = dailyCustomerAnalytics[dayKey] || { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//       }
+
+//       if (weeklyStats[weekKey]) {
+//         weeklyStats[weekKey] = mergeStats(weeklyStats[weekKey], orderStats);
+//         weeklyCustomerStats[weekKey] = weeklyCustomerAnalytics[weekKey] || { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//       }
+
+//       if (monthlyStats[monthKey]) {
+//         monthlyStats[monthKey] = mergeStats(monthlyStats[monthKey], orderStats);
+//         monthlyCustomerStats[monthKey] = monthlyCustomerAnalytics[monthKey] || { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 };
+//       }
+      
+//       processedOrders++;
+//     } catch (error) {
+//       console.error('Error processing order:', error);
+//     }
+//   });
+
+//   console.log(`✅ Processed ${processedOrders} orders for analytics`);
+
+//   // Calculate today's and yesterday's data
+//   const todayData = dailyStats[currentDateInShopTZ] || this.getEmptyOrderStats();
+//   const yesterdayData = dailyStats[yesterdayInShopTZ] || this.getEmptyOrderStats();
+//   const lastWeekData = dailyStats[lastWeekSameDayInShopTZ] || this.getEmptyOrderStats();
+
+
+//   console.log(`📊 Data Availability:`);
+//   console.log(`   Today Data:`, todayData);
+//   console.log(`   Last Week Data:`, lastWeekData);
+//   console.log(`   Today Revenue: ${todayData.totalSales}`);
+//   console.log(`   Last Week Revenue: ${lastWeekData.totalSales}`);
+
+  
+
+
+//   // ⬇️⬇️⬇️ EVENT SUMMARY CALCULATIONS - ADDED IN CORRECT LOCATION ⬇️⬇️⬇️
+// // ⬇️⬇️⬇️ EVENT SUMMARY CALCULATIONS - ADDED IN CORRECT LOCATION ⬇️⬇️⬇️
+
+// // Today's event summary - from todayData (handle null case)
+// const todayEventSummary = todayData.eventSummary || {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// // Last 7 days event summary - aggregate from dailyStats
+// let last7DaysEventSummary = {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// last7DaysKeys.forEach(date => {
+//   const dayData = dailyStats[date];
+//   if (dayData && dayData.eventSummary) {
+//     const merged = mergeEventSummaries(last7DaysEventSummary, dayData.eventSummary);
+//     if (merged) {
+//       last7DaysEventSummary = merged;
+//     }
+//   }
+// });
+
+// // Last 8 weeks event summary - aggregate from weeklyStats
+// let last8WeeksEventSummary = {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// last8WeeksKeys.forEach(week => {
+//   const weekData = weeklyStats[week];
+//   if (weekData && weekData.eventSummary) {
+//     const merged = mergeEventSummaries(last8WeeksEventSummary, weekData.eventSummary);
+//     if (merged) {
+//       last8WeeksEventSummary = merged;
+//     }
+//   }
+// });
+
+
+// // Calculate weekly totals - CORRECTED VERSION
+// let weeklyTotalOrders = 0;
+// let weeklyPerformanceRevenue = 0; // For Weekly Performance section
+// let weeklyTotalItems = 0;
+
+// // For Weekly Financial Breakdown - USE THE SAME LOGIC AS FINANCIAL CALCULATOR
+// let weeklyTotalRevenue = 0;        // Gross Sales (use 'total' property)
+// let weeklyTotalDiscounts = 0;
+// let weeklyTotalReturns = 0;
+// let weeklyTotalExtraFees = 0;
+// let weeklyTotalNetSales = 0;
+// let weeklyTotalShipping = 0;
+// let weeklyTotalTaxes = 0;
+// let weeklyTotalTotalSales = 0;    // Final Total
+
+// last8WeeksKeys.forEach(week => {
+//   const weekData = weeklyStats[week];
+//   if (weekData) {
+//     weeklyTotalOrders += weekData.orderCount;
+//     weeklyPerformanceRevenue += weekData.totalSales; // For Weekly Performance
+//     weeklyTotalItems += weekData.items;
+    
+//     // ✅ CORRECT: Use the same properties as your financial calculator
+//     weeklyTotalRevenue += weekData.total;           // Gross Sales
+//     weeklyTotalDiscounts += weekData.discounts;
+//     weeklyTotalReturns += weekData.returns;
+//     weeklyTotalExtraFees += weekData.extraFees || 0;
+    
+//     weeklyTotalNetSales += weekData.netSales;
+//     weeklyTotalShipping += weekData.shipping;
+//     weeklyTotalTaxes += weekData.taxes;
+//     weeklyTotalTotalSales += weekData.totalSales;   // Final Total
+//   }
+// });
+
+// // Verify the math makes sense - THIS SHOULD MATCH YOUR FINANCIAL CALCULATOR LOGIC
+// console.log('🔍 WEEKLY FINANCIAL VERIFICATION:');
+// console.log('Gross Sales (total):', weeklyTotalRevenue);
+// console.log('Discounts:', weeklyTotalDiscounts);
+// console.log('Returns:', weeklyTotalReturns);
+// console.log('Extra Fees:', weeklyTotalExtraFees);
+// console.log('Net Sales:', weeklyTotalNetSales);
+// console.log('Total Sales (totalSales):', weeklyTotalTotalSales);
+
+// // Check if the calculation matches: Gross - Discounts + Returns + Extra Fees ≈ Net Sales
+// const calculatedNet = weeklyTotalRevenue - weeklyTotalDiscounts + weeklyTotalReturns + weeklyTotalExtraFees;
+// console.log('Expected Net (Gross - Discounts + Returns + Extra Fees):', calculatedNet);
+// console.log('Actual Net Sales from data:', weeklyTotalNetSales);
+// console.log('Difference:', Math.abs(calculatedNet - weeklyTotalNetSales));
+
+
+
+
+// // Create weekly financials array
+// const weeklyFinancials = last8WeeksKeys.map(week => {
+//   const weekData = weeklyStats[week] || this.getEmptyOrderStats();
+//   return {
+//     week,
+//     total: weekData.total,
+//     discounts: weekData.discounts,
+//     returns: weekData.returns,
+//     netSales: weekData.netSales,
+//     shipping: weekData.shipping,
+//     extraFees: weekData.extraFees || 0,
+//     taxes: weekData.taxes,
+//     totalSales: weekData.totalSales
+//   };
+// });
+
+
+
+
+
+
+
+
+// // Last 6 months event summary - aggregate from monthlyStats
+// let last6MonthsEventSummary = {
+//   refunds: { count: 0, value: 0 },
+//   exchanges: { count: 0, value: 0 },
+//   partialRefunds: { count: 0, value: 0 },
+//   totalEvents: 0,
+//   netValue: 0
+// };
+
+// monthRanges.forEach(month => {
+//   const monthData = monthlyStats[month.key];
+//   if (monthData && monthData.eventSummary) {
+//     const merged = mergeEventSummaries(last6MonthsEventSummary, monthData.eventSummary);
+//     if (merged) {
+//       last6MonthsEventSummary = merged;
+//     }
+//   }
+// });
+
+//   // Debug the event summaries
+//   console.log('🔍 EVENT SUMMARIES FROM PROCESSED DATA:');
+//   console.log('Today Events:', todayEventSummary.totalEvents, 'Refunds:', todayEventSummary.refunds.count);
+//   console.log('Last 7 Days Events:', last7DaysEventSummary.totalEvents, 'Refunds:', last7DaysEventSummary.refunds.count);
+//   console.log('Last 8 Weeks Events:', last8WeeksEventSummary.totalEvents, 'Refunds:', last8WeeksEventSummary.refunds.count);
+//   console.log('Last 6 Months Events:', last6MonthsEventSummary.totalEvents, 'Refunds:', last6MonthsEventSummary.refunds.count);
+
+//   // ⬆️⬆️⬆️ END EVENT SUMMARY CALCULATIONS ⬆️⬆️⬆️
+
+//   // Calculate 7-day totals
+//   let last7DaysStats = this.getEmptyOrderStats();
+//   let last7DaysTotalCustomers = 0;
+//   let last7DaysRepeatCustomers = 0;
+//   let last7DaysNewCustomers = 0;
+
+//   last7DaysKeys.forEach(date => {
+//     const dayData = dailyStats[date];
+//     const customerData = dailyCustomerStats[date];
+    
+//     if (dayData) {
+//       last7DaysStats = mergeStats(last7DaysStats, dayData);
+//     }
+    
+//     last7DaysTotalCustomers += customerData.totalCustomers;
+//     last7DaysRepeatCustomers += customerData.repeatedCustomers;
+//     last7DaysNewCustomers += customerData.newCustomers;
+//   });
+
+//   let last7DaysTotalRevenue = 0;
+//   let last7DaysTotalDiscounts = 0;
+//   let last7DaysTotalReturns = 0;
+//   let last7DaysTotalExtraFees = 0;
+//   let last7DaysTotalNetSales = 0;
+//   let last7DaysTotalShipping = 0;
+//   let last7DaysTotalTaxes = 0;
+//   let last7DaysTotalTotalSales = 0;
+
+//   last7DaysKeys.forEach(date => {
+//     const dayData = dailyStats[date];
+//     if (dayData) {
+//       last7DaysTotalRevenue += dayData.total;
+//       last7DaysTotalDiscounts += dayData.discounts;
+//       last7DaysTotalReturns += dayData.returns;
+//       last7DaysTotalExtraFees += dayData.extraFees || 0;
+//       last7DaysTotalNetSales += dayData.netSales;
+//       last7DaysTotalShipping += dayData.shipping;
+//       last7DaysTotalTaxes += dayData.taxes;
+//       last7DaysTotalTotalSales += dayData.totalSales;
+//     }
+//   });
+
+
+
+  
+//   // Daily financials array
+// const dailyFinancials = last7DaysKeys.map(date => {
+//   const dayData = dailyStats[date] || this.getEmptyOrderStats();
+//   return {
+//     date,
+//     total: dayData.total,
+//     discounts: dayData.discounts,
+//     returns: dayData.returns,
+//     netSales: dayData.netSales,
+//     shipping: dayData.shipping,
+//     extraFees: dayData.extraFees || 0,
+//     taxes: dayData.taxes,
+//     totalSales: dayData.totalSales
+//   };
+// });
+
+
+// //   // Calculate weekly financial totals for last 8 weeks
+// // let weeklyTotalOrders = 0;
+// // let weeklyTotalRevenue = 0;
+// // let weeklyTotalItems = 0;
+
+// // last8WeeksKeys.forEach(week => {
+// //   const weekData = weeklyStats[week];
+// //   if (weekData) {
+// //     weeklyTotalOrders += weekData.orderCount;
+// //     weeklyTotalRevenue += weekData.totalSales;
+// //     weeklyTotalItems += weekData.items;
+// //   }
+// // });
+
+// //   // Create daily financials array
+// //   const dailyFinancials = last7DaysKeys.map(date => {
+// //     const dayData = dailyStats[date] || this.getEmptyOrderStats();
+// //     return {
+// //       date,
+// //       total: dayData.total,
+// //       discounts: dayData.discounts,
+// //       returns: dayData.returns,
+// //       netSales: dayData.netSales,
+// //       shipping: dayData.shipping,
+// //       extraFees: dayData.extraFees || 0,
+// //       taxes: dayData.taxes,
+// //       totalSales: dayData.totalSales
+// //     };
+// //   });
+
+
+
+
+
+
+
+
+// // Add this after the weekly calculations in processOrdersData method
+// // In processOrdersData method - COMPLETE MONTHLY CALCULATIONS
+
+// // ==================== MONTHLY FINANCIAL CALCULATIONS ====================
+
+// // Calculate monthly financial totals from monthlyStats
+// let monthlyTotalOrders = 0;
+// let monthlyTotalRevenue = 0;
+// let monthlyTotalItems = 0;
+// let monthlyTotalDiscounts = 0;
+// let monthlyTotalReturns = 0;
+// let monthlyTotalExtraFees = 0;
+// let monthlyTotalNetSales = 0;
+// let monthlyTotalShipping = 0;
+// let monthlyTotalTaxes = 0;
+// let monthlyTotalTotalSales = 0;
+
+// // Calculate from monthlyStats (which has the processed financial data)
+// monthRanges.forEach(month => {
+//   const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+  
+//   monthlyTotalOrders += monthData.orderCount;
+//   monthlyTotalRevenue += monthData.total;           // Gross Sales
+//   monthlyTotalItems += monthData.items;
+//   monthlyTotalDiscounts += monthData.discounts;
+//   monthlyTotalReturns += monthData.returns;
+//   monthlyTotalExtraFees += monthData.extraFees || 0;
+//   monthlyTotalNetSales += monthData.netSales;
+//   monthlyTotalShipping += monthData.shipping;
+//   monthlyTotalTaxes += monthData.taxes;
+//   monthlyTotalTotalSales += monthData.totalSales;
+// });
+
+// // Create monthlyFinancials object with ALL calculated metrics
+// const monthlyFinancials = {
+//   totalOrders: monthlyTotalOrders,
+//   totalRevenue: monthlyTotalRevenue,
+//   totalItems: monthlyTotalItems,
+//   totalDiscounts: monthlyTotalDiscounts,
+//   totalReturns: monthlyTotalReturns,
+//   totalExtraFees: monthlyTotalExtraFees,
+//   totalNetSales: monthlyTotalNetSales,
+//   totalShipping: monthlyTotalShipping,
+//   totalTaxes: monthlyTotalTaxes,
+//   totalTotalSales: monthlyTotalTotalSales
+// };
+
+// // Create monthlyTotals object for the details section
+// const monthlyTotals: Record<string, any> = {};
+// monthRanges.forEach(month => {
+//   const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+//   monthlyTotals[month.key] = {
+//     total: monthData.total,
+//     discounts: monthData.discounts,
+//     returns: monthData.returns,
+//     netSales: monthData.netSales,
+//     shipping: monthData.shipping,
+//     taxes: monthData.taxes,
+//     extraFees: monthData.extraFees || 0,
+//     totalSales: monthData.totalSales,
+//     orderCount: monthData.orderCount,
+//     items: monthData.items
+//   };
+// });
+
+// // Debug to verify calculations
+// console.log('🔍 MONTHLY FINANCIAL CALCULATIONS:');
+// console.log('Gross Sales (totalRevenue):', monthlyTotalRevenue);
+// console.log('Discounts:', monthlyTotalDiscounts);
+// console.log('Returns:', monthlyTotalReturns);
+// console.log('Extra Fees:', monthlyTotalExtraFees);
+// console.log('Net Sales:', monthlyTotalNetSales);
+// console.log('Shipping:', monthlyTotalShipping);
+// console.log('Taxes:', monthlyTotalTaxes);
+// console.log('Total Sales:', monthlyTotalTotalSales);
+
+
+
+//   // Calculate overall totals from monthly data
+//   let overallStats = this.getEmptyOrderStats();
+//   monthRanges.forEach(month => {
+//     const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+//     overallStats = mergeStats(overallStats, monthData);
+//   });
+
+//   console.log(`📊 Overall totals: ${overallStats.orderCount} orders, ${this.formatCurrency(overallStats.totalSales, shopCurrency)} revenue`);
+
+//   // Format data for response
+//   const dailySales = last7DaysKeys.map(date => {
+//     const dayData = dailyStats[date] || this.getEmptyOrderStats();
+//     const customerData = dailyCustomerStats[date];
+    
+//     return {
+//       date,
+//       revenue: dayData.totalSales,
+//       orders: dayData.orderCount,
+//       items: dayData.items,
+//       fulfilled: dayData.fulfilled
+//     };
+//   });
+
+//   const weeklySales = last8WeeksKeys.map(week => {
+//     const weekData = weeklyStats[week] || this.getEmptyOrderStats();
+//     const customerData = weeklyCustomerStats[week];
+    
+//     return {
+//       week,
+//       revenue: weekData.totalSales,
+//       orders: weekData.orderCount,
+//       items: weekData.items
+//     };
+//   });
+
+//   const monthlySales = monthRanges.map(month => {
+//     const monthData = monthlyStats[month.key] || this.getEmptyOrderStats();
+//     const customerData = monthlyCustomerStats[month.key];
+    
+//     return {
+//       month: month.key,
+//       revenue: monthData.totalSales,
+//       orders: monthData.orderCount,
+//       items: monthData.items
+//     };
+//   });
+
+//   // Calculate percentage changes - SAME CALCULATIONS AS MAIN CODE
+//   const revenueChangeVsYesterday = yesterdayData.totalSales > 0 
+//     ? ((todayData.totalSales - yesterdayData.totalSales) / yesterdayData.totalSales) * 100 
+//     : (todayData.totalSales > 0 ? 100 : 0);
+
+//   const ordersChangeVsYesterday = yesterdayData.orderCount > 0 
+//     ? ((todayData.orderCount - yesterdayData.orderCount) / yesterdayData.orderCount) * 100 
+//     : (todayData.orderCount > 0 ? 100 : 0);
+
+//   const itemsChangeVsYesterday = yesterdayData.items > 0 
+//     ? ((todayData.items - yesterdayData.items) / yesterdayData.items) * 100 
+//     : (todayData.items > 0 ? 100 : 0);
+
+//   // const revenueChangeVsLastWeek = lastWeekData.totalSales > 0 
+//   //   ? ((todayData.totalSales - lastWeekData.totalSales) / lastWeekData.totalSales) * 100 
+//   //   : (todayData.totalSales > 0 ? 100 : 0);
+
+//  const getWeekOverWeekChange = () => {
+//   try {
+//     console.log('🔄 DEBUG: Starting Week-over-Week Calculation');
+    
+//     // Get the weekly data keys and REVERSE them to get most recent first
+//     const weeklyKeys = getLast8Weeks(shopTimezone).reverse(); // 🆕 ADD .reverse() here
+//     console.log('📅 DEBUG: Weekly keys (REVERSED - most recent first):', weeklyKeys);
+    
+//     // Debug: Show ALL weekly data available
+//     console.log('🔍 DEBUG: All Weekly Stats Data:');
+//     weeklyKeys.forEach((weekKey, index) => {
+//       const weekData = weeklyStats[weekKey];
+//       if (weekData) {
+//         console.log(`   ✅ Week ${index + 1} (${weekKey}):`, {
+//           revenue: weekData.totalSales,
+//           orders: weekData.orderCount,
+//           items: weekData.items,
+//           total: weekData.total,
+//           netSales: weekData.netSales
+//         });
+//       } else {
+//         console.log(`   ❌ Week ${index + 1} (${weekKey}): NO DATA`);
+//       }
+//     });
+    
+//     if (weeklyKeys.length < 2) {
+//       console.log('❌ DEBUG: Not enough weekly data available');
+//       return 0;
+//     }
+    
+//     // Current week (most recent week) - NOW CORRECT!
+//     const currentWeekKey = weeklyKeys[0]; // First item after reverse = most recent
+//     const currentWeekData = weeklyStats[currentWeekKey];
+//     const currentWeekRevenue = currentWeekData?.totalSales || 0;
+    
+//     // Previous week (week before current week) - NOW CORRECT!
+//     const previousWeekKey = weeklyKeys[1]; // Second item after reverse = previous week
+//     const previousWeekData = weeklyStats[previousWeekKey];
+//     const previousWeekRevenue = previousWeekData?.totalSales || 0;
+    
+//     console.log('🎯 DEBUG: Calculation Details (CORRECTED):');
+//     console.log(`   Current Week Key: "${currentWeekKey}"`);
+//     console.log(`   Current Week Revenue: ${currentWeekRevenue}`);
+//     console.log(`   Previous Week Key: "${previousWeekKey}"`);
+//     console.log(`   Previous Week Revenue: ${previousWeekRevenue}`);
+    
+//     // Calculate percentage change
+//     if (previousWeekRevenue > 0 && currentWeekRevenue > 0) {
+//       const change = ((currentWeekRevenue - previousWeekRevenue) / previousWeekRevenue) * 100;
+//       console.log(`   ✅ Change Calculation: ((${currentWeekRevenue} - ${previousWeekRevenue}) / ${previousWeekRevenue}) * 100 = ${change.toFixed(1)}%`);
+//       return change;
+//     } else if (currentWeekRevenue > 0 && previousWeekRevenue === 0) {
+//       console.log(`   ℹ️ Change: 100% (current week has revenue, previous week has none)`);
+//       return 100;
+//     } else if (currentWeekRevenue === 0 && previousWeekRevenue > 0) {
+//       const change = -100;
+//       console.log(`   ℹ️ Change: ${change}% (current week has no revenue, previous week had revenue)`);
+//       return change;
+//     } else {
+//       console.log(`   ℹ️ Change: 0% (both weeks have no revenue or both have zero revenue)`);
+//       return 0;
+//     }
+//   } catch (error) {
+//     console.error('❌ Error calculating week-over-week change:', error);
+//     return 0;
+//   }
+// };
+
+// const revenueChangeVsLastWeek = getWeekOverWeekChange();
+
+
+// console.log(`📈 Week-over-Week Calculation:`);
+//   console.log(`   Formula: ((${todayData.totalSales} - ${lastWeekData.totalSales}) / ${lastWeekData.totalSales}) * 100`);
+//   console.log(`   Result: ${revenueChangeVsLastWeek}%`);
+
+
+//   // Additional metrics
+//   const bestDay = dailySales.reduce((best, current) => 
+//     current.revenue > best.revenue ? current : best, 
+//     { date: '', revenue: 0, orders: 0, items: 0, fulfilled: 0 }
+//   );
+
+//   const averageDailyRevenue = dailySales.length > 0 
+//     ? dailySales.reduce((sum, day) => sum + day.revenue, 0) / dailySales.length 
+//     : 0;
+
+//   const fulfillmentRate = last7DaysStats.orderCount > 0 
+//     ? (last7DaysStats.fulfilled / last7DaysStats.orderCount) * 100 
+//     : 0;
+
+//   const last7DaysRepeatCustomerRate = last7DaysTotalCustomers > 0 
+//     ? (last7DaysRepeatCustomers / last7DaysTotalCustomers) * 100 
+//     : 0;
+
+//   // Financial rates
+//   const discountRate = overallStats.total > 0 ? (overallStats.discounts / overallStats.total) * 100 : 0;
+//   const shippingRate = overallStats.total > 0 ? (overallStats.shipping / overallStats.total) * 100 : 0;
+//   const taxRate = overallStats.total > 0 ? (overallStats.taxes / overallStats.total) * 100 : 0;
+//   const returnRate = overallStats.total > 0 ? (overallStats.returns / overallStats.total) * 100 : 0;
+
+//   // Chart data - USING EXTRACTED FORMATTING
+//   const weeklyRevenueTrend = weeklySales.map(week => ({
+//     week: formatWeekDisplay(week.week),
+//     revenue: week.revenue
+//   }));
+
+//   const monthlyComparison = monthlySales.map(month => ({
+//     month: month.month.split(' ')[0],
+//     revenue: month.revenue,
+//     orders: month.orders
+//   }));
+
+//   const dailyPerformance = dailySales.map(day => {
+//     const date = new Date(day.date);
+//     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+//     return {
+//       day: dayNames[date.getDay()],
+//       revenue: day.revenue,
+//       orders: day.orders
+//     };
+//   });
+
+
+
+
+
+
+
+// console.log('🔍 Starting mismatch calculations...');
+  
+//   // Today's mismatch
+//   const todayMismatchSummary = this.getTodayMismatchSummary({
+//     dailyFinancials: dailyFinancials,
+//     currentDateInShopTZ: currentDateInShopTZ
+//   });
+
+//   // Last 7 days mismatch
+//   const last7DaysMismatchSummary = this.calculateMismatchSummary(dailyFinancials, 'day');
+  
+//   // Weekly mismatch
+//   const weeklyMismatchSummary = this.calculateMismatchSummary(weeklyFinancials, 'week');
+  
+//   // Monthly mismatch - FIX THIS PART
+//   const monthlyData = monthRanges.map(month => {
+//     const monthData = monthlyTotals[month.key];
+//     if (monthData) {
+//       return {
+//         netSales: monthData.netSales || 0,
+//         shipping: monthData.shipping || 0,
+//         taxes: monthData.taxes || 0,
+//         extraFees: monthData.extraFees || 0,
+//         totalSales: monthData.totalSales || 0
+//       };
+//     }
+//     return null;
+//   }).filter(Boolean);
+  
+//   const monthlyMismatchSummary = this.calculateMismatchSummary(monthlyData, 'month');
+
+//   console.log('📊 FINAL MISMATCH RESULTS:');
+//   console.log('Today:', todayMismatchSummary);
+//   console.log('Last 7 Days:', last7DaysMismatchSummary);
+//   console.log('Weekly:', weeklyMismatchSummary);
+//   console.log('Monthly:', monthlyMismatchSummary);
+
+
+
+
+
+
+//   // Calculate additional metrics
+//   const averageOrderValue = overallStats.orderCount > 0 ? overallStats.totalSales / overallStats.orderCount : 0;
+//   const averageItemsPerOrder = overallStats.orderCount > 0 ? overallStats.items / overallStats.orderCount : 0;
+//   const customerRetentionRate = totalCustomerData.totalCustomers > 0 ? 
+//     (totalCustomerData.repeatedCustomers / totalCustomerData.totalCustomers) * 100 : 0;
+//   const averageOrderFrequency = totalCustomerData.totalCustomers > 0 ? 
+//     overallStats.orderCount / totalCustomerData.totalCustomers : 0;
+
+//   // Calculate last 7 days totals from dailySales
+//   const last7DaysOrders = (dailySales || []).reduce((sum, day) => sum + (day.orders || 0), 0);
+//   const last7DaysRevenue = (dailySales || []).reduce((sum, day) => sum + (day.revenue || 0), 0);
+//   const last7DaysItems = (dailySales || []).reduce((sum, day) => sum + (day.items || 0), 0);
+
+//   console.log(`🎯 Final analytics prepared for email`);
+
+
+
+//   console.log(`🎯 Final analytics prepared for email`);
+
+// // 🆕 CALCULATE DAYS LEFT IN CURRENT WEEK
+// // 🆕 SIMPLE CORRECT CALCULATION
+// const today = new Date();
+// const dayOfWeek = today.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+
+// // If it's Sunday (0), 0 days left. Otherwise, 7 - dayOfWeek
+// const daysLeftInWeek = dayOfWeek === 0 ? 0 : (7 - dayOfWeek);
+
+// console.log(`📅 Days left in current week: ${daysLeftInWeek} (today: ${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dayOfWeek]})`);
+
+
+
+//   // Return complete EmailOrderData with all required fields
+//   return {
+//     // Core metrics
+//     totalOrders: overallStats.orderCount,
+//     totalCustomers: totalCustomerData.totalCustomers,
+//     fulfillmentRate,
+//     totalRevenue: overallStats.total,
+//     netRevenue: overallStats.netSales,
+//     averageOrderValue,
+//     totalItems: overallStats.items,
+//     todayOrders: todayData.orderCount,
+//     todayRevenue: todayData.totalSales,
+//     todayItems: todayData.items,
+    
+//     // Event summaries
+//     todayEventSummary: todayEventSummary,
+//     last7DaysEventSummary: last7DaysEventSummary,
+//     last8WeeksEventSummary: last8WeeksEventSummary,
+//     last6MonthsEventSummary: last6MonthsEventSummary,
+    
+//     last7DaysOrders,
+//     last7DaysRevenue, 
+//     last7DaysItems,
+
+   
+
+
+
+// last7DaysTotalRevenue,
+//   last7DaysTotalDiscounts,
+//   last7DaysTotalReturns,
+//   last7DaysTotalExtraFees,
+//   last7DaysTotalNetSales,
+//   last7DaysTotalShipping,
+//   last7DaysTotalTaxes,
+//   last7DaysTotalTotalSales,
+  
+  
+
+
+
+//   weeklyTotalOrders: weeklyTotalOrders,
+//   weeklyTotalRevenue: weeklyTotalRevenue, // Map your calculated value to the type property
+//   weeklyTotalItems: weeklyTotalItems,
+  
+//   // Weekly Financial Breakdown - Use EXACT property names
+//   weeklyTotalDiscounts: weeklyTotalDiscounts,
+//   weeklyTotalReturns: weeklyTotalReturns,
+//   weeklyTotalExtraFees: weeklyTotalExtraFees,
+//   weeklyTotalNetSales: weeklyTotalNetSales,
+//   weeklyTotalShipping: weeklyTotalShipping,
+//   weeklyTotalTaxes: weeklyTotalTaxes,
+//   weeklyTotalTotalSales: weeklyTotalTotalSales,
+//   weeklyFinancials: weeklyFinancials,
+  
+//   // Daily Financial Data
+//   dailyFinancials: dailyFinancials,
+  
+  
+
+//   // ✅ CORRECT - Use the calculated values!
+// monthlyFinancials: monthlyFinancials,
+// monthRanges: monthRanges.map(m => m.key),
+// monthlyTotals: monthlyTotals,
+
+
+
+
+
+// todayMismatchSummary,
+//     last7DaysMismatchSummary,
+//     weeklyMismatchSummary,
+//     monthlyMismatchSummary,
+
+
+  
+
+
+//     // In your return statement, add:
+// daysLeftInWeek,
+
+
+
+//     ordersChangeVsYesterday,
+//     revenueChangeVsYesterday,
+//     itemsChangeVsYesterday,
+//     newCustomers: totalCustomerData.newCustomers,
+//     repeatCustomers: totalCustomerData.repeatedCustomers,
+//     customerRetentionRate,
+//     averageOrderFrequency,
+//     shopTimezone,
+//     shopCurrency,
+//     totalRefunds: overallStats.returns,
+//     totalExchanges: 0,
+//     totalPartialRefunds: 0,
+//     totalEvents: 0,
+//     ordersWithEvents: 0,
+//     netEventValue: 0,
+
+//     // Extended email fields
+//     fulfilledOrders: overallStats.fulfilled,
+//     unfulfilledOrders: overallStats.unfulfilled,
+//     totalDiscounts: overallStats.discounts,
+//     totalShipping: overallStats.shipping,
+//     totalTaxes: overallStats.taxes,
+//     totalReturns: overallStats.returns,
+//     returnFees: overallStats.returnFees || 0,
+//     discountRate,
+//     shippingRate,
+//     taxRate,
+//     returnRate,
+//     averageItemsPerOrder,
+//     dailySales,
+//     weeklySales,
+//     monthlySales,
+//     yesterdayRevenue: yesterdayData.totalSales,
+//     yesterdayOrders: yesterdayData.orderCount,
+//     yesterdayItems: yesterdayData.items,
+//     lastWeekRevenue: lastWeekData.totalSales,
+//     lastWeekOrders: lastWeekData.orderCount,
+//     lastWeekItems: lastWeekData.items,
+//     todayFulfilled: todayData.fulfilled,
+//     todayUnfulfilled: todayData.unfulfilled,
+//     last7DaysFulfilled: last7DaysStats.fulfilled,
+//     last7DaysUnfulfilled: last7DaysStats.unfulfilled,
+//     revenueChangeVsLastWeek,
+//     bestDay: { date: bestDay.date, revenue: bestDay.revenue, orders: bestDay.orders, items: bestDay.items },
+//     averageDailyRevenue,
+//     last7DaysTotalCustomers,
+//     last7DaysRepeatCustomers,
+//     last7DaysNewCustomers,
+//     last7DaysRepeatCustomerRate,
+//     customerTypeData: { new: totalCustomerData.newCustomers, repeat: totalCustomerData.repeatedCustomers },
+//     fulfillmentStatusData: { fulfilled: overallStats.fulfilled, unfulfilled: overallStats.unfulfilled },
+//     weeklyRevenueTrend,
+//     monthlyComparison,
+//     dailyPerformance,
+//     ordersLoaded: orders.length,
+//     currentDateInShopTZ,
+//   };
+
+// }
+
+//   private formatCurrency(amount: number, currency: string): string {
+//     return amount.toLocaleString('en-US', { 
+//       style: 'currency', 
+//       currency: currency,
+//       minimumFractionDigits: 2 
+//     });
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// // analyticsLoader.server.ts - OPTIMIZED VERSION
+// import { json } from "@remix-run/node";
+// import { authenticate } from "../shopify.server";
+// import { cacheManager } from "../utils/cacheManager";
+// import { makeCacheKey, nowISO, getMonthRanges, getLastNDays, getLast8Weeks } from "../utils/analyticsHelpers";
+// import { fetchOrdersSinceGraphQL, fetchOrdersForPeriodGraphQL } from "../services/shopifyGraphql.server";
+// import { processOrderToStats, mergeStats } from "../core/financialCalculator.server";
+// import { buildCustomerOrderMap, analyzeCustomerBehavior, calculateOverallCustomerData } from "../core/customerAnalytics.server";
+// import type { CachedAnalyticsData, OrderStats, CustomerData } from "../types/analytics";
+
+// // Memory optimization: Process orders in smaller batches with cleanup
+// async function processOrdersInBatches(
+//   orders: any[], 
+//   dailyTotals: Record<string, OrderStats & CustomerData>,
+//   weeklyTotals: Record<string, OrderStats & CustomerData>,
+//   monthlyTotals: Record<string, OrderStats & CustomerData>,
+//   totals: Record<string, OrderStats>,
+//   dailyCustomerAnalytics: Record<string, CustomerData>,
+//   weeklyCustomerAnalytics: Record<string, CustomerData>,
+//   monthlyCustomerAnalytics: Record<string, CustomerData>,
+//   shopTimeZone: string
+// ): Promise<number> {
+//   const BATCH_SIZE = 100; // Smaller batch size for memory management
+//   let processedCount = 0;
+//   let batchNumber = 0;
+
+//   for (let i = 0; i < orders.length; i += BATCH_SIZE) {
+//     batchNumber++;
+//     const batch = orders.slice(i, i + BATCH_SIZE);
+//     let batchStats = {
+//       daily: { ...dailyTotals },
+//       weekly: { ...weeklyTotals },
+//       monthly: { ...monthlyTotals },
+//       totals: { ...totals }
+//     };
+
+//     batch.forEach((order: any) => {
+//       try {
+//         const date = new Date(order.createdAt);
+//         const monthKey = date.toLocaleString("default", { month: "short", year: "numeric", timeZone: shopTimeZone });
+//         const dayKey = date.toLocaleDateString("en-CA", { timeZone: shopTimeZone });
         
-        if (order.fulfillment_status === "fulfilled" || order.fulfillments?.length > 0) {
-          todayFulfilled += 1;
-        } else {
-          todayUnfulfilled += 1;
-        }
-      }
-      
-      // Yesterday's metrics (in shop's timezone) - ONLY COUNT ONCE
-      if (isYesterday && !countedYesterdayOrders.has(order.id)) {
-        yesterdayRevenue += revenue;
-        yesterdayOrders += 1;
-        yesterdayItems += itemsInOrder;
-        countedYesterdayOrders.add(order.id);
-      }
-      
-      // Last week metrics (in shop's timezone) - ONLY COUNT ONCE
-      if (isLastWeekSameDay && !countedLastWeekOrders.has(order.id)) {
-        lastWeekRevenue += revenue;
-        lastWeekOrders += 1;
-        lastWeekItems += itemsInOrder;
-        countedLastWeekOrders.add(order.id);
-      }
+//         const monday = new Date(date);
+//         monday.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+//         const weekKey = `Week of ${monday.toLocaleDateString("en-CA", { timeZone: shopTimeZone })}`;
 
-      // Last 7 days fulfillment (in shop's timezone)
-      if (isLast7Days) {
-        if (order.fulfillment_status === "fulfilled" || order.fulfillments?.length > 0) {
-          last7DaysFulfilled += 1;
-        } else {
-          last7DaysUnfulfilled += 1;
-        }
-      }
+//         const orderStats = processOrderToStats(order);
 
-      // Daily aggregation (using shop's timezone)
-      if (!salesByDay[dateKey]) {
-        salesByDay[dateKey] = { revenue: 0, orders: 0, items: 0 };
-      }
-      salesByDay[dateKey].revenue += revenue;
-      salesByDay[dateKey].orders += 1;
-      salesByDay[dateKey].items += itemsInOrder;
+//         if (batchStats.totals[monthKey]) {
+//           batchStats.totals[monthKey] = mergeStats(batchStats.totals[monthKey], orderStats);
+//         }
 
-      // Weekly aggregation (using shop's timezone)
-      const weekStart = TimezoneHelper.getWeekStartDate(createdAtUTC, shopTimezone);
-      const weekKey = `${weekStart.getFullYear()}-W${Math.ceil((weekStart.getDate() + 6) / 7)}`;
-      
-      if (!salesByWeek[weekKey]) {
-        salesByWeek[weekKey] = { revenue: 0, orders: 0, items: 0 };
-      }
-      salesByWeek[weekKey].revenue += revenue;
-      salesByWeek[weekKey].orders += 1;
-      salesByWeek[weekKey].items += itemsInOrder;
+//         if (batchStats.daily[dayKey]) {
+//           batchStats.daily[dayKey] = {
+//             ...mergeStats(batchStats.daily[dayKey], orderStats),
+//             newCustomers: dailyCustomerAnalytics[dayKey]?.newCustomers || 0,
+//             repeatedCustomers: dailyCustomerAnalytics[dayKey]?.repeatedCustomers || 0,
+//             totalCustomers: dailyCustomerAnalytics[dayKey]?.totalCustomers || 0
+//           };
+//         }
 
-      // Monthly aggregation (using shop's timezone)
-      const monthKey = TimezoneHelper.getMonthKey(createdAtUTC, shopTimezone);
-      if (!salesByMonth[monthKey]) {
-        salesByMonth[monthKey] = { revenue: 0, orders: 0, items: 0 };
-      }
-      salesByMonth[monthKey].revenue += revenue;
-      salesByMonth[monthKey].orders += 1;
-      salesByMonth[monthKey].items += itemsInOrder;
-    });
+//         if (batchStats.weekly[weekKey]) {
+//           batchStats.weekly[weekKey] = {
+//             ...mergeStats(batchStats.weekly[weekKey], orderStats),
+//             newCustomers: weeklyCustomerAnalytics[weekKey]?.newCustomers || 0,
+//             repeatedCustomers: weeklyCustomerAnalytics[weekKey]?.repeatedCustomers || 0,
+//             totalCustomers: weeklyCustomerAnalytics[weekKey]?.totalCustomers || 0
+//           };
+//         }
 
-    // Customer analytics
-    const customerOrderCount: Record<string, number> = {};
-    orders.forEach((order: any) => {
-      const customerId = order.customer?.id;
-      if (customerId) {
-        customerOrderCount[customerId] = (customerOrderCount[customerId] || 0) + 1;
-      }
-    });
+//         if (batchStats.monthly[monthKey]) {
+//           batchStats.monthly[monthKey] = {
+//             ...mergeStats(batchStats.monthly[monthKey], orderStats),
+//             newCustomers: monthlyCustomerAnalytics[monthKey]?.newCustomers || 0,
+//             repeatedCustomers: monthlyCustomerAnalytics[monthKey]?.repeatedCustomers || 0,
+//             totalCustomers: monthlyCustomerAnalytics[monthKey]?.totalCustomers || 0
+//           };
+//         }
 
-    const totalCustomers = Object.keys(customerOrderCount).length;
-    const repeatCustomers = Object.values(customerOrderCount).filter(count => count > 1).length;
-    const repeatCustomerRate = totalCustomers > 0 ? (repeatCustomers / totalCustomers) * 100 : 0;
-    const newCustomers = totalCustomers - repeatCustomers;
+//         processedCount++;
+//       } catch (error) {
+//         console.error('Error processing individual order in batch:', error);
+//       }
+//     });
 
-    // Last 7 days customer analytics (using shop's timezone)
-    const last7DaysCustomers: Record<string, number> = {};
-    orders.forEach((order: any) => {
-      const createdAtUTC = new Date(order.created_at);
-      const dateKey = TimezoneHelper.getLocalDateKey(createdAtUTC, shopTimezone);
-      
-      if (last7DaysKeys.includes(dateKey)) {
-        const customerId = order.customer?.id;
-        if (customerId) {
-          last7DaysCustomers[customerId] = (last7DaysCustomers[customerId] || 0) + 1;
-        }
-      }
-    });
+//     // Merge batch results into main totals
+//     Object.keys(batchStats.daily).forEach(key => {
+//       if (dailyTotals[key]) {
+//         dailyTotals[key] = batchStats.daily[key];
+//       }
+//     });
 
-    const last7DaysTotalCustomers = Object.keys(last7DaysCustomers).length;
-    const last7DaysRepeatCustomers = Object.values(last7DaysCustomers).filter(count => count > 1).length;
-    const last7DaysRepeatCustomerRate = last7DaysTotalCustomers > 0 ? (last7DaysRepeatCustomers / last7DaysTotalCustomers) * 100 : 0;
-    const last7DaysNewCustomers = last7DaysTotalCustomers - last7DaysRepeatCustomers;
+//     Object.keys(batchStats.weekly).forEach(key => {
+//       if (weeklyTotals[key]) {
+//         weeklyTotals[key] = batchStats.weekly[key];
+//       }
+//     });
 
-    // Process daily data using shop's timezone
-    const dailySales = last7DaysKeys.map(date => {
-      const dayData = salesByDay[date] || { revenue: 0, orders: 0, items: 0 };
-      return {
-        date,
-        revenue: dayData.revenue,
-        orders: dayData.orders,
-        items: dayData.items
-      };
-    });
+//     Object.keys(batchStats.monthly).forEach(key => {
+//       if (monthlyTotals[key]) {
+//         monthlyTotals[key] = batchStats.monthly[key];
+//       }
+//     });
 
-    // Process weekly data (last 8 weeks)
-    const weeklyEntries = Object.entries(salesByWeek)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .slice(-8);
+//     Object.keys(batchStats.totals).forEach(key => {
+//       if (totals[key]) {
+//         totals[key] = batchStats.totals[key];
+//       }
+//     });
 
-    const weeklySales = weeklyEntries.map(([week, data]) => ({
-      week,
-      revenue: data.revenue,
-      orders: data.orders,
-      items: data.items
-    }));
+//     // Force garbage collection if available
+//     if (global.gc) {
+//       global.gc();
+//     }
 
-    // Process monthly data (last 6 months)
-    const monthlyEntries = Object.entries(salesByMonth)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .slice(-6);
+//     console.log(`✅ Processed batch ${batchNumber}: ${batch.length} orders (total: ${processedCount})`);
+//   }
 
-    const monthlySales = monthlyEntries.map(([month, data]) => ({
-      month,
-      revenue: data.revenue,
-      orders: data.orders,
-      items: data.items
-    }));
+//   return processedCount;
+// }
 
-    // Additional metrics
-    const fulfillmentRate = totalOrders > 0 ? (fulfilledOrders / totalOrders) * 100 : 0;
+// export async function analyticsLoader({ request }: { request: Request }) {
+//   let cacheUsed = false;
+//   let apiSuccess = false;
+//   let fetchMode: "incremental" | "full" = "full";
+//   let cacheHit = false;
+//   let fallbackUsed = false;
+//   const loaderStartTime = performance.now();
+//   let cacheOperationTime = 0;
+
+//   try {
+//     const { session } = await authenticate.admin(request);
+//     const shop = session.shop;
+//     const accessToken = session.accessToken!;
+
+//     // Get shop info using REST (compatible with both)
+//     const shopRes = await fetch(`https://${shop}/admin/api/${process.env.SHOPIFY_API_VERSION || '2024-04'}/shop.json`, {
+//       headers: {
+//         "X-Shopify-Access-Token": accessToken,
+//       },
+//     });
+
+//     if (!shopRes.ok) throw new Error(`Failed to fetch shop info: ${shopRes.status}`);
+//     const shopData = await shopRes.json();
+//     const shopTimeZone = shopData.shop.iana_timezone || "UTC";
+//     const shopCurrency = shopData.shop.currency || "USD";
+
+//     const monthRanges = getMonthRanges(shopTimeZone);
+//     const dailyKeys = getLastNDays(7, shopTimeZone);
+//     const weeklyKeys = getLast8Weeks(shopTimeZone);
+
+//     const initStats = (): OrderStats => ({
+//       total: 0,
+//       discounts: 0,
+//       returns: 0,
+//       netSales: 0,
+//       shipping: 0,
+//       taxes: 0,
+//       extraFees: 0,
+//       totalSales: 0,
+//       shippingRefunds: 0,
+//       netReturns: 0,
+//       totalRefund: 0,
+//       items: 0,
+//       fulfilled: 0,
+//       unfulfilled: 0,
+//       orderCount: 0,
+//       discountsReturned: 0,
+//       netDiscounts: 0,
+//       returnShippingCharges: 0,
+//       restockingFees: 0,
+//       returnFees: 0,
+//       refundDiscrepancy: 0,
+//       hasSubsequentEvents: false,
+//       eventSummary: null,
+//       refundsCount: 0,
+//       financialStatus: 'pending'
+//     });
+
+//     const totals: Record<string, OrderStats> = {};
+//     const dailyTotals: Record<string, OrderStats & CustomerData> = {};
+//     const weeklyTotals: Record<string, OrderStats & CustomerData> = {};
+//     const monthlyTotals: Record<string, OrderStats & CustomerData> = {};
+
+//     monthRanges.forEach((r) => {
+//       totals[r.key] = initStats();
+//       monthlyTotals[r.key] = {
+//         ...initStats(),
+//         newCustomers: 0,
+//         repeatedCustomers: 0,
+//         totalCustomers: 0
+//       };
+//     });
+
+//     dailyKeys.forEach((d) => (dailyTotals[d] = {
+//       ...initStats(),
+//       newCustomers: 0,
+//       repeatedCustomers: 0,
+//       totalCustomers: 0
+//     }));
+
+//     weeklyKeys.forEach((w) => (weeklyTotals[w] = {
+//       ...initStats(),
+//       newCustomers: 0,
+//       repeatedCustomers: 0,
+//       totalCustomers: 0
+//     }));
+
+//     const ordersKey = makeCacheKey(shop, "orders");
+//     const cacheStartTime = performance.now();
+//     const cacheEntry = await cacheManager.get<{ orders: any[]; lastUpdatedAt?: string }>(ordersKey);
+//     cacheOperationTime = performance.now() - cacheStartTime;
+
+//     const cacheHealth = cacheManager.healthReport();
+//     const shouldClean = cacheHealth.health < 0.7 || Math.random() < 0.1;
+
+//     if (shouldClean) {
+//       await cacheManager.cleanAllExpired();
+//       await cacheManager.enforceSizeLimit(50);
+//     }
+
+//     let allOrders: any[] = [];
+
+//     try {
+//       if (cacheEntry && cacheEntry.value.lastUpdatedAt) {
+//         cacheUsed = true;
+//         cacheHit = true;
+//         fetchMode = "incremental";
+        
+//         const apiStart = performance.now();
+//         const result = await fetchOrdersSinceGraphQL(shop, accessToken, cacheEntry.value.lastUpdatedAt, cacheEntry.value.orders);
+//         const apiTime = performance.now() - apiStart;
+
+//         if (result.orders.length > 0) {
+//           apiSuccess = true;
+//           const orderMap = new Map();
+//           cacheEntry.value.orders.forEach((order: any) => orderMap.set(order.id, order));
+//           result.orders.forEach((order: any) => orderMap.set(order.id, order));
+//           allOrders = Array.from(orderMap.values());
+//           await cacheManager.set(ordersKey, { orders: allOrders, lastUpdatedAt: nowISO() }, 30 * 60 * 1000);
+//         } else {
+//           allOrders = cacheEntry.value.orders;
+//           apiSuccess = true;
+//         }
+//       } else {
+//         fetchMode = "full";
+//       }
+
+//       if (fetchMode === "full") {
+//         console.log(`🔄 Fetching full order history via GraphQL for periods: ${monthRanges[0].start} to ${monthRanges[monthRanges.length - 1].end}`);
+//         allOrders = await fetchOrdersForPeriodGraphQL(
+//           shop,
+//           accessToken,
+//           monthRanges[0].start,
+//           monthRanges[monthRanges.length - 1].end
+//         );
+//         apiSuccess = true;
+//         await cacheManager.set(ordersKey, { orders: allOrders, lastUpdatedAt: nowISO() }, 30 * 60 * 1000);
+//       }
+//     } catch (error) {
+//       console.error('Error fetching orders:', error);
+//       if (cacheEntry && cacheEntry.value.orders) {
+//         allOrders = cacheEntry.value.orders;
+//         apiSuccess = true;
+//         fallbackUsed = true;
+//       } else {
+//         await cacheManager.remove(ordersKey);
+//         throw error;
+//       }
+//     }
+
+//     // Early return if no orders
+//     if (allOrders.length === 0) {
+//       console.log('⚠️ No orders found, returning empty analytics');
+//       const emptyResult: CachedAnalyticsData = {
+//         shop,
+//         totals,
+//         dailyTotals,
+//         weeklyTotals,
+//         monthlyTotals,
+//         totalOrders: 0,
+//         totalCustomerData: { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 },
+//         monthRanges: monthRanges.map((r) => r.key),
+//         dailyKeys,
+//         weeklyKeys,
+//         lastUpdated: new Date().toISOString(),
+//         shopTimeZone,
+//         shopCurrency
+//       };
+//       return json(emptyResult);
+//     }
+
+//     console.log(`🔧 Processing ${allOrders.length} orders in optimized batches...`);
+
+//     const timing = { customerAnalysis: 0, orderProcessing: 0, calculations: 0 };
+//     const customerStart = performance.now();
     
-    // Fix percentage change calculations to handle "no previous data" correctly
-    const revenueChangeVsYesterday = (yesterdayRevenue === 0 && todayRevenue > 0) 
-      ? 100 
-      : (yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0);
+//     const customerOrderMap = buildCustomerOrderMap(allOrders, shopTimeZone);
+//     const dailyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimeZone, dailyKeys, 'daily');
+//     const weeklyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimeZone, weeklyKeys, 'weekly');
+//     const monthlyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimeZone, monthRanges.map(r => r.key), 'monthly');
+    
+//     timing.customerAnalysis = performance.now() - customerStart;
 
-    const ordersChangeVsYesterday = (yesterdayOrders === 0 && todayOrders > 0) 
-      ? 100 
-      : (yesterdayOrders > 0 ? ((todayOrders - yesterdayOrders) / yesterdayOrders) * 100 : 0);
+//     const orderProcessStart = performance.now();
+    
+//     const processedCount = await processOrdersInBatches(
+//       allOrders,
+//       dailyTotals,
+//       weeklyTotals,
+//       monthlyTotals,
+//       totals,
+//       dailyCustomerAnalytics,
+//       weeklyCustomerAnalytics,
+//       monthlyCustomerAnalytics,
+//       shopTimeZone
+//     );
 
-    const itemsChangeVsYesterday = (yesterdayItems === 0 && todayItems > 0) 
-      ? 100 
-      : (yesterdayItems > 0 ? ((todayItems - yesterdayItems) / yesterdayItems) * 100 : 0);
+//     timing.orderProcessing = performance.now() - orderProcessStart;
 
-    const revenueChangeVsLastWeek = (lastWeekRevenue === 0 && todayRevenue > 0) 
-      ? 100 
-      : (lastWeekRevenue > 0 ? ((todayRevenue - lastWeekRevenue) / lastWeekRevenue) * 100 : 0);
+//     const calculationsStart = performance.now();
+//     const totalCustomerData = calculateOverallCustomerData(customerOrderMap);
+//     timing.calculations = performance.now() - calculationsStart;
 
-    const bestDay = dailySales.reduce((best, current) => 
-      current.revenue > best.revenue ? current : best, { date: '', revenue: 0, orders: 0, items: 0 }
+//     const totalLoaderTime = performance.now() - loaderStartTime;
+
+//     const result: CachedAnalyticsData = {
+//       shop,
+//       totals,
+//       dailyTotals,
+//       weeklyTotals,
+//       monthlyTotals,
+//       totalOrders: allOrders.length,
+//       totalCustomerData,
+//       monthRanges: monthRanges.map((r) => r.key),
+//       dailyKeys,
+//       weeklyKeys,
+//       lastUpdated: new Date().toISOString(),
+//       shopTimeZone,
+//       shopCurrency,
+//       _cacheInfo: {
+//         fetchMode,
+//         apiSuccess,
+//         cacheHealth: cacheManager.healthReport(),
+//         cacheStats: cacheManager.getStats(),
+//         cacheUsed,
+//         cacheHit,
+//         fallbackUsed,
+//         cacheTimestamp: cacheEntry?.timestamp,
+//         performance: {
+//           cacheOperationTime: parseFloat(cacheOperationTime.toFixed(2)),
+//           totalLoaderTime: parseFloat(totalLoaderTime.toFixed(2))
+//         }
+//       }
+//     };
+
+//     console.log(`✅ GraphQL analytics loader completed: ${processedCount}/${allOrders.length} orders processed successfully`);
+//     return json(result);
+
+//   } catch (error: unknown) {
+//     const errorMsg = `Loader error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+//     console.error('❌ Analytics loader error:', error);
+//     return json({
+//       shop: "unknown",
+//       error: errorMsg,
+//       userMessage: "Sorry for the inconvenience! Please try refreshing the page.",
+//       timestamp: new Date().toISOString()
+//     });
+//   }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// analyticsLoader.server.ts - WITH SAFE API CALLS
+import { json } from "@remix-run/node";
+import { authenticate } from "../shopify.server";
+import { cacheManager } from "../utils/cacheManager";
+import { makeCacheKey, nowISO, getMonthRanges, getLastNDays, getLast8Weeks } from "../utils/analyticsHelpers";
+import { fetchOrdersSinceGraphQL, fetchOrdersForPeriodGraphQL } from "../services/shopifyGraphql.server";
+import { processOrderToStats, mergeStats } from "../core/financialCalculator.server";
+import { buildCustomerOrderMap, analyzeCustomerBehavior, calculateOverallCustomerData } from "../core/customerAnalytics.server";
+import type { CachedAnalyticsData, OrderStats, CustomerData } from "../types/analytics";
+
+// Safe API Call Helper
+async function safeApiCall<T>(
+  fn: () => Promise<T>,
+  {
+    retries = 5,
+    initialDelay = 2000,
+    maxDelay = 20000,
+    backoff = 2,
+    label = "API Call"
+  }: { retries?: number; initialDelay?: number; maxDelay?: number; backoff?: number; label?: string } = {}
+): Promise<T> {
+  let attempt = 0;
+  let delay = initialDelay;
+
+  while (true) {
+    try {
+      const result = await fn();
+      return result;
+    } catch (err: any) {
+      attempt++;
+      if (attempt > retries) {
+        console.error(`❌ ${label} failed after ${retries} retries:`, err);
+        throw err;
+      }
+
+      // Handle rate limit headers or known Shopify transient errors
+      const waitReason =
+        err?.message?.includes("rate limit") ||
+        err?.message?.includes("502") ||
+        err?.message?.includes("503") ||
+        err?.message?.includes("504") ||
+        err?.message?.includes("ETIMEDOUT") ||
+        err?.message?.includes("ENOTFOUND")
+          ? "Rate limit or timeout"
+          : "Unknown";
+
+      console.warn(`⚠️ ${label} attempt ${attempt} failed (${waitReason}). Retrying in ${delay / 1000}s...`);
+      await new Promise((r) => setTimeout(r, delay));
+      delay = Math.min(delay * backoff, maxDelay);
+    }
+  }
+}
+
+// Memory optimization: Process orders in smaller batches with cleanup
+async function processOrdersInBatches(
+  orders: any[], 
+  dailyTotals: Record<string, OrderStats & CustomerData>,
+  weeklyTotals: Record<string, OrderStats & CustomerData>,
+  monthlyTotals: Record<string, OrderStats & CustomerData>,
+  totals: Record<string, OrderStats>,
+  dailyCustomerAnalytics: Record<string, CustomerData>,
+  weeklyCustomerAnalytics: Record<string, CustomerData>,
+  monthlyCustomerAnalytics: Record<string, CustomerData>,
+  shopTimeZone: string
+): Promise<number> {
+  const BATCH_SIZE = 100;
+  let processedCount = 0;
+  let batchNumber = 0;
+
+  for (let i = 0; i < orders.length; i += BATCH_SIZE) {
+    batchNumber++;
+    const batch = orders.slice(i, i + BATCH_SIZE);
+    let batchStats = {
+      daily: { ...dailyTotals },
+      weekly: { ...weeklyTotals },
+      monthly: { ...monthlyTotals },
+      totals: { ...totals }
+    };
+
+    batch.forEach((order: any) => {
+      try {
+        const date = new Date(order.createdAt);
+        const monthKey = date.toLocaleString("default", { month: "short", year: "numeric", timeZone: shopTimeZone });
+        const dayKey = date.toLocaleDateString("en-CA", { timeZone: shopTimeZone });
+        
+        const monday = new Date(date);
+        monday.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+        const weekKey = `Week of ${monday.toLocaleDateString("en-CA", { timeZone: shopTimeZone })}`;
+
+        const orderStats = processOrderToStats(order);
+
+        if (batchStats.totals[monthKey]) {
+          batchStats.totals[monthKey] = mergeStats(batchStats.totals[monthKey], orderStats);
+        }
+
+        if (batchStats.daily[dayKey]) {
+          batchStats.daily[dayKey] = {
+            ...mergeStats(batchStats.daily[dayKey], orderStats),
+            newCustomers: dailyCustomerAnalytics[dayKey]?.newCustomers || 0,
+            repeatedCustomers: dailyCustomerAnalytics[dayKey]?.repeatedCustomers || 0,
+            totalCustomers: dailyCustomerAnalytics[dayKey]?.totalCustomers || 0
+          };
+        }
+
+        if (batchStats.weekly[weekKey]) {
+          batchStats.weekly[weekKey] = {
+            ...mergeStats(batchStats.weekly[weekKey], orderStats),
+            newCustomers: weeklyCustomerAnalytics[weekKey]?.newCustomers || 0,
+            repeatedCustomers: weeklyCustomerAnalytics[weekKey]?.repeatedCustomers || 0,
+            totalCustomers: weeklyCustomerAnalytics[weekKey]?.totalCustomers || 0
+          };
+        }
+
+        if (batchStats.monthly[monthKey]) {
+          batchStats.monthly[monthKey] = {
+            ...mergeStats(batchStats.monthly[monthKey], orderStats),
+            newCustomers: monthlyCustomerAnalytics[monthKey]?.newCustomers || 0,
+            repeatedCustomers: monthlyCustomerAnalytics[monthKey]?.repeatedCustomers || 0,
+            totalCustomers: monthlyCustomerAnalytics[monthKey]?.totalCustomers || 0
+          };
+        }
+
+        processedCount++;
+      } catch (error) {
+        console.error('Error processing individual order in batch:', error);
+      }
+    });
+
+    // Merge batch results into main totals
+    Object.keys(batchStats.daily).forEach(key => {
+      if (dailyTotals[key]) {
+        dailyTotals[key] = batchStats.daily[key];
+      }
+    });
+
+    Object.keys(batchStats.weekly).forEach(key => {
+      if (weeklyTotals[key]) {
+        weeklyTotals[key] = batchStats.weekly[key];
+      }
+    });
+
+    Object.keys(batchStats.monthly).forEach(key => {
+      if (monthlyTotals[key]) {
+        monthlyTotals[key] = batchStats.monthly[key];
+      }
+    });
+
+    Object.keys(batchStats.totals).forEach(key => {
+      if (totals[key]) {
+        totals[key] = batchStats.totals[key];
+      }
+    });
+
+    // Safe garbage collection
+    if (typeof global.gc === "function") {
+      global.gc();
+    }
+
+    console.log(`✅ Processed batch ${batchNumber}: ${batch.length} orders (total: ${processedCount})`);
+
+    // Add delay every 5 batches to prevent event loop blocking
+    if (batchNumber % 5 === 0) {
+      console.log(`⏳ Taking a brief pause between batches...`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  }
+
+  return processedCount;
+}
+
+export async function analyticsLoader({ request }: { request: Request }) {
+  let cacheUsed = false;
+  let apiSuccess = false;
+  let fetchMode: "incremental" | "full" = "full";
+  let cacheHit = false;
+  let fallbackUsed = false;
+  const loaderStartTime = performance.now();
+  let cacheOperationTime = 0;
+
+  try {
+    const { session } = await authenticate.admin(request);
+    const shop = session.shop;
+    const accessToken = session.accessToken!;
+
+    // Get shop info with safe API call
+    const shopRes = await safeApiCall(
+      async () =>
+        fetch(`https://${shop}/admin/api/${process.env.SHOPIFY_API_VERSION || '2024-04'}/shop.json`, {
+          headers: { "X-Shopify-Access-Token": accessToken },
+        }),
+      { label: "Shop Info Fetch" }
     );
 
-    const averageDailyRevenue = dailySales.length > 0 
-      ? dailySales.reduce((sum, day) => sum + day.revenue, 0) / dailySales.length 
-      : 0;
+    if (!shopRes.ok) throw new Error(`Failed to fetch shop info: ${shopRes.status}`);
+    const shopData = await shopRes.json();
+    const shopTimeZone = shopData.shop.iana_timezone || "UTC";
+    const shopCurrency = shopData.shop.currency || "USD";
 
-    // Chart data
-    const customerTypeData = {
-      new: newCustomers,
-      repeat: repeatCustomers
-    };
+    const monthRanges = getMonthRanges(shopTimeZone);
+    const dailyKeys = getLastNDays(7, shopTimeZone);
+    const weeklyKeys = getLast8Weeks(shopTimeZone);
 
-    const fulfillmentStatusData = {
-      fulfilled: fulfilledOrders,
-      unfulfilled: unfulfilledOrders
-    };
+    const initStats = (): OrderStats => ({
+      total: 0,
+      discounts: 0,
+      returns: 0,
+      netSales: 0,
+      shipping: 0,
+      taxes: 0,
+      extraFees: 0,
+      totalSales: 0,
+      shippingRefunds: 0,
+      netReturns: 0,
+      totalRefund: 0,
+      items: 0,
+      fulfilled: 0,
+      unfulfilled: 0,
+      orderCount: 0,
+      discountsReturned: 0,
+      netDiscounts: 0,
+      returnShippingCharges: 0,
+      restockingFees: 0,
+      returnFees: 0,
+      refundDiscrepancy: 0,
+      hasSubsequentEvents: false,
+      eventSummary: null,
+      refundsCount: 0,
+      financialStatus: 'pending'
+    });
 
-    const weeklyRevenueTrend = weeklySales.map(week => ({
-      week: `Week ${week.week.split('-W')[1]}`,
-      revenue: week.revenue
+    const totals: Record<string, OrderStats> = {};
+    const dailyTotals: Record<string, OrderStats & CustomerData> = {};
+    const weeklyTotals: Record<string, OrderStats & CustomerData> = {};
+    const monthlyTotals: Record<string, OrderStats & CustomerData> = {};
+
+    monthRanges.forEach((r) => {
+      totals[r.key] = initStats();
+      monthlyTotals[r.key] = {
+        ...initStats(),
+        newCustomers: 0,
+        repeatedCustomers: 0,
+        totalCustomers: 0
+      };
+    });
+
+    dailyKeys.forEach((d) => (dailyTotals[d] = {
+      ...initStats(),
+      newCustomers: 0,
+      repeatedCustomers: 0,
+      totalCustomers: 0
     }));
 
-    const monthlyComparison = monthlySales.map(month => {
-      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthNumber = parseInt(month.month.split('-')[1]);
-      return {
-        month: monthNames[monthNumber - 1],
-        revenue: month.revenue,
-        orders: month.orders
+    weeklyKeys.forEach((w) => (weeklyTotals[w] = {
+      ...initStats(),
+      newCustomers: 0,
+      repeatedCustomers: 0,
+      totalCustomers: 0
+    }));
+
+    const ordersKey = makeCacheKey(shop, "orders");
+    const cacheStartTime = performance.now();
+    const cacheEntry = await cacheManager.get<{ orders: any[]; lastUpdatedAt?: string }>(ordersKey);
+    cacheOperationTime = performance.now() - cacheStartTime;
+
+    const cacheHealth = cacheManager.healthReport();
+    const shouldClean = cacheHealth.health < 0.7 || Math.random() < 0.1;
+
+    if (shouldClean) {
+      await cacheManager.cleanAllExpired();
+      await cacheManager.enforceSizeLimit(50);
+    }
+
+    let allOrders: any[] = [];
+
+    try {
+     if (cacheEntry && cacheEntry.value.lastUpdatedAt) {
+  cacheUsed = true;
+  cacheHit = true;
+  fetchMode = "incremental";
+  
+  const apiStart = performance.now();
+  const result = await safeApiCall(
+    () => fetchOrdersSinceGraphQL(shop, accessToken, cacheEntry.value.lastUpdatedAt!, cacheEntry.value.orders),
+    { label: "Incremental Orders Fetch" }
+  );
+  const apiTime = performance.now() - apiStart;
+
+  if (result.orders.length > 0) {
+    apiSuccess = true;
+    const orderMap = new Map();
+    cacheEntry.value.orders.forEach((order: any) => orderMap.set(order.id, order));
+    result.orders.forEach((order: any) => orderMap.set(order.id, order));
+    allOrders = Array.from(orderMap.values());
+    await cacheManager.set(ordersKey, { orders: allOrders, lastUpdatedAt: nowISO() }, 30 * 60 * 1000);
+  } else {
+    allOrders = cacheEntry.value.orders;
+    apiSuccess = true;
+  }
+
+      } else {
+        fetchMode = "full";
+      }
+
+      if (fetchMode === "full") {
+        console.log(`🔄 Fetching full order history via GraphQL for periods: ${monthRanges[0].start} to ${monthRanges[monthRanges.length - 1].end}`);
+        allOrders = await safeApiCall(
+          () => fetchOrdersForPeriodGraphQL(
+            shop,
+            accessToken,
+            monthRanges[0].start,
+            monthRanges[monthRanges.length - 1].end
+          ),
+          { label: "Full Orders Fetch" }
+        );
+        apiSuccess = true;
+        await cacheManager.set(ordersKey, { orders: allOrders, lastUpdatedAt: nowISO() }, 30 * 60 * 1000);
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      if (cacheEntry && cacheEntry.value.orders) {
+        console.warn("⚠️ Using cached orders due to API error, waiting briefly before fallback...");
+        await new Promise((r) => setTimeout(r, 3000));
+        allOrders = cacheEntry.value.orders;
+        apiSuccess = true;
+        fallbackUsed = true;
+      } else {
+        await cacheManager.remove(ordersKey);
+        throw error;
+      }
+    }
+
+    // Early return if no orders
+    if (allOrders.length === 0) {
+      console.log('⚠️ No orders found, returning empty analytics');
+      const emptyResult: CachedAnalyticsData = {
+        shop,
+        totals,
+        dailyTotals,
+        weeklyTotals,
+        monthlyTotals,
+        totalOrders: 0,
+        totalCustomerData: { newCustomers: 0, repeatedCustomers: 0, totalCustomers: 0 },
+        monthRanges: monthRanges.map((r) => r.key),
+        dailyKeys,
+        weeklyKeys,
+        lastUpdated: new Date().toISOString(),
+        shopTimeZone,
+        shopCurrency
       };
-    });
+      return json(emptyResult);
+    }
 
-    const dailyPerformance = dailySales.map(day => {
-      const date = new Date(day.date);
-      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      return {
-        day: dayNames[date.getDay()],
-        revenue: day.revenue,
-        orders: day.orders
-      };
-    });
+    console.log(`🔧 Processing ${allOrders.length} orders in optimized batches...`);
 
-    return {
-      // Core metrics
-      totalOrders,
-      fulfilledOrders,
-      unfulfilledOrders,
-      totalRevenue,
+    const timing = { customerAnalysis: 0, orderProcessing: 0, calculations: 0 };
+    const customerStart = performance.now();
+    
+    const customerOrderMap = buildCustomerOrderMap(allOrders, shopTimeZone);
+    const dailyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimeZone, dailyKeys, 'daily');
+    const weeklyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimeZone, weeklyKeys, 'weekly');
+    const monthlyCustomerAnalytics = analyzeCustomerBehavior(customerOrderMap, shopTimeZone, monthRanges.map(r => r.key), 'monthly');
+    
+    timing.customerAnalysis = performance.now() - customerStart;
 
-      // New financial metrics
-      totalDiscounts,
-      totalShipping,
-      totalTaxes,
-      totalReturns,
-      returnFees: totalReturns,
-      netRevenue,
-      discountRate,
-      shippingRate,
-      taxRate,
-      returnRate,
+    const orderProcessStart = performance.now();
+    
+    const processedCount = await processOrdersInBatches(
+      allOrders,
+      dailyTotals,
+      weeklyTotals,
+      monthlyTotals,
+      totals,
+      dailyCustomerAnalytics,
+      weeklyCustomerAnalytics,
+      monthlyCustomerAnalytics,
+      shopTimeZone
+    );
 
-      totalItems,
-      averageOrderValue,
-      averageItemsPerOrder,
-      dailySales,
-      weeklySales,
-      monthlySales,
-      todayRevenue,
-      todayOrders,
-      todayItems,
-      yesterdayRevenue,
-      yesterdayOrders,
-      yesterdayItems,
-      lastWeekRevenue,
-      lastWeekOrders,
-      lastWeekItems,
-      todayFulfilled,
-      todayUnfulfilled,
-      last7DaysFulfilled,
-      last7DaysUnfulfilled,
-      fulfillmentRate,
-      revenueChangeVsYesterday,
-      ordersChangeVsYesterday,
-      itemsChangeVsYesterday,
-      revenueChangeVsLastWeek,
-      bestDay,
-      averageDailyRevenue,
-      totalCustomers,
-      repeatCustomers,
-      newCustomers,
-      repeatCustomerRate,
-      last7DaysTotalCustomers,
-      last7DaysRepeatCustomers,
-      last7DaysNewCustomers, 
-      last7DaysRepeatCustomerRate,
-      customerTypeData,
-      fulfillmentStatusData,
-      weeklyRevenueTrend,
-      monthlyComparison,
-      dailyPerformance,
-      ordersLoaded: orders.length,
-      shopTimezone,
-      currentDateInShopTZ,
-      shopCurrency
+    timing.orderProcessing = performance.now() - orderProcessStart;
+
+    const calculationsStart = performance.now();
+    const totalCustomerData = calculateOverallCustomerData(customerOrderMap);
+    timing.calculations = performance.now() - calculationsStart;
+
+    const totalLoaderTime = performance.now() - loaderStartTime;
+
+    const result: CachedAnalyticsData = {
+      shop,
+      totals,
+      dailyTotals,
+      weeklyTotals,
+      monthlyTotals,
+      totalOrders: allOrders.length,
+      totalCustomerData,
+      monthRanges: monthRanges.map((r) => r.key),
+      dailyKeys,
+      weeklyKeys,
+      lastUpdated: new Date().toISOString(),
+      shopTimeZone,
+      shopCurrency,
+      _cacheInfo: {
+        fetchMode,
+        apiSuccess,
+        cacheHealth: cacheManager.healthReport(),
+        cacheStats: cacheManager.getStats(),
+        cacheUsed,
+        cacheHit,
+        fallbackUsed,
+        cacheTimestamp: cacheEntry?.timestamp,
+        performance: {
+          cacheOperationTime: parseFloat(cacheOperationTime.toFixed(2)),
+          totalLoaderTime: parseFloat(totalLoaderTime.toFixed(2))
+        }
+      }
     };
+
+    console.log(`✅ GraphQL analytics loader completed: ${processedCount}/${allOrders.length} orders processed successfully`);
+    return json(result);
+
+  } catch (error: unknown) {
+    const errorMsg = `Loader error: ${error instanceof Error ? error.message : 'Unknown error'}`;
+    console.error('❌ Analytics loader error:', error);
+    return json({
+      shop: "unknown",
+      error: errorMsg,
+      userMessage: "Sorry for the inconvenience! Please try refreshing the page.",
+      timestamp: new Date().toISOString()
+    });
   }
 }
