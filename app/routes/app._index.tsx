@@ -48270,10 +48270,5465 @@
 
 
 
+// import { json, LoaderFunctionArgs } from "@remix-run/node";
+// import { useLoaderData } from "@remix-run/react";
+// import { authenticate } from "../shopify.server";
+// import type { EventSummary, OrderEvent, EventDetectionData } from "../types/analytics";
+
+// // Helper function to convert a UTC date to store timezone and get YYYY-MM-DD
+// const getStoreLocalDateString = (utcDate: Date, timezone: string = 'America/New_York'): string => {
+//   return utcDate.toLocaleDateString('en-CA', { timeZone: timezone });
+// };
+
+// // Helper to check if a UTC date is today in store timezone
+// const isTodayInStoreTime = (utcDate: Date, storeTimezone: string = 'America/New_York'): boolean => {
+//   const nowUTC = new Date();
+//   const orderDateStore = getStoreLocalDateString(utcDate, storeTimezone);
+//   const todayStore = getStoreLocalDateString(nowUTC, storeTimezone);
+//   return orderDateStore === todayStore;
+// };
+
+// // Proportional discount allocation function (matches Shopify's rounding)
+// function allocateDiscountProportional(totalDiscount: number, subtotalA: number, subtotalB: number) {
+//   const totalSubtotal = subtotalA + subtotalB;
+  
+//   if (totalSubtotal === 0) {
+//     return { portionADiscount: 0, portionBDiscount: 0 };
+//   }
+  
+//   // Calculate first portion with rounding to match Shopify
+//   const portionADiscount = Math.round((totalDiscount * (subtotalA / totalSubtotal)) * 100) / 100;
+  
+//   // Derive second portion to ensure exact total
+//   const portionBDiscount = Math.round((totalDiscount - portionADiscount) * 100) / 100;
+  
+//   return {
+//     portionADiscount,
+//     portionBDiscount
+//   };
+// }
+
+// // Calculate order metrics following your exact logic
+// function calculateOrderMetrics(order: any) {
+//   // Calculate line items total (ORIGINAL prices before discounts)
+//   const lineItemsTotal = order.lineItems?.edges?.reduce((sum: number, li: any) => {
+//     return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//   }, 0) || 0;
+
+//   // Get discounts from the order data
+//   const discounts = parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+
+//   // Get refund discrepancy directly from Shopify
+//   const refundDiscrepancy = parseFloat(order.refundDiscrepancySet?.shopMoney?.amount || 0);
+
+//   // Calculate gross returns (sum of refunded line items)
+//   let grossReturns = 0;
+//   order.refunds?.forEach((refund: any) => {
+//     refund.refundLineItems?.edges?.forEach((edge: any) => {
+//       grossReturns += parseFloat(edge.node.subtotalSet?.shopMoney?.amount || 0);
+//     });
+//   });
+
+//   // Calculate refunded shipping - FROM REFUNDS DATA
+//   const refundedShipping = parseFloat(order.totalRefundedShippingSet?.shopMoney?.amount || 0);
+
+//   // Calculate shipping charges
+//   const shippingAmount = parseFloat(order.totalShippingPriceSet?.shopMoney?.amount || 0);
+//   const shippingCharges = shippingAmount - refundedShipping;
+
+//   // Calculate restocking fees and return shipping fees - FROM RETURNS DATA
+//   let totalRestockingFees = 0;
+//   let totalReturnShippingFees = 0;
+  
+//   order.returns?.nodes?.forEach((returnItem: any) => {
+//     returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
+//       if (lineItem.restockingFee?.amountSet?.shopMoney?.amount) {
+//         totalRestockingFees += parseFloat(lineItem.restockingFee.amountSet.shopMoney.amount);
+//       }
+//     });
+    
+//     // Calculate return shipping fees from returns
+//     returnItem.returnShippingFees?.forEach((shippingFee: any) => {
+//       if (shippingFee?.amountSet?.shopMoney?.amount) {
+//         totalReturnShippingFees += parseFloat(shippingFee.amountSet.shopMoney.amount);
+//       }
+//     });
+//   });
+
+//   // Calculate total return fees (restocking + return shipping)
+//   const totalReturnFees = totalRestockingFees + totalReturnShippingFees;
+
+//   // Calculate sales metrics using accurate data
+//   // Gross Sales = Original line items total (BEFORE any discounts)
+//   const grossSales = lineItemsTotal;
+
+//   // Net Sales = Gross Sales - Returns - Discounts
+//   let netSales = grossSales - grossReturns - discounts;
+
+//   // Handle refund discrepancies - OVER-refunds ADD to net sales, UNDER-refunds DEDUCT from net sales
+//   if (refundDiscrepancy > 0) {
+//     // Positive discrepancy = OVER-refund (we refunded more than we should have)
+//     netSales += refundDiscrepancy;
+//   } else if (refundDiscrepancy < 0) {
+//     // Negative discrepancy = UNDER-refund (we refunded less than we should have)
+//     netSales -= Math.abs(refundDiscrepancy);
+//   }
+
+//   // Calculate net returns (gross returns adjusted for discrepancies)
+//   let netReturns = grossReturns;
+//   if (refundDiscrepancy > 0) {
+//     netReturns = grossReturns - refundDiscrepancy;
+//   } else if (refundDiscrepancy < 0) {
+//     netReturns = grossReturns + Math.abs(refundDiscrepancy);
+//   }
+
+//   // Calculate taxes
+//   const taxes = parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+
+//   // TOTAL SALES = Net Sales + Shipping Charges + Return Fees + Taxes
+//   const totalSales = netSales + shippingCharges + totalReturnFees + taxes;
+
+//   return {
+//     ...order,
+//     // Core calculated metrics
+//     calculatedGrossSales: grossSales,
+//     calculatedGrossReturns: grossReturns,
+//     calculatedNetReturns: netReturns,
+//     calculatedRefundedShipping: refundedShipping,
+//     calculatedReturnShippingFees: totalReturnShippingFees,
+//     calculatedNetSales: netSales,
+//     calculatedRefundDiscrepancy: refundDiscrepancy,
+//     calculatedRestockingFees: totalRestockingFees,
+//     calculatedReturnFees: totalReturnFees,
+//     calculatedShippingCharges: shippingCharges,
+//     calculatedTaxes: taxes,
+//     calculatedTotalSales: totalSales,
+    
+//     // Add flags for display purposes
+//     hasOverRefund: refundDiscrepancy > 0,
+//     hasUnderRefund: refundDiscrepancy < 0
+//   };
+// }
+
+// // Process orders and separate gift card transactions with proportional discount allocation
+// const processOrders = (orders: any[]) => {
+//   const regularOrders: any[] = [];
+//   const giftCardOrders: any[] = [];
+//   const mixedOrdersRegular: any[] = [];
+//   const mixedOrdersGiftCard: any[] = [];
+
+//   orders.forEach((order: any) => {
+//     // Check if order contains gift cards
+//     const hasGiftCards = order.lineItems?.edges?.some((li: any) => 
+//       li.node.name?.toLowerCase().includes('gift card') || 
+//       li.node.title?.toLowerCase().includes('gift card') || 
+//       li.node.product?.title?.toLowerCase().includes('gift card')
+//     );
+
+//     if (!hasGiftCards) {
+//       // Pure regular order
+//       const processed = calculateOrderMetrics(order);
+//       regularOrders.push(processed);
+//     } else {
+//       // Order contains gift cards - check if mixed or pure gift card
+//       const giftCardLineItems = order.lineItems?.edges?.filter((li: any) => 
+//         li.node.name?.toLowerCase().includes('gift card') || 
+//         li.node.title?.toLowerCase().includes('gift card') || 
+//         li.node.product?.title?.toLowerCase().includes('gift card')
+//       );
+      
+//       const regularLineItems = order.lineItems?.edges?.filter((li: any) => 
+//         !li.node.name?.toLowerCase().includes('gift card') && 
+//         !li.node.title?.toLowerCase().includes('gift card') && 
+//         !li.node.product?.title?.toLowerCase().includes('gift card')
+//       );
+
+//       if (regularLineItems.length > 0 && giftCardLineItems.length > 0) {
+//         // Mixed order - use proportional discount allocation
+        
+//         // Calculate subtotals for each portion
+//         const regularSubtotal = regularLineItems.reduce((sum: number, li: any) => {
+//           return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//         }, 0);
+        
+//         const giftCardSubtotal = giftCardLineItems.reduce((sum: number, li: any) => {
+//           return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//         }, 0);
+        
+//         const totalOrderDiscount = parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+        
+//         // Allocate discount proportionally (matching Shopify's rounding)
+//         const discountAllocation = allocateDiscountProportional(
+//           totalOrderDiscount, 
+//           giftCardSubtotal, 
+//           regularSubtotal
+//         );
+        
+//         const giftCardDiscount = discountAllocation.portionADiscount;
+//         const regularDiscount = discountAllocation.portionBDiscount;
+
+//         // Helper function to create money set
+//         const createMoneySet = (amount: number, currencyCode: string = 'USD') => {
+//           return {
+//             shopMoney: { 
+//               amount: amount.toFixed(2), 
+//               currencyCode: currencyCode || order.totalPriceSet?.shopMoney?.currencyCode || 'USD' 
+//             }
+//           };
+//         };
+
+//         // Create regular portion with proportional discount
+//         const regularPortion = {
+//           ...order,
+//           lineItems: { edges: regularLineItems },
+//           isMixedOrderRegular: true,
+//           // Apply proportional discount
+//           totalDiscountsSet: createMoneySet(regularDiscount),
+//           calculatedDiscountAllocation: {
+//             method: 'proportional',
+//             regularDiscount,
+//             giftCardDiscount,
+//             totalOrderDiscount
+//           }
+//         };
+        
+//         // Create gift card portion with proportional discount and NO shipping
+//         const giftCardPortion = {
+//           ...order,
+//           lineItems: { edges: giftCardLineItems },
+//           isMixedOrderGiftCard: true,
+//           // Gift cards get NO shipping
+//           totalShippingPriceSet: createMoneySet(0),
+//           totalRefundedShippingSet: createMoneySet(0),
+//           // Apply proportional discount
+//           totalDiscountsSet: createMoneySet(giftCardDiscount),
+//           calculatedDiscountAllocation: {
+//             method: 'proportional',
+//             regularDiscount,
+//             giftCardDiscount,
+//             totalOrderDiscount
+//           }
+//         };
+
+//         const processedRegular = calculateOrderMetrics(regularPortion);
+//         const processedGiftCard = calculateOrderMetrics(giftCardPortion);
+        
+//         mixedOrdersRegular.push(processedRegular);
+//         mixedOrdersGiftCard.push(processedGiftCard);
+//       } else {
+//         // Pure gift card order
+//         const giftCardOrder = {
+//           ...order,
+//           // Gift cards get NO shipping
+//           totalShippingPriceSet: { shopMoney: { amount: "0.00", currencyCode: order.totalShippingPriceSet?.shopMoney?.currencyCode || "USD" } },
+//           totalRefundedShippingSet: { shopMoney: { amount: "0.00", currencyCode: order.totalRefundedShippingSet?.shopMoney?.currencyCode || "USD" } }
+//         };
+//         const processed = calculateOrderMetrics(giftCardOrder);
+//         processed.isGiftCardOrder = true;
+//         giftCardOrders.push(processed);
+//       }
+//     }
+//   });
+
+//   // Combine all regular orders (pure regular + mixed regular portions)
+//   const allRegularOrders = [...regularOrders, ...mixedOrdersRegular];
+//   const allGiftCardOrders = [...giftCardOrders, ...mixedOrdersGiftCard];
+  
+//   return {
+//     regularOrders: allRegularOrders,
+//     giftCardOrders: allGiftCardOrders
+//   };
+// };
+
+// // Calculate financial metrics
+// function calculateFinancialMetrics(orders: any[]): any {
+//   const totalGrossSales = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedGrossSales || 0);
+//   }, 0);
+
+//   const totalDiscounts = orders.reduce((sum: number, order: any) => {
+//     return sum + parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+//   }, 0);
+
+//   const totalNetReturns = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetReturns || 0);
+//   }, 0);
+
+//   const totalNetSales = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetSales || 0);
+//   }, 0);
+
+//   const totalShippingCharges = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedShippingCharges || 0);
+//   }, 0);
+
+//   // Return fees (restocking + return shipping)
+//   const totalReturnFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnFees || 0);
+//   }, 0);
+
+//   const totalTaxes = orders.reduce((sum: number, order: any) => {
+//     return sum + parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+//   }, 0);
+
+//   // TOTAL SALES = Net Sales + Shipping Charges + Return Fees + Taxes
+//   const totalSales = totalNetSales + totalShippingCharges + totalReturnFees + totalTaxes;
+
+//   const totalOrders = orders.length;
+//   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+//   // Breakdown of return fees
+//   const totalRestockingFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedRestockingFees || 0);
+//   }, 0);
+
+//   const totalReturnShippingFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnShippingFees || 0);
+//   }, 0);
+
+//   return {
+//     totalGrossSales,
+//     totalDiscounts,
+//     totalReturns: totalNetReturns,
+//     totalNetSales,
+//     totalShippingCharges,
+//     totalReturnFees,
+//     totalTaxes,
+//     totalSales,
+//     totalOrders,
+//     averageOrderValue,
+//     totalRestockingFees,
+//     totalReturnShippingFees,
+//     currencyCode: orders[0]?.totalPriceSet?.shopMoney?.currencyCode || 'USD'
+//   };
+// }
+
+
+
+
+
+// // Add this function right before your event detection loop
+// function debugReturnData(orders: any[]) {
+//   console.log('=== RETURN DATA DEBUG ===');
+  
+//   orders.forEach((order: any) => {
+//     const returns = order.returns?.nodes || [];
+//     if (returns.length > 0) {
+//       console.log(`Order ${order.name} has ${returns.length} returns:`, {
+//         orderId: order.id,
+//         returns: returns.map((ret: any) => ({
+//           id: ret.id,
+//           createdAt: ret.createdAt,
+//           hasRestockingFees: ret.returnLineItems?.nodes?.some((li: any) => li.restockingFee),
+//           hasReturnShipping: ret.returnShippingFees?.length > 0,
+//           hasTaxData: !!ret.totalTaxSet,
+//           lineItems: ret.returnLineItems?.nodes?.map((li: any) => ({
+//             hasRestockingFee: !!li.restockingFee,
+//             restockingFeeAmount: li.restockingFee?.amountSet?.shopMoney?.amount,
+//             totalPrice: li.totalPriceSet?.shopMoney?.amount
+//           }))
+//         }))
+//       });
+//     }
+//   });
+  
+//   console.log('=== END RETURN DATA DEBUG ===');
+// }
+
+// // EVENT DETECTION FUNCTIONS
+// function parseMoneyAmount(moneySet: any): number {
+//   if (!moneySet || !moneySet.shopMoney || !moneySet.shopMoney.amount) {
+//     return 0;
+//   }
+//   return parseFloat(moneySet.shopMoney.amount) || 0;
+// }
+
+// function detectRefundEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
+//   const events: OrderEvent[] = [];
+//   const orderRefunds = order.refunds || [];
+
+//   orderRefunds.forEach((refund: any) => {
+//     const refundDate = new Date(refund.createdAt);
+    
+//     if (refundDate >= periodStart && refundDate <= periodEnd && isTodayInStoreTime(refundDate, storeTimezone)) {
+//       const refundAmount = parseMoneyAmount(refund.totalRefundedSet);
+//       const totalOrderAmount = parseMoneyAmount(order.currentTotalPriceSet);
+//       const isFullRefund = Math.abs(refundAmount - totalOrderAmount) < 0.01;
+
+//       // Calculate refunded shipping from this refund
+//       const refundedShipping = parseMoneyAmount(refund.shipping) || 0;
+      
+//       // Calculate refunded taxes
+//       const refundedTaxes = refund.refundLineItems?.edges?.reduce((sum: number, edge: any) => {
+//         return sum + parseMoneyAmount(edge.node.totalTaxSet);
+//       }, 0) || 0;
+      
+//       // Calculate refund discrepancy if any
+//       const refundDiscrepancy = parseMoneyAmount(order.refundDiscrepancySet) || 0;
+
+//       if (isFullRefund) {
+//         events.push({
+//           orderId: order.id,
+//           orderName: order.name,
+//           eventType: 'refund',
+//           eventDate: refundDate.toISOString(),
+//           amount: -refundAmount,
+//           currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//           description: `Full refund processed`,
+//           details: { 
+//             refundId: refund.id, 
+//             note: refund.note,
+//             refundedShipping: -refundedShipping,
+//             refundedTaxes: -refundedTaxes,
+//             refundDiscrepancy: refundDiscrepancy,
+//             isFullRefund: true
+//           }
+//         });
+//       } else {
+//         events.push({
+//           orderId: order.id,
+//           orderName: order.name,
+//           eventType: 'partial_refund',
+//           eventDate: refundDate.toISOString(),
+//           amount: -refundAmount,
+//           currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//           description: `Partial refund: ${refundAmount.toFixed(2)}`,
+//           details: { 
+//             refundId: refund.id, 
+//             note: refund.note, 
+//             refundLineItems: refund.refundLineItems,
+//             refundedShipping: -refundedShipping,
+//             refundedTaxes: -refundedTaxes,
+//             refundDiscrepancy: refundDiscrepancy
+//           }
+//         });
+//       }
+
+//       // Add separate event for refunded shipping if any
+//       if (refundedShipping > 0) {
+//         events.push({
+//           orderId: order.id,
+//           orderName: order.name,
+//           eventType: 'refund_shipping',
+//           eventDate: refundDate.toISOString(),
+//           amount: -refundedShipping,
+//           currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//           description: `Refunded shipping`,
+//           details: { 
+//             refundId: refund.id,
+//             type: 'refund_shipping',
+//             amount: -refundedShipping
+//           }
+//         });
+//       }
+
+//       // Add separate event for refunded taxes if any
+//       if (refundedTaxes > 0) {
+//         events.push({
+//           orderId: order.id,
+//           orderName: order.name,
+//           eventType: 'refund_tax',
+//           eventDate: refundDate.toISOString(),
+//           amount: -refundedTaxes,
+//           currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//           description: `Refunded taxes`,
+//           details: { 
+//             refundId: refund.id,
+//             type: 'refund_tax',
+//             amount: -refundedTaxes
+//           }
+//         });
+//       }
+
+//       // Add event for refund discrepancy if any
+//       if (Math.abs(refundDiscrepancy) > 0.01) {
+//         events.push({
+//           orderId: order.id,
+//           orderName: order.name,
+//           eventType: refundDiscrepancy > 0 ? 'over_refund' : 'under_refund',
+//           eventDate: refundDate.toISOString(),
+//           amount: refundDiscrepancy > 0 ? -Math.abs(refundDiscrepancy) : Math.abs(refundDiscrepancy),
+//           currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//           description: refundDiscrepancy > 0 ? 'Over refund discrepancy' : 'Under refund discrepancy',
+//           details: { 
+//             refundId: refund.id,
+//             type: 'refund_discrepancy',
+//             amount: refundDiscrepancy
+//           }
+//         });
+//       }
+//     }
+//   });
+
+//   return events;
+// }
+
+// function detectExchangeEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
+//   console.log(`🔍 detectExchangeEvents CALLED for order: ${order.name}`);
+//   const events: OrderEvent[] = [];
+  
+//   // Check for exchanges in returns data - SAME LOGIC AS TODAY'S ORDERS
+//   const returns = order.returns?.nodes || [];
+  
+//   console.log(`📦 Order ${order.name} has ${returns.length} returns for exchange detection`);
+  
+//   returns.forEach((returnItem: any, index: number) => {
+//     // Use the same date handling as detectReturnEvents
+//     let returnDate: Date | null = null;
+//     let isValidDate = false;
+    
+//     try {
+//       if (returnItem.createdAt) {
+//         returnDate = new Date(returnItem.createdAt);
+//         isValidDate = !isNaN(returnDate.getTime());
+//       }
+//     } catch (error) {
+//       console.log(`❌ Invalid date for return in exchange detection:`, returnItem.createdAt);
+//       isValidDate = false;
+//     }
+    
+//     // If no valid date, use order updated date as fallback
+//     if (!isValidDate) {
+//       try {
+//         returnDate = new Date(order.updatedAt);
+//         isValidDate = !isNaN(returnDate.getTime());
+//       } catch (error) {
+//         console.log(`❌ No valid date available for exchange detection`);
+//         return;
+//       }
+//     }
+
+//     // Add null check here
+//     if (!returnDate) {
+//       console.log(`❌ No return date available for exchange detection`);
+//       return;
+//     }
+
+//     const isInPeriod = returnDate >= periodStart && returnDate <= periodEnd;
+//     const isToday = isTodayInStoreTime(returnDate, storeTimezone);
+    
+//     console.log(`📅 Exchange date check for ${order.name}:`, {
+//       returnDate: returnDate.toISOString(),
+//       isInPeriod,
+//       isToday,
+//       storeTimezone
+//     });
+
+//     // Check if this return represents an exchange (you might need to adjust this condition)
+//     // Look for returns that have specific characteristics of exchanges
+//     const mightBeExchange = returnItem.returnLineItems?.nodes?.length > 0 && 
+//                            returnItem.status !== 'cancelled'; // Adjust based on your exchange patterns
+    
+//     if (isInPeriod && isToday && mightBeExchange) {
+//       console.log(`🔄 Processing potential exchange for order ${order.name}`);
+//       debugReturnStructure(returnItem); // Add this line
+      
+//       // Calculate return value from return line items
+//       let returnValue = 0;
+//       returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
+//         returnValue += parseMoneyAmount(lineItem.totalPriceSet) || 0;
+//       });
+
+//       events.push({
+//         orderId: order.id,
+//         orderName: order.name,
+//         eventType: 'exchange',
+//         eventDate: returnDate.toISOString(),
+//         amount: -returnValue,
+//         currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//         description: `Exchange processed`,
+//         details: { returnId: returnItem.id, status: returnItem.status, returnValue }
+//       });
+//     } else {
+//       console.log(`❌ Exchange filtered out for ${order.name}:`, {
+//         reason: !isInPeriod ? 'Not in period' : !isToday ? 'Not today' : !mightBeExchange ? 'Not exchange pattern' : 'Unknown',
+//         returnDate: returnDate.toISOString()
+//       });
+//     }
+//   });
+
+//   console.log(`🔄 Total exchange events created for order ${order.name}: ${events.length}`);
+//   return events;
+// }
+
+
+
+
+
+
+
+// // Add this function to help debug return data structure
+// function debugReturnStructure(returnItem: any) {
+//   console.log('🔍 RETURN ITEM STRUCTURE DEBUG:', {
+//     id: returnItem.id,
+//     createdAt: returnItem.createdAt,
+//     status: returnItem.status,
+//     type: returnItem.type,
+//     notes: returnItem.notes,
+//     adminNote: returnItem.adminNote,
+//     returnLineItems: returnItem.returnLineItems?.nodes?.map((li: any, index: number) => ({
+//       index,
+//       id: li.id,
+//       lineItemId: li.lineItemId,
+//       name: li.name,
+//       title: li.title,
+//       quantity: li.quantity,
+//       reason: li.reason,
+//       availableFields: Object.keys(li),
+//       priceFields: {
+//         totalPriceSet: li.totalPriceSet,
+//         priceSet: li.priceSet,
+//         subtotalSet: li.subtotalSet,
+//         originalPriceSet: li.originalPriceSet
+//       }
+//     }))
+//   });
+// }
+
+
+// function findExchangeGroup(events: OrderEvent[], startIndex: number, processedIds: Set<number>): OrderEvent[] {
+//   const group: OrderEvent[] = [events[startIndex]];
+//   const startTime = new Date(events[startIndex].eventDate).getTime();
+//   const timeWindow = 10 * 60 * 1000; // 10 minute window for exchange events
+  
+//   // Look for related events within time window
+//   for (let i = startIndex + 1; i < events.length; i++) {
+//     if (processedIds.has(events[i].internalId!)) continue;
+    
+//     const eventTime = new Date(events[i].eventDate).getTime();
+//     if (eventTime - startTime <= timeWindow) {
+//       // Check if this event type fits exchange pattern
+//       if (isExchangeRelatedEvent(events[i])) {
+//         group.push(events[i]);
+//       }
+//     } else {
+//       break; // Outside time window
+//     }
+//   }
+  
+//   return group;
+// }
+
+// function isExchangeRelatedEvent(event: OrderEvent): boolean {
+//   const exchangeRelatedTypes = [
+//     'item_removed', 'item_added', 'product_return', 'restocking_fee', 
+//     'return_shipping_fee', 'partial_refund', 'exchange'
+//   ];
+//   return exchangeRelatedTypes.includes(event.eventType);
+// }
+
+
+// function createCombinedExchangeEvent(events: OrderEvent[]): OrderEvent {
+//   const firstEvent = events[0];
+//   const totalAmount = events.reduce((sum, event) => sum + event.amount, 0);
+  
+//   // Calculate components for details
+//   const returnedValue = events
+//     .filter(e => e.eventType === 'item_removed' || e.eventType === 'product_return')
+//     .reduce((sum, e) => sum + Math.min(0, e.amount), 0);
+  
+//   const newItemsValue = events
+//     .filter(e => e.eventType === 'item_added')
+//     .reduce((sum, e) => sum + Math.max(0, e.amount), 0);
+  
+//   const fees = events
+//     .filter(e => e.eventType === 'restocking_fee' || e.eventType === 'return_shipping_fee')
+//     .reduce((sum, e) => sum + e.amount, 0);
+  
+//   const refunds = events
+//     .filter(e => e.eventType === 'partial_refund')
+//     .reduce((sum, e) => sum + e.amount, 0);
+  
+//   return {
+//     orderId: firstEvent.orderId,
+//     orderName: firstEvent.orderName,
+//     eventType: 'exchange',
+//     eventDate: firstEvent.eventDate,
+//     amount: totalAmount,
+//     currencyCode: firstEvent.currencyCode,
+//     description: `Exchange processed (${events.length} actions)`,
+//     details: {
+//       isExchange: true,
+//       componentEvents: events.length,
+//       returnedValue: Math.abs(returnedValue),
+//       newItemsValue: newItemsValue,
+//       fees: fees,
+//       refunds: refunds,
+//       netValue: totalAmount,
+//       originalEvents: events.map(e => ({
+//         type: e.eventType,
+//         amount: e.amount,
+//         description: e.description
+//       }))
+//     }
+//   };
+// }
+
+
+// function detectReturnEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
+//   console.log(`🔍 detectReturnEvents CALLED for order: ${order.name}`);
+//   const events: OrderEvent[] = [];
+//   const returns = order.returns?.nodes || [];
+  
+//   console.log(`📦 Order ${order.name} has ${returns.length} returns`);
+  
+//   returns.forEach((returnItem: any, index: number) => {
+//     // Validate and safely parse the return date
+//     let returnDate: Date | null = null;
+//     let isValidDate = false;
+    
+//     try {
+//       if (returnItem.createdAt) {
+//         returnDate = new Date(returnItem.createdAt);
+//         isValidDate = !isNaN(returnDate.getTime());
+//       }
+//     } catch (error) {
+//       console.log(`❌ Invalid date for return:`, returnItem.createdAt);
+//       isValidDate = false;
+//     }
+    
+//     // If no valid date, use order updated date as fallback
+//     if (!isValidDate) {
+//       try {
+//         returnDate = new Date(order.updatedAt);
+//         isValidDate = !isNaN(returnDate.getTime());
+//         console.log(`🔄 Using order updated date as fallback for return: ${returnDate.toISOString()}`);
+//       } catch (error) {
+//         console.log(`❌ No valid date available for return`);
+//         return; // Skip this return if no valid date
+//       }
+//     }
+    
+//     console.log(`Return ${index + 1}:`, {
+//       id: returnItem.id,
+//       createdAt: returnItem.createdAt,
+//       returnDate: returnDate?.toISOString(),
+//       status: returnItem.status,
+//       hasRestockingFees: returnItem.returnLineItems?.nodes?.some((li: any) => li.restockingFee),
+//       hasReturnShipping: returnItem.returnShippingFees?.length > 0,
+//       restockingFees: returnItem.returnLineItems?.nodes?.map((li: any) => ({
+//         hasFee: !!li.restockingFee,
+//         amount: li.restockingFee?.amountSet?.shopMoney?.amount
+//       })),
+//       returnShippingFees: returnItem.returnShippingFees?.map((fee: any) => ({
+//         amount: fee?.amountSet?.shopMoney?.amount
+//       }))
+//     });
+    
+//     // TEMPORARY: Remove date filtering for debugging (but keep date validation)
+//     if (true && returnDate) { // Ensure returnDate exists
+//       console.log(`✅ Processing return for order ${order.name} (date filtering disabled)`);
+      
+//       // Calculate restocking fees
+//       let totalRestockingFees = 0;
+//       let restockingFeeItems = 0;
+      
+//       returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
+//         if (lineItem.restockingFee) {
+//           const feeAmount = parseMoneyAmount(lineItem.restockingFee.amountSet);
+//           totalRestockingFees += feeAmount;
+//           restockingFeeItems++;
+          
+//           console.log(`💰 Restocking fee detected: ${feeAmount} for line item ${lineItem.id}`);
+          
+//           // Create individual restocking fee event
+//           events.push({
+//             orderId: order.id,
+//             orderName: order.name,
+//             eventType: 'restocking_fee',
+//             eventDate: returnDate!.toISOString(), // Use non-null assertion since we checked
+//             amount: feeAmount,
+//             currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//             description: `Restocking fee for item`,
+//             details: { 
+//               returnId: returnItem.id, 
+//               type: 'restocking_fee', 
+//               amount: feeAmount,
+//               lineItemId: lineItem.id
+//             }
+//           });
+//         }
+//       });
+
+//       // Calculate return shipping fees
+//       let totalReturnShippingFees = 0;
+//       let returnShippingEvents = 0;
+      
+//       returnItem.returnShippingFees?.forEach((shippingFee: any) => {
+//         const shippingAmount = parseMoneyAmount(shippingFee.amountSet);
+//         totalReturnShippingFees += shippingAmount;
+//         returnShippingEvents++;
+        
+//         console.log(`🚚 Return shipping fee detected: ${shippingAmount}`);
+        
+//         // Create individual return shipping fee event
+//         events.push({
+//           orderId: order.id,
+//           orderName: order.name,
+//           eventType: 'return_shipping_fee',
+//           eventDate: returnDate!.toISOString(), // Use non-null assertion since we checked
+//           amount: shippingAmount,
+//           currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//           description: `Return shipping fee`,
+//           details: { 
+//             returnId: returnItem.id, 
+//             type: 'return_shipping_fee', 
+//             amount: shippingAmount
+//           }
+//         });
+//       });
+
+//       // Calculate returned products value
+//       let returnedProductsValue = 0;
+//       let returnedItemsCount = 0;
+      
+//       returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
+//         const itemValue = parseMoneyAmount(lineItem.totalPriceSet) || 0;
+//         returnedProductsValue += itemValue;
+//         returnedItemsCount++;
+//       });
+
+//       // Main return event for products
+//       if (returnedItemsCount > 0) {
+//         console.log(`📦 Product return detected: ${returnedItemsCount} items worth ${returnedProductsValue}`);
+        
+//         events.push({
+//           orderId: order.id,
+//           orderName: order.name,
+//           eventType: 'product_return',
+//           eventDate: returnDate!.toISOString(), // Use non-null assertion since we checked
+//           amount: -returnedProductsValue,
+//           currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//           description: `Products returned (${returnedItemsCount} items)`,
+//           details: { 
+//             returnId: returnItem.id, 
+//             type: 'product_return',
+//             itemsCount: returnedItemsCount,
+//             value: -returnedProductsValue
+//           }
+//         });
+//       }
+
+//       // Calculate and add tax impact from returns
+//       const returnTaxImpact = parseMoneyAmount(returnItem.totalTaxSet) || 0;
+//       if (returnTaxImpact !== 0) {
+//         console.log(`🧾 Return tax impact detected: ${returnTaxImpact}`);
+        
+//         events.push({
+//           orderId: order.id,
+//           orderName: order.name,
+//           eventType: 'return_tax',
+//           eventDate: returnDate!.toISOString(), // Use non-null assertion since we checked
+//           amount: -returnTaxImpact,
+//           currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//           description: `Tax adjustment from return`,
+//           details: { 
+//             returnId: returnItem.id, 
+//             type: 'tax_adjustment',
+//             amount: -returnTaxImpact
+//           }
+//         });
+//       }
+
+//       // Summary of what was detected for this return
+//       console.log(`📊 Return ${returnItem.id} summary:`, {
+//         restockingFees: totalRestockingFees,
+//         returnShippingFees: totalReturnShippingFees,
+//         returnedProductsValue: returnedProductsValue,
+//         taxImpact: returnTaxImpact,
+//         totalEventsCreated: events.length
+//       });
+//     } else {
+//       console.log(`❌ Return filtered out: no valid date available`);
+//     }
+//   });
+
+//   console.log(`🎯 Total events created for order ${order.name}: ${events.length}`);
+//   return events;
+// }
+
+
+
+
+
+
+
+
+
+// function detectTaxEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
+//   console.log(`🔍 detectTaxEvents CALLED for order: ${order.name}`);
+//   const events: OrderEvent[] = [];
+//   const orderUpdatedDate = new Date(order.updatedAt);
+
+//   // Check if taxes were modified today
+//   if (orderUpdatedDate >= periodStart && orderUpdatedDate <= periodEnd && isTodayInStoreTime(orderUpdatedDate, storeTimezone)) {
+//     const originalTax = parseMoneyAmount(order.totalTaxSet) || 0;
+//     const currentTax = parseMoneyAmount(order.currentTotalTaxSet) || 0;
+//     const taxDifference = currentTax - originalTax;
+
+//     console.log(`📊 Tax check for order ${order.name}:`, {
+//       originalTax,
+//       currentTax,
+//       taxDifference,
+//       updatedToday: isTodayInStoreTime(orderUpdatedDate, storeTimezone),
+//       orderUpdatedDate: orderUpdatedDate.toISOString()
+//     });
+
+//     if (Math.abs(taxDifference) > 0.01) {
+//       events.push({
+//         orderId: order.id,
+//         orderName: order.name,
+//         eventType: 'tax_adjustment',
+//         eventDate: orderUpdatedDate.toISOString(),
+//         amount: taxDifference,
+//         currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//         description: `Tax adjustment applied`,
+//         details: { 
+//           taxChange: taxDifference, 
+//           originalTax, 
+//           currentTax,
+//           type: 'tax_adjustment'
+//         }
+//       });
+      
+//       console.log(`✅ Tax adjustment event created for order ${order.name}: ${taxDifference}`);
+//     }
+//   }
+
+//   return events;
+// }
+
+
+// // NEW FUNCTION: Detect newly added line items to existing orders
+// function detectNewLineItems(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
+//   console.log(`🔍 detectNewLineItems CALLED for order: ${order.name}`);
+//   const events: OrderEvent[] = [];
+//   const orderUpdatedDate = new Date(order.updatedAt);
+
+//   // Check if order was modified today (but not created today)
+//   const orderCreatedDate = new Date(order.createdAt);
+//   if (orderUpdatedDate > orderCreatedDate && 
+//       isTodayInStoreTime(orderUpdatedDate, storeTimezone) && 
+//       !isTodayInStoreTime(orderCreatedDate, storeTimezone)) {
+    
+//     // Get all line items
+//     const lineItems = order.lineItems?.edges || [];
+    
+//     // Try to identify newly added line items by looking for items with later creation dates
+//     // or items that don't appear in the original order data
+//     lineItems.forEach((edge: any) => {
+//       const lineItem = edge.node;
+      
+//       // Check if this line item was likely added today
+//       // You might need to adjust this logic based on your actual data structure
+//       const lineItemCreatedAt = lineItem.createdAt ? new Date(lineItem.createdAt) : orderUpdatedDate;
+      
+//       if (lineItemCreatedAt >= periodStart && 
+//           lineItemCreatedAt <= periodEnd && 
+//           isTodayInStoreTime(lineItemCreatedAt, storeTimezone) &&
+//           lineItemCreatedAt > orderCreatedDate) {
+        
+//         const itemValue = parseMoneyAmount(lineItem.originalTotalSet) || 0;
+        
+//         if (itemValue > 0) {
+//           console.log(`🆕 New line item detected in order ${order.name}:`, {
+//             lineItemId: lineItem.id,
+//             name: lineItem.name,
+//             value: itemValue,
+//             createdAt: lineItemCreatedAt.toISOString()
+//           });
+          
+//           events.push({
+//             orderId: order.id,
+//             orderName: order.name,
+//             eventType: 'item_added',
+//             eventDate: lineItemCreatedAt.toISOString(),
+//             amount: itemValue,
+//             currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//             description: `New item added: ${lineItem.name}`,
+//             details: { 
+//               lineItemId: lineItem.id,
+//               lineItemName: lineItem.name,
+//               quantity: lineItem.quantity,
+//               value: itemValue,
+//               type: 'new_line_item'
+//             }
+//           });
+//         }
+//       }
+//     });
+//   }
+
+//   console.log(`🆕 New line items detected for order ${order.name}: ${events.length}`);
+//   return events;
+// }
+
+// function detectModificationEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
+//   const events: OrderEvent[] = [];
+//   const orderCreatedDate = new Date(order.createdAt);
+//   const orderUpdatedDate = new Date(order.updatedAt);
+
+//   // Check if order was modified today (but not created today)
+//   if (orderUpdatedDate > orderCreatedDate && isTodayInStoreTime(orderUpdatedDate, storeTimezone) && !isTodayInStoreTime(orderCreatedDate, storeTimezone)) {
+//     // Check for significant changes that indicate modifications
+//     const originalSubtotal = parseMoneyAmount(order.subtotalPriceSet);
+//     const currentSubtotal = parseMoneyAmount(order.currentSubtotalPriceSet);
+//     const subtotalDifference = currentSubtotal - originalSubtotal;
+
+//     if (Math.abs(subtotalDifference) > 0.01) {
+//       if (subtotalDifference > 0) {
+//         events.push({
+//           orderId: order.id,
+//           orderName: order.name,
+//           eventType: 'item_added',
+//           eventDate: orderUpdatedDate.toISOString(),
+//           amount: subtotalDifference,
+//           currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//           description: `Items added to order`,
+//           details: { subtotalChange: subtotalDifference, originalSubtotal, currentSubtotal }
+//         });
+//       } else {
+//         events.push({
+//           orderId: order.id,
+//           orderName: order.name,
+//           eventType: 'item_removed',
+//           eventDate: orderUpdatedDate.toISOString(),
+//           amount: subtotalDifference,
+//           currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//           description: `Items removed from order`,
+//           details: { subtotalChange: subtotalDifference, originalSubtotal, currentSubtotal }
+//         });
+//       }
+//     }
+
+//     // Check for discount changes
+//     const originalDiscounts = parseMoneyAmount(order.totalDiscountsSet);
+//     const currentDiscounts = parseMoneyAmount(order.currentTotalDiscountsSet);
+//     const discountDifference = currentDiscounts - originalDiscounts;
+
+//     if (Math.abs(discountDifference) > 0.01) {
+//       events.push({
+//         orderId: order.id,
+//         orderName: order.name,
+//         eventType: 'discount',
+//         eventDate: orderUpdatedDate.toISOString(),
+//         amount: -discountDifference, // Negative because discount reduces revenue
+//         currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
+//         description: `Discount modified`,
+//         details: { discountChange: discountDifference, originalDiscounts, currentDiscounts }
+//       });
+//     }
+//   }
+
+//   return events;
+// }
+
+// // Main function to detect all events for an order
+// function detectOrderEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
+//   const events: OrderEvent[] = [];
+
+//   // Skip orders created today (they're already in today's orders)
+//   const orderCreatedDate = new Date(order.createdAt);
+//   if (isTodayInStoreTime(orderCreatedDate, storeTimezone)) {
+//     return events;
+//   }
+
+//   // Detect all types of events
+//   events.push(...detectRefundEvents(order, periodStart, periodEnd, storeTimezone));
+//   events.push(...detectExchangeEvents(order, periodStart, periodEnd, storeTimezone));
+//   events.push(...detectReturnEvents(order, periodStart, periodEnd, storeTimezone));
+//   events.push(...detectModificationEvents(order, periodStart, periodEnd, storeTimezone));
+//   events.push(...detectTaxEvents(order, periodStart, periodEnd, storeTimezone));
+//   events.push(...detectNewLineItems(order, periodStart, periodEnd, storeTimezone)); // NEW: Detect newly added line items
+
+//   return events;
+// }
+
+// // Calculate event summary from events
+// function calculateEventSummary(events: OrderEvent[]): EventSummary {
+//   const summary: EventSummary = {
+//     refunds: { count: 0, value: 0 },
+//     exchanges: { count: 0, value: 0 },
+//     partialRefunds: { count: 0, value: 0 },
+//     modifications: { count: 0, value: 0 },
+//     returns: { count: 0, value: 0 },
+//     discounts: { count: 0, value: 0 },
+//     restockingFees: { count: 0, value: 0 },
+//     returnShippingFees: { count: 0, value: 0 },
+//     refundShipping: { count: 0, value: 0 },
+//     taxAdjustments: { count: 0, value: 0 },
+//     refundTaxes: { count: 0, value: 0 },
+//     newLineItems: { count: 0, value: 0 }, // NEW: Track newly added line items
+//     totalEvents: events.length,
+//     netValue: 0
+//   };
+
+//  events.forEach(event => {
+//   switch (event.eventType) {
+//     case 'refund':
+//       summary.refunds.count++;
+//       summary.refunds.value += event.amount;
+//       break;
+//     case 'exchange':
+//       summary.exchanges.count++;
+//       summary.exchanges.value += event.amount;
+//       break;
+//     case 'partial_refund':
+//       summary.partialRefunds.count++;
+//       summary.partialRefunds.value += event.amount;
+//       break;
+//     case 'item_added':
+//       // Only count as new line item if it's specifically a new line item addition
+//       if (event.details?.type === 'new_line_item') {
+//         summary.newLineItems.count++;
+//         summary.newLineItems.value += event.amount;
+//       } else {
+//         // Regular modification tracking
+//         summary.modifications.count++;
+//         summary.modifications.value += event.amount;
+//       }
+//       break;
+//     case 'item_removed':
+//       summary.modifications.count++;
+//       summary.modifications.value += event.amount;
+//       break;
+//     case 'product_return':
+//       summary.returns.count++;
+//       summary.returns.value += event.amount;
+//       break;
+//     case 'discount':
+//       summary.discounts.count++;
+//       summary.discounts.value += event.amount;
+//       break;
+//     case 'restocking_fee':
+//       summary.restockingFees.count++;
+//       summary.restockingFees.value += event.amount;
+//       break;
+//     case 'return_shipping_fee':
+//       summary.returnShippingFees.count++;
+//       summary.returnShippingFees.value += event.amount;
+//       break;
+//     case 'refund_shipping':
+//       summary.refundShipping.count++;
+//       summary.refundShipping.value += event.amount;
+//       break;
+//     case 'tax_adjustment':
+//     case 'return_tax':
+//       summary.taxAdjustments.count++;
+//       summary.taxAdjustments.value += event.amount;
+//       break;
+//     case 'refund_tax':
+//       summary.refundTaxes.count++;
+//       summary.refundTaxes.value += event.amount;
+//       break;
+//     case 'over_refund':
+//     case 'under_refund':
+//       summary.refunds.count++;
+//       summary.refunds.value += event.amount;
+//       break;
+//   }
+//   summary.netValue += event.amount;
+// });
+
+// return summary;
+// }
+
+// // Calculate event order metrics (MIRRORS TODAY'S ORDERS LOGIC)
+// function calculateEventOrderMetrics(orderEvents: OrderEvent[]): any[] {
+//   // Group events by order
+//   const eventsByOrder: { [orderId: string]: OrderEvent[] } = {};
+//   orderEvents.forEach(event => {
+//     if (!eventsByOrder[event.orderId]) {
+//       eventsByOrder[event.orderId] = [];
+//     }
+//     eventsByOrder[event.orderId].push(event);
+//   });
+
+//   // Calculate metrics for each order with events
+//   const orderMetrics = Object.entries(eventsByOrder).map(([orderId, events]) => {
+//     const firstEvent = events[0];
+    
+//     // Calculate financial impact from events
+//     const grossSalesImpact = events
+//       .filter(e => e.eventType === 'item_added')
+//       .reduce((sum, e) => sum + Math.max(0, e.amount), 0);
+    
+//     const returnsImpact = events
+//       .filter(e => e.eventType === 'refund' || e.eventType === 'partial_refund' || e.eventType === 'product_return')
+//       .reduce((sum, e) => sum + Math.min(0, e.amount), 0);
+    
+//     const discountsImpact = events
+//       .filter(e => e.eventType === 'discount')
+//       .reduce((sum, e) => sum + e.amount, 0);
+    
+//     const shippingImpact = events
+//       .filter(e => e.eventType === 'refund_shipping' || e.eventType === 'return_shipping_fee')
+//       .reduce((sum, e) => sum + e.amount, 0);
+    
+//     const returnFeesImpact = events
+//       .filter(e => e.eventType === 'restocking_fee' || e.eventType === 'return_shipping_fee')
+//       .reduce((sum, e) => sum + e.amount, 0);
+    
+//     const taxesImpact = events
+//       .filter(e => e.eventType === 'tax_adjustment' || e.eventType === 'return_tax' || e.eventType === 'refund_tax')
+//       .reduce((sum, e) => sum + e.amount, 0);
+
+//     const netSalesImpact = grossSalesImpact + returnsImpact + discountsImpact;
+//     const totalImpact = netSalesImpact + shippingImpact + returnFeesImpact + taxesImpact;
+
+//     return {
+//       orderId,
+//       orderName: firstEvent.orderName,
+//       currencyCode: firstEvent.currencyCode,
+//       events,
+//       // Core calculated metrics (MIRRORING TODAY'S ORDERS)
+//       calculatedGrossSales: grossSalesImpact,
+//       calculatedGrossReturns: Math.abs(returnsImpact),
+//       calculatedNetReturns: Math.abs(returnsImpact),
+//       calculatedRefundedShipping: events.filter(e => e.eventType === 'refund_shipping').reduce((sum, e) => sum + Math.abs(e.amount), 0),
+//       calculatedReturnShippingFees: events.filter(e => e.eventType === 'return_shipping_fee').reduce((sum, e) => sum + e.amount, 0),
+//       calculatedNetSales: netSalesImpact,
+//       calculatedRefundDiscrepancy: events.filter(e => e.eventType === 'over_refund' || e.eventType === 'under_refund').reduce((sum, e) => sum + e.amount, 0),
+//       calculatedRestockingFees: events.filter(e => e.eventType === 'restocking_fee').reduce((sum, e) => sum + e.amount, 0),
+//       calculatedReturnFees: returnFeesImpact,
+//       calculatedShippingCharges: shippingImpact,
+//       calculatedTaxes: taxesImpact,
+//       calculatedTotalSales: totalImpact,
+      
+//       // Flags (MIRRORING TODAY'S ORDERS)
+//       hasOverRefund: events.some(e => e.eventType === 'over_refund'),
+//       hasUnderRefund: events.some(e => e.eventType === 'under_refund'),
+//       eventTypes: [...new Set(events.map(e => e.eventType))]
+//     };
+//   });
+
+//   return orderMetrics;
+// }
+
+// // Calculate financial metrics for events (MIRRORING calculateFinancialMetrics)
+// // Calculate financial metrics for events (MIRRORING calculateFinancialMetrics)
+// function calculateEventFinancialMetrics(orderMetrics: any[]): any {
+//   const totalGrossSales = orderMetrics.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedGrossSales || 0);
+//   }, 0);
+
+//   const totalDiscounts = orderMetrics.reduce((sum: number, order: any) => {
+//     const discountEvents = order.events.filter((e: OrderEvent) => e.eventType === 'discount');
+//     return sum + discountEvents.reduce((discountSum: number, e: OrderEvent) => discountSum + Math.abs(e.amount), 0);
+//   }, 0);
+
+//   const totalNetReturns = orderMetrics.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetReturns || 0);
+//   }, 0);
+
+//   const totalNetSales = orderMetrics.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetSales || 0);
+//   }, 0);
+
+//   const totalShippingCharges = orderMetrics.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedShippingCharges || 0);
+//   }, 0);
+
+//   const totalReturnFees = orderMetrics.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnFees || 0);
+//   }, 0);
+
+//   const totalTaxes = orderMetrics.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedTaxes || 0);
+//   }, 0);
+
+//   const totalSales = totalNetSales + totalShippingCharges + totalReturnFees + totalTaxes;
+
+//   const totalOrders = orderMetrics.length;
+//   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+//   const totalRestockingFees = orderMetrics.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedRestockingFees || 0);
+//   }, 0);
+
+//   const totalReturnShippingFees = orderMetrics.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnShippingFees || 0);
+//   }, 0);
+
+//   return {
+//     totalGrossSales,
+//     totalDiscounts,
+//     totalReturns: totalNetReturns,
+//     totalNetSales,
+//     totalShippingCharges,
+//     totalReturnFees,
+//     totalTaxes,
+//     totalSales,
+//     totalOrders,
+//     averageOrderValue,
+//     totalRestockingFees,
+//     totalReturnShippingFees,
+//     currencyCode: orderMetrics[0]?.currencyCode || 'USD'
+//   };
+// }
+
+// // Add this function RIGHT AFTER your calculateEventSummary function
+
+// // Debug function to log all event details
+// function debugEventDetection(events: OrderEvent[], eventSummary: EventSummary) {
+//   console.log('=== EVENT DETECTION DEBUG ===');
+//   console.log(`Total events detected: ${events.length}`);
+//   console.log(`Orders with events: ${new Set(events.map(e => e.orderId)).size}`);
+  
+//   // Log event type breakdown
+//   const eventTypeCount: Record<string, number> = {};
+//   events.forEach(event => {
+//     eventTypeCount[event.eventType] = (eventTypeCount[event.eventType] || 0) + 1;
+//   });
+  
+//   console.log('Event type breakdown:', eventTypeCount);
+  
+//   // Log financial summary
+//   console.log('Financial Summary:', {
+//     totalEvents: eventSummary.totalEvents,
+//     netValue: eventSummary.netValue,
+//     refunds: eventSummary.refunds,
+//     exchanges: eventSummary.exchanges,
+//     partialRefunds: eventSummary.partialRefunds,
+//     modifications: eventSummary.modifications,
+//     returns: eventSummary.returns,
+//     discounts: eventSummary.discounts,
+//     restockingFees: eventSummary.restockingFees,
+//     returnShippingFees: eventSummary.returnShippingFees,
+//     refundShipping: eventSummary.refundShipping,
+//     taxAdjustments: eventSummary.taxAdjustments
+//   });
+  
+//   // Log detailed events for first 5 orders (to avoid console spam)
+//   const uniqueOrderIds = [...new Set(events.map(e => e.orderId))].slice(0, 5);
+//   uniqueOrderIds.forEach(orderId => {
+//     const orderEvents = events.filter(e => e.orderId === orderId);
+//     console.log(`Order ${orderId} events:`, orderEvents);
+//   });
+  
+//   console.log('=== END EVENT DEBUG ===');
+// }
+
+// export const loader = async ({ request }: LoaderFunctionArgs) => {
+//   const { admin, session } = await authenticate.admin(request);
+//   const shop = session.shop;
+
+//   // Get store timezone (default to Eastern Time)
+//   const storeTimezone = 'America/New_York';
+  
+//   // Get current UTC time
+//   const nowUTC = new Date();
+//   const todayStore = getStoreLocalDateString(nowUTC, storeTimezone);
+
+//   // Calculate reference dates for the queries - 7 months ago to cover all time ranges
+//   const sevenMonthsAgoUTC = new Date(nowUTC);
+//   sevenMonthsAgoUTC.setMonth(nowUTC.getMonth() - 7);
+
+//   // Fetch orders for all time periods - use UTC for the API query
+//   const dateQuery = `created_at:>=${sevenMonthsAgoUTC.toISOString()} created_at:<=${nowUTC.toISOString()}`;
+
+//   console.log('Fetching today\'s orders with pagination...');
+//   console.log('Store timezone:', storeTimezone);
+//   console.log('Today in store time:', todayStore);
+
+//   let allOrders: any[] = [];
+//   let hasNextPage = true;
+//   let afterCursor = null;
+//   let pageCount = 0;
+//   const maxPages = 50;
+
+//   while (hasNextPage && pageCount < maxPages) {
+//     pageCount++;
+    
+//     const paginationVariables: any = {
+//       query: dateQuery,
+//       first: 100
+//     };
+    
+//     if (afterCursor) {
+//       paginationVariables.after = afterCursor;
+//     }
+
+//     try {
+//       const response = await admin.graphql(
+//         `#graphql
+//         query TodayOrdersPaginated($query: String!, $first: Int!, $after: String) {
+//           orders(first: $first, query: $query, sortKey: CREATED_AT, reverse: true, after: $after) {
+//             pageInfo {
+//               hasNextPage
+//               endCursor
+//             }
+//             edges {
+//               cursor
+//               node {
+//                 id
+//                 name
+//                 createdAt
+//                 updatedAt
+//                 displayFinancialStatus
+//                 displayFulfillmentStatus
+//                 confirmed
+//                 cancelledAt
+//                 cancelReason
+//                 note
+//                 fullyPaid
+//                 totalReceivedSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalRefundedSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalOutstandingSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalDiscountsSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalShippingPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalRefundedShippingSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 refundDiscrepancySet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 returns(first: 7) {
+//                   nodes {
+//                     returnLineItems(first: 10) {
+//                       nodes {
+//                         ... on ReturnLineItem {
+//                           restockingFee {
+//                             amountSet {
+//                               shopMoney {
+//                                 amount
+//                                 currencyCode
+//                               }
+//                             }
+//                           }
+//                         }
+//                       }
+//                     }
+//                     returnShippingFees {
+//                       amountSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                     }
+//                   }
+//                 }
+//                 refunds {
+//                   id
+//                   createdAt
+//                   note
+//                   totalRefundedSet {
+//                     shopMoney {
+//                       amount
+//                       currencyCode
+//                     }
+//                   }
+//                   refundLineItems(first: 10) {
+//                     edges {
+//                       node {
+//                         lineItem {
+//                           id
+//                           name
+//                         }
+//                         quantity
+//                         subtotalSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                         totalTaxSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                       }
+//                     }
+//                   }
+//                 }
+//                 currentSubtotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 currentTotalTaxSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 currentTotalDiscountsSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 currentTotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 subtotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 lineItems(first: 50) {
+//                   edges {
+//                     node {
+//                       id
+//                       name
+//                       title
+//                       quantity
+//                       sku
+//                       variantTitle
+//                       product {
+//                         id
+//                         title
+//                       }
+//                       variant {
+//                         id
+//                         title
+//                         sku
+//                         price
+//                       }
+//                       originalUnitPriceSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       discountedUnitPriceSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       discountedTotalSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       originalTotalSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       taxLines {
+//                         priceSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                         rate
+//                         title
+//                       }
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         }`,
+//         { variables: paginationVariables }
+//       );
+
+//       const responseData: any = await response.json();
+      
+//       // Handle GraphQL errors
+//       if (responseData.errors && Array.isArray(responseData.errors)) {
+//         console.error('GraphQL Errors:', responseData.errors);
+//         throw new Error(`GraphQL error: ${JSON.stringify(responseData.errors)}`);
+//       }
+
+//       const ordersData = responseData?.data?.orders;
+//       if (!ordersData) {
+//         console.error('No orders data in response:', responseData);
+//         break;
+//       }
+
+//       const pageOrders = ordersData?.edges?.map((x: any) => x.node) ?? [];
+//       console.log(`Page ${pageCount}: Fetched ${pageOrders.length} orders`);
+
+//       allOrders = [...allOrders, ...pageOrders];
+//       hasNextPage = ordersData?.pageInfo?.hasNextPage || false;
+//       afterCursor = ordersData?.pageInfo?.endCursor;
+
+//       // Add a small delay to be respectful of API limits
+//       if (hasNextPage) {
+//         await new Promise(resolve => setTimeout(resolve, 200));
+//       }
+
+//       console.log(`Total orders so far: ${allOrders.length}, Has next page: ${hasNextPage}`);
+
+//     } catch (error: any) {
+//       console.error(`Error fetching page ${pageCount}:`, error);
+//       break;
+//     }
+//   }
+
+//   console.log(`Pagination complete. Total orders fetched: ${allOrders.length} over ${pageCount} pages`);
+
+//   // Filter orders for today using STORE LOCAL TIME
+//   const todayOrders = allOrders.filter((order: any) => {
+//     const orderDateUTC = new Date(order.createdAt);
+//     return isTodayInStoreTime(orderDateUTC, storeTimezone);
+//   });
+
+//   console.log(`Today's orders after filtering: ${todayOrders.length}`);
+
+//   // Process orders with gift card separation and proportional discount allocation
+//   const todayProcessed = processOrders(todayOrders);
+
+//   debugReturnData(allOrders);
+
+//   // EVENT DETECTION FOR PAST ORDERS
+//   const periodStart = new Date(sevenMonthsAgoUTC);
+//   const periodEnd = new Date(nowUTC);
+  
+//   const pastOrderEvents: OrderEvent[] = [];
+//   const ordersWithEvents = new Set<string>();
+
+//   allOrders.forEach((order: any) => {
+//     const events = detectOrderEvents(order, periodStart, periodEnd, storeTimezone);
+//     if (events.length > 0) {
+//       pastOrderEvents.push(...events);
+//       ordersWithEvents.add(order.id);
+//     }
+//   });
+
+//   const eventSummary = calculateEventSummary(pastOrderEvents);
+
+//   console.log(`Event detection: Found ${pastOrderEvents.length} events across ${ordersWithEvents.size} past orders`);
+
+
+//   // NEW: Calculate event metrics that mirror today's orders
+// const eventOrderMetrics = calculateEventOrderMetrics(pastOrderEvents);
+// const eventFinancialMetrics = calculateEventFinancialMetrics(eventOrderMetrics);
+
+
+// debugEventDetection(pastOrderEvents, eventSummary);
+
+
+//   // Calculate summaries for today's orders
+//   const todayRegularSummary = calculateFinancialMetrics(todayProcessed.regularOrders);
+//   const todayGiftCardSummary = calculateFinancialMetrics(todayProcessed.giftCardOrders);
+
+//   return json({ 
+//     today: todayProcessed,
+//     summaries: {
+//       regular: todayRegularSummary,
+//       giftCard: todayGiftCardSummary
+//     },
+//     // NEW: Event detection data
+//     events: {
+//       pastOrderEvents,
+//       eventSummary,
+//       ordersWithEventsCount: ordersWithEvents.size,
+//       totalEventsCount: pastOrderEvents.length,
+//        eventOrderMetrics,
+//     eventFinancialMetrics
+//     },
+//     summary: {
+//       orderCount: todayOrders.length,
+//       date: new Date().toLocaleDateString('en-US', { 
+//         weekday: 'long', 
+//         year: 'numeric', 
+//         month: 'long', 
+//         day: 'numeric',
+//         timeZone: storeTimezone 
+//       }),
+//       storeTimezone
+//     },
+//     debug: {
+//       totalFetched: allOrders.length,
+//       todayFiltered: todayOrders.length,
+//       regularOrders: todayProcessed.regularOrders.length,
+//       giftCardOrders: todayProcessed.giftCardOrders.length
+//     }
+//   });
+// };
+
+// // Helper function for event type colors
+// function getEventTypeColor(eventType: string): string {
+//   const colors: { [key: string]: string } = {
+//     refund: '#F44336',
+//     exchange: '#2196F3',
+//     partial_refund: '#FF9800',
+//     modification: '#9C27B0',
+//     return: '#795548',
+//     discount: '#607D8B',
+//     item_added: '#4CAF50',
+//     item_removed: '#F44336'
+//   };
+//   return colors[eventType] || '#666';
+// }
+
+// // Supporting components
+// function MetricsGrid({ metrics }: { metrics: any }) {
+//   return (
+//     <div style={{ 
+//       display: 'grid', 
+//       gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+//       gap: 16, 
+//       marginBottom: 20,
+//       padding: 16,
+//       backgroundColor: '#f5f5f5',
+//       borderRadius: 8
+//     }}>
+//       <MetricCard title="Gross Sales" value={metrics.totalGrossSales} currency={metrics.currencyCode} color="#4CAF50" />
+//       <MetricCard title="Discounts" value={-metrics.totalDiscounts} currency={metrics.currencyCode} color="#FF9800" />
+//       <MetricCard title="Returns" value={-metrics.totalReturns} currency={metrics.currencyCode} color="#F44336" />
+//       <MetricCard title="Net Sales" value={metrics.totalNetSales} currency={metrics.currencyCode} color="#2196F3" />
+//       <MetricCard title="Shipping Charges" value={metrics.totalShippingCharges} currency={metrics.currencyCode} color="#9C27B0" />
+//       <MetricCard title="Return Fees" value={metrics.totalReturnFees} currency={metrics.currencyCode} color="#795548" />
+//       <MetricCard title="Taxes" value={metrics.totalTaxes} currency={metrics.currencyCode} color="#607D8B" />
+//       <MetricCard title="Total Sales" value={metrics.totalSales} currency={metrics.currencyCode} color="#4CAF50" emphasis={true} />
+//     </div>
+//   );
+// }
+
+// function OrdersTable({ orders, currencyCode, isGiftCard = false }: { orders: any[], currencyCode: string, isGiftCard?: boolean }) {
+//   if (orders.length === 0) {
+//     return (
+//       <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+//         No {isGiftCard ? 'gift card ' : ''}orders today.
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
+//       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+//         <thead style={{ backgroundColor: '#f5f5f5' }}>
+//           <tr>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Order</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Time</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Status</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Total Sales</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Details</th>
+//           </tr>
+//         </thead>
+//         <tbody>
+//           {orders.map((order: any) => (
+//             <tr key={order.id} style={{ borderBottom: '1px solid #eee' }}>
+//               <td style={{ padding: '12px' }}>
+//                 <strong>{order.name}</strong>
+//                 {order.note && (
+//                   <div style={{ fontSize: '0.8em', color: '#666', marginTop: '4px' }}>
+//                     📝 {order.note}
+//                   </div>
+//                 )}
+//                 {order.isMixedOrderRegular && (
+//                   <div style={{ fontSize: '0.7em', color: '#FF9800', marginTop: '2px' }}>
+//                     Mixed Order (Regular Portion)
+//                   </div>
+//                 )}
+//                 {order.isMixedOrderGiftCard && (
+//                   <div style={{ fontSize: '0.7em', color: '#9C27B0', marginTop: '2px' }}>
+//                     Mixed Order (Gift Card Portion)
+//                   </div>
+//                 )}
+//                 {order.isGiftCardOrder && (
+//                   <div style={{ fontSize: '0.7em', color: '#9C27B0', marginTop: '2px' }}>
+//                     Gift Card Order
+//                   </div>
+//                 )}
+//                 {order.calculatedDiscountAllocation && (
+//                   <div style={{ fontSize: '0.7em', color: '#FF9800', marginTop: '2px' }}>
+//                     Proportional Discount Applied
+//                   </div>
+//                 )}
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 {new Date(order.createdAt).toLocaleTimeString('en-US', { 
+//                   hour: '2-digit', 
+//                   minute: '2-digit'
+//                 })}
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 <span style={{
+//                   padding: '4px 8px',
+//                   borderRadius: '4px',
+//                   fontSize: '0.8em',
+//                   backgroundColor: order.displayFinancialStatus === 'PAID' ? '#4CAF50' : 
+//                                  order.displayFinancialStatus === 'PENDING' ? '#FF9800' : '#F44336',
+//                   color: 'white'
+//                 }}>
+//                   {order.displayFinancialStatus}
+//                 </span>
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 <strong>
+//                   {order.calculatedTotalSales.toFixed(2)} {currencyCode}
+//                 </strong>
+//                 {order.calculatedGrossReturns > 0 && (
+//                   <div style={{ fontSize: '0.8em', color: '#F44336' }}>
+//                     Returns: -{order.calculatedGrossReturns.toFixed(2)}
+//                   </div>
+//                 )}
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 <div style={{ fontSize: '0.8em', color: '#666' }}>
+//                   <div>Net Sales: {order.calculatedNetSales.toFixed(2)}</div>
+//                   <div>Shipping: {order.calculatedShippingCharges.toFixed(2)}</div>
+//                   {order.calculatedReturnFees > 0 && (
+//                     <div style={{ color: '#795548' }}>
+//                       Return Fees: {order.calculatedReturnFees.toFixed(2)}
+//                     </div>
+//                   )}
+//                   <div>Taxes: {order.calculatedTaxes.toFixed(2)}</div>
+//                   {order.calculatedDiscountAllocation && (
+//                     <div style={{ color: '#FF9800' }}>
+//                       Discount: {parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0).toFixed(2)}
+//                     </div>
+//                   )}
+//                   {order.hasOverRefund && (
+//                     <div style={{ color: '#F44336' }}>Over Refund</div>
+//                   )}
+//                   {order.hasUnderRefund && (
+//                     <div style={{ color: '#FF9800' }}>Under Refund</div>
+//                   )}
+//                 </div>
+//               </td>
+//             </tr>
+//           ))}
+//         </tbody>
+//       </table>
+//     </div>
+//   );
+// }
+
+// function MetricCard({ title, value, currency, color = '#333', emphasis = false, isCount = false }: any) {
+//   const isNegative = value < 0 && !isCount;
+//   const displayValue = isCount ? value.toString() : Math.abs(value).toFixed(2);
+  
+//   return (
+//     <div style={{
+//       padding: '16px',
+//       backgroundColor: 'white',
+//       borderRadius: '8px',
+//       border: emphasis ? `2px solid ${color}` : '1px solid #ddd',
+//       textAlign: 'center',
+//       boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+//     }}>
+//       <div style={{ fontSize: '0.9em', fontWeight: 'bold', color: '#666', marginBottom: '8px' }}>
+//         {title}
+//       </div>
+//       <div style={{ fontSize: '1.2em', fontWeight: 'bold', color: isCount ? color : (isNegative ? '#F44336' : color) }}>
+//         {!isCount && isNegative ? '-' : ''}
+//         {currency && !isCount ? `${currency} ` : ''}
+//         {displayValue}
+//         {isCount && ' orders'}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function MetricItem({ title, value, currency, isCount = false }: any) {
+//   const displayValue = isCount ? value : value.toFixed(2);
+  
+//   return (
+//     <div>
+//       <div style={{ fontSize: '0.9em', opacity: 0.9 }}>{title}</div>
+//       <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>
+//         {!isCount && currency}{displayValue}{isCount && ' orders'}
+//       </div>
+//     </div>
+//   );
+// }
+
+// // SINGLE DEFAULT EXPORT
+// export default function OrdersToday() {
+//   const { today, summaries, summary, debug, events } = useLoaderData<typeof loader>();
+
+//   return (
+//     <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
+//       <h2>Today's Orders - {summary.date}</h2>
+//       <p style={{ color: '#666', marginBottom: 20 }}>
+//         Store Timezone: {summary.storeTimezone} • {summary.orderCount} orders today
+//         {debug && (
+//           <span style={{ fontSize: '0.8em', color: '#999' }}>
+//             {' '}({debug.regularOrders} regular + {debug.giftCardOrders} gift card)
+//           </span>
+//         )}
+//       </p>
+
+//       {/* Regular Orders */}
+//       <div style={{ marginBottom: 40 }}>
+//         <h3 style={{ borderBottom: '2px solid #2196F3', paddingBottom: 8, color: '#2196F3' }}>
+//           Regular Orders ({summaries.regular.totalOrders} orders)
+//         </h3>
+//         <MetricsGrid metrics={summaries.regular} />
+//         <OrdersTable orders={today.regularOrders} currencyCode={summaries.regular.currencyCode} />
+//       </div>
+
+//       {/* Gift Card Orders */}
+//       {today.giftCardOrders.length > 0 && (
+//         <div style={{ marginBottom: 40 }}>
+//           <h3 style={{ borderBottom: '2px solid #9C27B0', paddingBottom: 8, color: '#9C27B0' }}>
+//             Gift Card Orders ({summaries.giftCard.totalOrders} orders)
+//           </h3>
+//           <MetricsGrid metrics={summaries.giftCard} />
+//           <OrdersTable orders={today.giftCardOrders} currencyCode={summaries.giftCard.currencyCode} isGiftCard={true} />
+//         </div>
+//       )}
+
+//       {/* Combined Summary */}
+//       <div style={{ 
+//         padding: 20, 
+//         backgroundColor: '#4CAF50', 
+//         color: 'white', 
+//         borderRadius: 8,
+//         marginTop: 20
+//       }}>
+//         <h3 style={{ margin: '0 0 10px 0' }}>Combined Today's Performance</h3>
+//         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+//           <MetricItem 
+//             title="Total Sales" 
+//             value={summaries.regular.totalSales + summaries.giftCard.totalSales} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//           <MetricItem 
+//             title="Total Orders" 
+//             value={summaries.regular.totalOrders + summaries.giftCard.totalOrders} 
+//             isCount={true}
+//           />
+//           <MetricItem 
+//             title="Net Sales" 
+//             value={summaries.regular.totalNetSales + summaries.giftCard.totalNetSales} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//           <MetricItem 
+//             title="Shipping Charges" 
+//             value={summaries.regular.totalShippingCharges + summaries.giftCard.totalShippingCharges} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//           <MetricItem 
+//             title="Return Fees" 
+//             value={summaries.regular.totalReturnFees + summaries.giftCard.totalReturnFees} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//         </div>
+//       </div>
+
+//       {/* EVENT DETECTION SECTION - NEW */}
+    
+
+// {/* EVENT DETECTION SECTION - ENHANCED */}
+// <div style={{ marginBottom: 40, marginTop: 40 }}>
+//   <h2 style={{ borderBottom: '2px solid #FF9800', paddingBottom: 8, color: '#FF9800' }}>
+//     Today's Activity on Past Orders ({events.ordersWithEventsCount} orders with activity)
+//   </h2>
+  
+//   {events.totalEventsCount === 0 ? (
+//     <div style={{ 
+//       textAlign: 'center', 
+//       padding: '40px', 
+//       backgroundColor: '#fff3cd', 
+//       borderRadius: 8,
+//       border: '1px solid #ffeaa7'
+//     }}>
+//       <h3 style={{ color: '#856404', marginBottom: 10 }}>No Activity Detected</h3>
+//       <p style={{ color: '#856404' }}>No modifications, refunds, or returns detected on past orders today.</p>
+//     </div>
+//   ) : (
+//     <>
+//       {/* Event Financial Summary - NEW */}
+     
+
+// {/* Event Financial Summary - Show only what we detect */}
+// {/* Event Financial Summary - Show only what we detect */}
+// <div style={{ 
+//   display: 'grid', 
+//   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+//   gap: 16, 
+//   marginBottom: 20,
+//   padding: 16,
+//   backgroundColor: '#fff3cd',
+//   borderRadius: 8
+// }}>
+//   <MetricCard title="Total Events" value={events.eventSummary.totalEvents} currency="" color="#FF9800" isCount={true} />
+//   <MetricCard title="Net Value Impact" value={events.eventSummary.netValue} currency={summaries.regular.currencyCode} color="#FF9800" />
+//   <MetricCard title="Orders Affected" value={events.ordersWithEventsCount} currency="" color="#FF9800" isCount={true} />
+//   <MetricCard title="Refunds" value={events.eventSummary.refunds.value} currency={summaries.regular.currencyCode} color="#F44336" />
+//   <MetricCard title="Exchanges" value={events.eventSummary.exchanges.value} currency={summaries.regular.currencyCode} color="#2196F3" />
+//   <MetricCard title="Modifications" value={events.eventSummary.modifications.value} currency={summaries.regular.currencyCode} color="#9C27B0" />
+//   <MetricCard title="New Items Added" value={events.eventSummary.newLineItems.value} currency={summaries.regular.currencyCode} color="#4CAF50" /> {/* ADD THIS LINE */}
+//   <MetricCard title="Returns" value={events.eventSummary.returns.count} currency="" color="#795548" isCount={true} />
+//   <MetricCard title="Discounts" value={events.eventSummary.discounts.value} currency={summaries.regular.currencyCode} color="#607D8B" />
+// </div>
+
+// {/* Return Events Breakdown - Show actual detected return events */}
+// {events.eventSummary.returns.count > 0 && (
+//   <div style={{ 
+//     marginBottom: 20,
+//     padding: 16,
+//     backgroundColor: '#f3e5f5',
+//     borderRadius: 8,
+//     border: '1px solid #e1bee7'
+//   }}>
+//     <h4 style={{ marginBottom: 12, color: '#7b1fa2' }}>Return Events Detected</h4>
+    
+//     {/* Calculate actual return fees from events */}
+//     {(() => {
+//       const returnEvents = events.pastOrderEvents.filter(event => event.eventType === 'return');
+//       const restockingFees = returnEvents
+//         .filter(event => event.details?.type === 'restocking_fee')
+//         .reduce((sum, event) => sum + event.amount, 0);
+      
+//       const returnShippingFees = returnEvents
+//         .filter(event => event.details?.type === 'return_shipping')
+//         .reduce((sum, event) => sum + event.amount, 0);
+      
+//       const productReturns = returnEvents
+//         .filter(event => event.details?.type === 'product_return')
+//         .length;
+
+//       return (
+//         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+//           <div>
+//             <div style={{ fontSize: '0.9em', color: '#666' }}>Restocking Fees</div>
+//             <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#7b1fa2' }}>
+//               {summaries.regular.currencyCode} {restockingFees.toFixed(2)}
+//             </div>
+//             <div style={{ fontSize: '0.8em', color: '#666' }}>
+//               {returnEvents.filter(e => e.details?.type === 'restocking_fee').length} events
+//             </div>
+//           </div>
+//           <div>
+//             <div style={{ fontSize: '0.9em', color: '#666' }}>Return Shipping</div>
+//             <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#7b1fa2' }}>
+//               {summaries.regular.currencyCode} {returnShippingFees.toFixed(2)}
+//             </div>
+//             <div style={{ fontSize: '0.8em', color: '#666' }}>
+//               {returnEvents.filter(e => e.details?.type === 'return_shipping').length} events
+//             </div>
+//           </div>
+//           <div>
+//             <div style={{ fontSize: '0.9em', color: '#666' }}>Product Returns</div>
+//             <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#f44336' }}>
+//               {productReturns} returns
+//             </div>
+//             <div style={{ fontSize: '0.8em', color: '#666' }}>
+//               Items returned to inventory
+//             </div>
+//           </div>
+//           <div>
+//             <div style={{ fontSize: '0.9em', color: '#666' }}>Total Return Fees</div>
+//             <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#4CAF50' }}>
+//               {summaries.regular.currencyCode} {(restockingFees + returnShippingFees).toFixed(2)}
+//             </div>
+//             <div style={{ fontSize: '0.8em', color: '#666' }}>
+//               Combined fees
+//             </div>
+//           </div>
+//         </div>
+//       );
+//     })()}
+//   </div>
+// )}
+
+// {/* Enhanced Order Details with Return Fee Breakdown */}
+// {Array.from(new Set(events.pastOrderEvents.map(event => event.orderId))).map(orderId => {
+//   const orderEvents = events.pastOrderEvents.filter(event => event.orderId === orderId);
+//   const firstEvent = orderEvents[0];
+  
+//   // Calculate financial impact for this order
+//   const totalImpact = orderEvents.reduce((sum, event) => sum + event.amount, 0);
+  
+//   // Calculate return fee breakdown for this order
+//   const orderReturnEvents = orderEvents.filter(event => event.eventType === 'return');
+//   const orderRestockingFees = orderReturnEvents
+//     .filter(event => event.details?.type === 'restocking_fee')
+//     .reduce((sum, event) => sum + event.amount, 0);
+  
+//   const orderReturnShipping = orderReturnEvents
+//     .filter(event => event.details?.type === 'return_shipping')
+//     .reduce((sum, event) => sum + event.amount, 0);
+
+//   return (
+//     <details key={orderId} style={{ marginBottom: 15, border: '1px solid #ddd', borderRadius: 8 }}>
+//       <summary style={{ 
+//         cursor: 'pointer', 
+//         padding: '16px', 
+//         backgroundColor: '#f8f9fa',
+//         fontWeight: 'bold',
+//         fontSize: '16px'
+//       }}>
+//         <strong>{firstEvent.orderName}</strong>
+//         <span style={{ float: 'right', fontWeight: 'normal' }}>
+//           Impact: 
+//           <strong style={{ color: totalImpact >= 0 ? '#4CAF50' : '#F44336', marginLeft: '8px' }}>
+//             {totalImpact >= 0 ? '+' : ''}{totalImpact.toFixed(2)} {firstEvent.currencyCode}
+//           </strong>
+//           <span style={{ marginLeft: '16px', color: '#666' }}>
+//             {orderEvents.length} event{orderEvents.length > 1 ? 's' : ''}
+//           </span>
+//         </span>
+//       </summary>
+      
+//       <div style={{ padding: '16px', backgroundColor: 'white' }}>
+//         {/* Event List */}
+//         <div style={{ marginBottom: '16px' }}>
+//           <h4 style={{ marginBottom: '8px', color: '#333' }}>Event Details:</h4>
+//           {orderEvents.map((event, index) => (
+//             <div key={index} style={{ 
+//               padding: '8px', 
+//               marginBottom: '8px', 
+//               backgroundColor: '#f5f5f5',
+//               borderRadius: '4px',
+//               borderLeft: `4px solid ${getEventTypeColor(event.eventType)}`
+//             }}>
+//               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+//                 <div>
+//                   <span style={{
+//                     padding: '2px 6px',
+//                     borderRadius: '4px',
+//                     fontSize: '0.7em',
+//                     backgroundColor: getEventTypeColor(event.eventType),
+//                     color: 'white',
+//                     marginRight: '8px'
+//                   }}>
+//                     {event.eventType.replace('_', ' ').toUpperCase()}
+//                   </span>
+//                   {event.amount !== 0 && (
+//                     <strong style={{ color: event.amount >= 0 ? '#4CAF50' : '#F44336' }}>
+//                       {event.amount >= 0 ? '+' : ''}{event.amount.toFixed(2)} {event.currencyCode}
+//                     </strong>
+//                   )}
+//                   <span style={{ marginLeft: '8px' }}>{event.description}</span>
+//                 </div>
+//                 <div style={{ fontSize: '0.8em', color: '#666' }}>
+//                   {new Date(event.eventDate).toLocaleTimeString('en-US', { 
+//                     hour: '2-digit', 
+//                     minute: '2-digit'
+//                   })}
+//                 </div>
+//               </div>
+//               {event.details && (
+//                 <div style={{ fontSize: '0.7em', color: '#666', marginTop: '4px' }}>
+//                   {Object.entries(event.details).map(([key, value]) => (
+//                     <span key={key} style={{ marginRight: '8px' }}>
+//                       {key}: {String(value)}
+//                     </span>
+//                   ))}
+//                 </div>
+//               )}
+//             </div>
+//           ))}
+//         </div>
+
+//         {/* Financial Summary */}
+//         {(orderRestockingFees > 0 || orderReturnShipping > 0) && (
+//           <div style={{ 
+//             padding: '12px', 
+//             backgroundColor: '#e8f5e8', 
+//             borderRadius: '4px',
+//             border: '1px solid #4CAF50',
+//             marginBottom: '12px'
+//           }}>
+//             <h4 style={{ marginBottom: '8px', color: '#2e7d32' }}>Return Fees Summary:</h4>
+//             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px' }}>
+//               {orderRestockingFees > 0 && (
+//                 <div>
+//                   <div style={{ fontSize: '0.8em', color: '#666' }}>Restocking Fees</div>
+//                   <div style={{ color: '#7b1fa2', fontWeight: 'bold' }}>
+//                     +{orderRestockingFees.toFixed(2)} {firstEvent.currencyCode}
+//                   </div>
+//                 </div>
+//               )}
+//               {orderReturnShipping > 0 && (
+//                 <div>
+//                   <div style={{ fontSize: '0.8em', color: '#666' }}>Return Shipping</div>
+//                   <div style={{ color: '#7b1fa2', fontWeight: 'bold' }}>
+//                     +{orderReturnShipping.toFixed(2)} {firstEvent.currencyCode}
+//                   </div>
+//                 </div>
+//               )}
+//               {(orderRestockingFees > 0 || orderReturnShipping > 0) && (
+//                 <div>
+//                   <div style={{ fontSize: '0.8em', color: '#666' }}>Total Return Fees</div>
+//                   <div style={{ color: '#4CAF50', fontWeight: 'bold' }}>
+//                     +{(orderRestockingFees + orderReturnShipping).toFixed(2)} {firstEvent.currencyCode}
+//                   </div>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+//         )}
+//       </div>
+//     </details>
+//   );
+// })}
+     
+
+//       {/* Event Details Table (Original) */}
+//       <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
+//         <div style={{ padding: '12px', backgroundColor: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
+//           <h4 style={{ margin: 0, color: '#333' }}>All Events Timeline</h4>
+//         </div>
+//         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+//           <thead style={{ backgroundColor: '#f8f9fa' }}>
+//             <tr>
+//               <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Order</th>
+//               <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Event Type</th>
+//               <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Time</th>
+//               <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Amount</th>
+//               <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Description</th>
+//             </tr>
+//           </thead>
+//           <tbody>
+//             {events.pastOrderEvents.map((event: OrderEvent, index: number) => (
+//               <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
+//                 <td style={{ padding: '12px' }}>
+//                   <strong>{event.orderName}</strong>
+//                 </td>
+//                 <td style={{ padding: '12px' }}>
+//                   <span style={{
+//                     padding: '4px 8px',
+//                     borderRadius: '4px',
+//                     fontSize: '0.8em',
+//                     backgroundColor: getEventTypeColor(event.eventType),
+//                     color: 'white'
+//                   }}>
+//                     {event.eventType.replace('_', ' ').toUpperCase()}
+//                   </span>
+//                 </td>
+//                 <td style={{ padding: '12px' }}>
+//                   {new Date(event.eventDate).toLocaleTimeString('en-US', { 
+//                     hour: '2-digit', 
+//                     minute: '2-digit'
+//                   })}
+//                 </td>
+//                 <td style={{ padding: '12px' }}>
+//                   <strong style={{ color: event.amount >= 0 ? '#4CAF50' : '#F44336' }}>
+//                     {event.amount >= 0 ? '+' : ''}{event.amount.toFixed(2)} {event.currencyCode}
+//                   </strong>
+//                 </td>
+//                 <td style={{ padding: '12px' }}>
+//                   {event.description}
+//                   {event.details && (
+//                     <div style={{ fontSize: '0.8em', color: '#666', marginTop: '4px' }}>
+//                       {JSON.stringify(event.details)}
+//                     </div>
+//                   )}
+//                 </td>
+//               </tr>
+//             ))}
+//           </tbody>
+//         </table>
+//       </div>
+//     </>
+//   )}
+// </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { json, LoaderFunctionArgs } from "@remix-run/node";
+// import { useLoaderData } from "@remix-run/react";
+// import { authenticate } from "../shopify.server";
+
+// // Helper function to convert a UTC date to store timezone and get YYYY-MM-DD
+// const getStoreLocalDateString = (utcDate: Date, timezone: string = 'America/New_York'): string => {
+//   return utcDate.toLocaleDateString('en-CA', { timeZone: timezone });
+// };
+
+// // Helper to check if a UTC date is today in store timezone
+// const isTodayInStoreTime = (utcDate: Date, storeTimezone: string = 'America/New_York'): boolean => {
+//   const nowUTC = new Date();
+//   const orderDateStore = getStoreLocalDateString(utcDate, storeTimezone);
+//   const todayStore = getStoreLocalDateString(nowUTC, storeTimezone);
+//   return orderDateStore === todayStore;
+// };
+
+// // Proportional discount allocation function (matches Shopify's rounding)
+// function allocateDiscountProportional(totalDiscount: number, subtotalA: number, subtotalB: number) {
+//   const totalSubtotal = subtotalA + subtotalB;
+  
+//   if (totalSubtotal === 0) {
+//     return { portionADiscount: 0, portionBDiscount: 0 };
+//   }
+  
+//   // Calculate first portion with rounding to match Shopify
+//   const portionADiscount = Math.round((totalDiscount * (subtotalA / totalSubtotal)) * 100) / 100;
+  
+//   // Derive second portion to ensure exact total
+//   const portionBDiscount = Math.round((totalDiscount - portionADiscount) * 100) / 100;
+  
+//   return {
+//     portionADiscount,
+//     portionBDiscount
+//   };
+// }
+
+// // Calculate order metrics following your exact logic
+// function calculateOrderMetrics(order: any) {
+//   // Calculate line items total (ORIGINAL prices before discounts)
+//   const lineItemsTotal = order.lineItems?.edges?.reduce((sum: number, li: any) => {
+//     return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//   }, 0) || 0;
+
+//   // Get discounts from the order data
+//   const discounts = parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+
+//   // Get refund discrepancy directly from Shopify
+//   const refundDiscrepancy = parseFloat(order.refundDiscrepancySet?.shopMoney?.amount || 0);
+
+//   // Calculate gross returns (sum of refunded line items)
+//   let grossReturns = 0;
+//   order.refunds?.forEach((refund: any) => {
+//     refund.refundLineItems?.edges?.forEach((edge: any) => {
+//       grossReturns += parseFloat(edge.node.subtotalSet?.shopMoney?.amount || 0);
+//     });
+//   });
+
+//   // Calculate refunded shipping - FROM REFUNDS DATA
+//   const refundedShipping = parseFloat(order.totalRefundedShippingSet?.shopMoney?.amount || 0);
+
+//   // Calculate shipping charges
+//   const shippingAmount = parseFloat(order.totalShippingPriceSet?.shopMoney?.amount || 0);
+//   const shippingCharges = shippingAmount - refundedShipping;
+
+//   // Calculate restocking fees and return shipping fees - FROM RETURNS DATA
+//   let totalRestockingFees = 0;
+//   let totalReturnShippingFees = 0;
+  
+//   order.returns?.nodes?.forEach((returnItem: any) => {
+//     returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
+//       if (lineItem.restockingFee?.amountSet?.shopMoney?.amount) {
+//         totalRestockingFees += parseFloat(lineItem.restockingFee.amountSet.shopMoney.amount);
+//       }
+//     });
+    
+//     // Calculate return shipping fees from returns
+//     returnItem.returnShippingFees?.forEach((shippingFee: any) => {
+//       if (shippingFee?.amountSet?.shopMoney?.amount) {
+//         totalReturnShippingFees += parseFloat(shippingFee.amountSet.shopMoney.amount);
+//       }
+//     });
+//   });
+
+//   // Calculate total return fees (restocking + return shipping)
+//   const totalReturnFees = totalRestockingFees + totalReturnShippingFees;
+
+//   // Calculate sales metrics using accurate data
+//   // Gross Sales = Original line items total (BEFORE any discounts)
+//   const grossSales = lineItemsTotal;
+
+//   // Net Sales = Gross Sales - Returns - Discounts
+//   let netSales = grossSales - grossReturns - discounts;
+
+//   // Handle refund discrepancies - OVER-refunds ADD to net sales, UNDER-refunds DEDUCT from net sales
+//   if (refundDiscrepancy > 0) {
+//     // Positive discrepancy = OVER-refund (we refunded more than we should have)
+//     netSales += refundDiscrepancy;
+//   } else if (refundDiscrepancy < 0) {
+//     // Negative discrepancy = UNDER-refund (we refunded less than we should have)
+//     netSales -= Math.abs(refundDiscrepancy);
+//   }
+
+//   // Calculate net returns (gross returns adjusted for discrepancies)
+//   let netReturns = grossReturns;
+//   if (refundDiscrepancy > 0) {
+//     netReturns = grossReturns - refundDiscrepancy;
+//   } else if (refundDiscrepancy < 0) {
+//     netReturns = grossReturns + Math.abs(refundDiscrepancy);
+//   }
+
+//   // Calculate taxes
+//   const taxes = parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+
+//   // TOTAL SALES = Net Sales + Shipping Charges + Return Fees + Taxes
+//   const totalSales = netSales + shippingCharges + totalReturnFees + taxes;
+
+//   return {
+//     ...order,
+//     // Core calculated metrics
+//     calculatedGrossSales: grossSales,
+//     calculatedGrossReturns: grossReturns,
+//     calculatedNetReturns: netReturns,
+//     calculatedRefundedShipping: refundedShipping,
+//     calculatedReturnShippingFees: totalReturnShippingFees,
+//     calculatedNetSales: netSales,
+//     calculatedRefundDiscrepancy: refundDiscrepancy,
+//     calculatedRestockingFees: totalRestockingFees,
+//     calculatedReturnFees: totalReturnFees,
+//     calculatedShippingCharges: shippingCharges,
+//     calculatedTaxes: taxes,
+//     calculatedTotalSales: totalSales,
+    
+//     // Add flags for display purposes
+//     hasOverRefund: refundDiscrepancy > 0,
+//     hasUnderRefund: refundDiscrepancy < 0
+//   };
+// }
+
+// // Process orders and separate gift card transactions with proportional discount allocation
+// const processOrders = (orders: any[]) => {
+//   const regularOrders: any[] = [];
+//   const giftCardOrders: any[] = [];
+//   const mixedOrdersRegular: any[] = [];
+//   const mixedOrdersGiftCard: any[] = [];
+
+//   orders.forEach((order: any) => {
+//     // Check if order contains gift cards
+//     const hasGiftCards = order.lineItems?.edges?.some((li: any) => 
+//       li.node.name?.toLowerCase().includes('gift card') || 
+//       li.node.title?.toLowerCase().includes('gift card') || 
+//       li.node.product?.title?.toLowerCase().includes('gift card')
+//     );
+
+//     if (!hasGiftCards) {
+//       // Pure regular order
+//       const processed = calculateOrderMetrics(order);
+//       regularOrders.push(processed);
+//     } else {
+//       // Order contains gift cards - check if mixed or pure gift card
+//       const giftCardLineItems = order.lineItems?.edges?.filter((li: any) => 
+//         li.node.name?.toLowerCase().includes('gift card') || 
+//         li.node.title?.toLowerCase().includes('gift card') || 
+//         li.node.product?.title?.toLowerCase().includes('gift card')
+//       );
+      
+//       const regularLineItems = order.lineItems?.edges?.filter((li: any) => 
+//         !li.node.name?.toLowerCase().includes('gift card') && 
+//         !li.node.title?.toLowerCase().includes('gift card') && 
+//         !li.node.product?.title?.toLowerCase().includes('gift card')
+//       );
+
+//       if (regularLineItems.length > 0 && giftCardLineItems.length > 0) {
+//         // Mixed order - use proportional discount allocation
+        
+//         // Calculate subtotals for each portion
+//         const regularSubtotal = regularLineItems.reduce((sum: number, li: any) => {
+//           return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//         }, 0);
+        
+//         const giftCardSubtotal = giftCardLineItems.reduce((sum: number, li: any) => {
+//           return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//         }, 0);
+        
+//         const totalOrderDiscount = parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+        
+//         // Allocate discount proportionally (matching Shopify's rounding)
+//         const discountAllocation = allocateDiscountProportional(
+//           totalOrderDiscount, 
+//           giftCardSubtotal, 
+//           regularSubtotal
+//         );
+        
+//         const giftCardDiscount = discountAllocation.portionADiscount;
+//         const regularDiscount = discountAllocation.portionBDiscount;
+
+//         // Helper function to create money set
+//         const createMoneySet = (amount: number, currencyCode: string = 'USD') => {
+//           return {
+//             shopMoney: { 
+//               amount: amount.toFixed(2), 
+//               currencyCode: currencyCode || order.totalPriceSet?.shopMoney?.currencyCode || 'USD' 
+//             }
+//           };
+//         };
+
+//         // Create regular portion with proportional discount
+//         const regularPortion = {
+//           ...order,
+//           lineItems: { edges: regularLineItems },
+//           isMixedOrderRegular: true,
+//           // Apply proportional discount
+//           totalDiscountsSet: createMoneySet(regularDiscount),
+//           calculatedDiscountAllocation: {
+//             method: 'proportional',
+//             regularDiscount,
+//             giftCardDiscount,
+//             totalOrderDiscount
+//           }
+//         };
+        
+//         // Create gift card portion with proportional discount and NO shipping
+//         const giftCardPortion = {
+//           ...order,
+//           lineItems: { edges: giftCardLineItems },
+//           isMixedOrderGiftCard: true,
+//           // Gift cards get NO shipping
+//           totalShippingPriceSet: createMoneySet(0),
+//           totalRefundedShippingSet: createMoneySet(0),
+//           // Apply proportional discount
+//           totalDiscountsSet: createMoneySet(giftCardDiscount),
+//           calculatedDiscountAllocation: {
+//             method: 'proportional',
+//             regularDiscount,
+//             giftCardDiscount,
+//             totalOrderDiscount
+//           }
+//         };
+
+//         const processedRegular = calculateOrderMetrics(regularPortion);
+//         const processedGiftCard = calculateOrderMetrics(giftCardPortion);
+        
+//         mixedOrdersRegular.push(processedRegular);
+//         mixedOrdersGiftCard.push(processedGiftCard);
+//       } else {
+//         // Pure gift card order
+//         const giftCardOrder = {
+//           ...order,
+//           // Gift cards get NO shipping
+//           totalShippingPriceSet: { shopMoney: { amount: "0.00", currencyCode: order.totalShippingPriceSet?.shopMoney?.currencyCode || "USD" } },
+//           totalRefundedShippingSet: { shopMoney: { amount: "0.00", currencyCode: order.totalRefundedShippingSet?.shopMoney?.currencyCode || "USD" } }
+//         };
+//         const processed = calculateOrderMetrics(giftCardOrder);
+//         processed.isGiftCardOrder = true;
+//         giftCardOrders.push(processed);
+//       }
+//     }
+//   });
+
+//   // Combine all regular orders (pure regular + mixed regular portions)
+//   const allRegularOrders = [...regularOrders, ...mixedOrdersRegular];
+//   const allGiftCardOrders = [...giftCardOrders, ...mixedOrdersGiftCard];
+  
+//   return {
+//     regularOrders: allRegularOrders,
+//     giftCardOrders: allGiftCardOrders
+//   };
+// };
+
+// // Calculate financial metrics
+// function calculateFinancialMetrics(orders: any[]): any {
+//   const totalGrossSales = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedGrossSales || 0);
+//   }, 0);
+
+//   const totalDiscounts = orders.reduce((sum: number, order: any) => {
+//     return sum + parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+//   }, 0);
+
+//   const totalNetReturns = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetReturns || 0);
+//   }, 0);
+
+//   const totalNetSales = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetSales || 0);
+//   }, 0);
+
+//   const totalShippingCharges = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedShippingCharges || 0);
+//   }, 0);
+
+//   // Return fees (restocking + return shipping)
+//   const totalReturnFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnFees || 0);
+//   }, 0);
+
+//   const totalTaxes = orders.reduce((sum: number, order: any) => {
+//     return sum + parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+//   }, 0);
+
+//   // TOTAL SALES = Net Sales + Shipping Charges + Return Fees + Taxes
+//   const totalSales = totalNetSales + totalShippingCharges + totalReturnFees + totalTaxes;
+
+//   const totalOrders = orders.length;
+//   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+//   // Breakdown of return fees
+//   const totalRestockingFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedRestockingFees || 0);
+//   }, 0);
+
+//   const totalReturnShippingFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnShippingFees || 0);
+//   }, 0);
+
+//   return {
+//     totalGrossSales,
+//     totalDiscounts,
+//     totalReturns: totalNetReturns,
+//     totalNetSales,
+//     totalShippingCharges,
+//     totalReturnFees,
+//     totalTaxes,
+//     totalSales,
+//     totalOrders,
+//     averageOrderValue,
+//     totalRestockingFees,
+//     totalReturnShippingFees,
+//     currencyCode: orders[0]?.totalPriceSet?.shopMoney?.currencyCode || 'USD'
+//   };
+// }
+
+// export const loader = async ({ request }: LoaderFunctionArgs) => {
+//   const { admin, session } = await authenticate.admin(request);
+//   const shop = session.shop;
+
+//   // Get store timezone (default to Eastern Time)
+//   const storeTimezone = 'America/New_York';
+  
+//   // Get current UTC time
+//   const nowUTC = new Date();
+//   const todayStore = getStoreLocalDateString(nowUTC, storeTimezone);
+
+//   // Calculate reference dates for the queries - 7 months ago to cover all time ranges
+//   const sevenMonthsAgoUTC = new Date(nowUTC);
+//   sevenMonthsAgoUTC.setMonth(nowUTC.getMonth() - 7);
+
+//   // Fetch orders for all time periods - use UTC for the API query
+//   const dateQuery = `created_at:>=${sevenMonthsAgoUTC.toISOString()} created_at:<=${nowUTC.toISOString()}`;
+
+//   console.log('Fetching today\'s orders with pagination...');
+//   console.log('Store timezone:', storeTimezone);
+//   console.log('Today in store time:', todayStore);
+
+//   let allOrders: any[] = [];
+//   let hasNextPage = true;
+//   let afterCursor = null;
+//   let pageCount = 0;
+//   const maxPages = 50;
+
+//   while (hasNextPage && pageCount < maxPages) {
+//     pageCount++;
+    
+//     const paginationVariables: any = {
+//       query: dateQuery,
+//       first: 100
+//     };
+    
+//     if (afterCursor) {
+//       paginationVariables.after = afterCursor;
+//     }
+
+//     try {
+//       const response = await admin.graphql(
+//         `#graphql
+//         query TodayOrdersPaginated($query: String!, $first: Int!, $after: String) {
+//           orders(first: $first, query: $query, sortKey: CREATED_AT, reverse: true, after: $after) {
+//             pageInfo {
+//               hasNextPage
+//               endCursor
+//             }
+//             edges {
+//               cursor
+//               node {
+//                 id
+//                 name
+//                 createdAt
+//                 updatedAt
+//                 displayFinancialStatus
+//                 displayFulfillmentStatus
+//                 confirmed
+//                 cancelledAt
+//                 cancelReason
+//                 note
+//                 fullyPaid
+//                 totalReceivedSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalRefundedSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalOutstandingSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalDiscountsSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalShippingPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalRefundedShippingSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 refundDiscrepancySet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 returns(first: 7) {
+//                   nodes {
+//                     returnLineItems(first: 10) {
+//                       nodes {
+//                         ... on ReturnLineItem {
+//                           restockingFee {
+//                             amountSet {
+//                               shopMoney {
+//                                 amount
+//                                 currencyCode
+//                               }
+//                             }
+//                           }
+//                         }
+//                       }
+//                     }
+//                     returnShippingFees {
+//                       amountSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                     }
+//                   }
+//                 }
+//                 refunds {
+//                   id
+//                   createdAt
+//                   note
+//                   totalRefundedSet {
+//                     shopMoney {
+//                       amount
+//                       currencyCode
+//                     }
+//                   }
+//                   refundLineItems(first: 10) {
+//                     edges {
+//                       node {
+//                         lineItem {
+//                           id
+//                           name
+//                         }
+//                         quantity
+//                         subtotalSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                         totalTaxSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                       }
+//                     }
+//                   }
+//                 }
+//                 currentSubtotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 currentTotalTaxSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 currentTotalDiscountsSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 currentTotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 subtotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 lineItems(first: 50) {
+//                   edges {
+//                     node {
+//                       id
+//                       name
+//                       title
+//                       quantity
+//                       sku
+//                       variantTitle
+//                       product {
+//                         id
+//                         title
+//                       }
+//                       variant {
+//                         id
+//                         title
+//                         sku
+//                         price
+//                       }
+//                       originalUnitPriceSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       discountedUnitPriceSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       discountedTotalSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       originalTotalSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       taxLines {
+//                         priceSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                         rate
+//                         title
+//                       }
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         }`,
+//         { variables: paginationVariables }
+//       );
+
+//       const responseData: any = await response.json();
+      
+//       // Handle GraphQL errors
+//       if (responseData.errors && Array.isArray(responseData.errors)) {
+//         console.error('GraphQL Errors:', responseData.errors);
+//         throw new Error(`GraphQL error: ${JSON.stringify(responseData.errors)}`);
+//       }
+
+//       const ordersData = responseData?.data?.orders;
+//       if (!ordersData) {
+//         console.error('No orders data in response:', responseData);
+//         break;
+//       }
+
+//       const pageOrders = ordersData?.edges?.map((x: any) => x.node) ?? [];
+//       console.log(`Page ${pageCount}: Fetched ${pageOrders.length} orders`);
+
+//       allOrders = [...allOrders, ...pageOrders];
+//       hasNextPage = ordersData?.pageInfo?.hasNextPage || false;
+//       afterCursor = ordersData?.pageInfo?.endCursor;
+
+//       // Add a small delay to be respectful of API limits
+//       if (hasNextPage) {
+//         await new Promise(resolve => setTimeout(resolve, 200));
+//       }
+
+//       console.log(`Total orders so far: ${allOrders.length}, Has next page: ${hasNextPage}`);
+
+//     } catch (error: any) {
+//       console.error(`Error fetching page ${pageCount}:`, error);
+//       break;
+//     }
+//   }
+
+//   console.log(`Pagination complete. Total orders fetched: ${allOrders.length} over ${pageCount} pages`);
+
+//   // Filter orders for today using STORE LOCAL TIME
+//   const todayOrders = allOrders.filter((order: any) => {
+//     const orderDateUTC = new Date(order.createdAt);
+//     return isTodayInStoreTime(orderDateUTC, storeTimezone);
+//   });
+
+//   console.log(`Today's orders after filtering: ${todayOrders.length}`);
+
+//   // Process orders with gift card separation and proportional discount allocation
+//   const todayProcessed = processOrders(todayOrders);
+
+//   // Calculate summaries for today's orders
+//   const todayRegularSummary = calculateFinancialMetrics(todayProcessed.regularOrders);
+//   const todayGiftCardSummary = calculateFinancialMetrics(todayProcessed.giftCardOrders);
+
+//   return json({ 
+//     today: todayProcessed,
+//     summaries: {
+//       regular: todayRegularSummary,
+//       giftCard: todayGiftCardSummary
+//     },
+//     summary: {
+//       orderCount: todayOrders.length,
+//       date: new Date().toLocaleDateString('en-US', { 
+//         weekday: 'long', 
+//         year: 'numeric', 
+//         month: 'long', 
+//         day: 'numeric',
+//         timeZone: storeTimezone 
+//       }),
+//       storeTimezone
+//     },
+//     debug: {
+//       totalFetched: allOrders.length,
+//       todayFiltered: todayOrders.length,
+//       regularOrders: todayProcessed.regularOrders.length,
+//       giftCardOrders: todayProcessed.giftCardOrders.length
+//     }
+//   });
+// };
+
+// // Supporting components
+// function MetricsGrid({ metrics }: { metrics: any }) {
+//   return (
+//     <div style={{ 
+//       display: 'grid', 
+//       gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+//       gap: 16, 
+//       marginBottom: 20,
+//       padding: 16,
+//       backgroundColor: '#f5f5f5',
+//       borderRadius: 8
+//     }}>
+//       <MetricCard title="Gross Sales" value={metrics.totalGrossSales} currency={metrics.currencyCode} color="#4CAF50" />
+//       <MetricCard title="Discounts" value={-metrics.totalDiscounts} currency={metrics.currencyCode} color="#FF9800" />
+//       <MetricCard title="Returns" value={-metrics.totalReturns} currency={metrics.currencyCode} color="#F44336" />
+//       <MetricCard title="Net Sales" value={metrics.totalNetSales} currency={metrics.currencyCode} color="#2196F3" />
+//       <MetricCard title="Shipping Charges" value={metrics.totalShippingCharges} currency={metrics.currencyCode} color="#9C27B0" />
+//       <MetricCard title="Return Fees" value={metrics.totalReturnFees} currency={metrics.currencyCode} color="#795548" />
+//       <MetricCard title="Taxes" value={metrics.totalTaxes} currency={metrics.currencyCode} color="#607D8B" />
+//       <MetricCard title="Total Sales" value={metrics.totalSales} currency={metrics.currencyCode} color="#4CAF50" emphasis={true} />
+//     </div>
+//   );
+// }
+
+// function OrdersTable({ orders, currencyCode, isGiftCard = false }: { orders: any[], currencyCode: string, isGiftCard?: boolean }) {
+//   if (orders.length === 0) {
+//     return (
+//       <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+//         No {isGiftCard ? 'gift card ' : ''}orders today.
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
+//       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+//         <thead style={{ backgroundColor: '#f5f5f5' }}>
+//           <tr>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Order</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Time</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Status</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Total Sales</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Details</th>
+//           </tr>
+//         </thead>
+//         <tbody>
+//           {orders.map((order: any) => (
+//             <tr key={order.id} style={{ borderBottom: '1px solid #eee' }}>
+//               <td style={{ padding: '12px' }}>
+//                 <strong>{order.name}</strong>
+//                 {order.note && (
+//                   <div style={{ fontSize: '0.8em', color: '#666', marginTop: '4px' }}>
+//                     📝 {order.note}
+//                   </div>
+//                 )}
+//                 {order.isMixedOrderRegular && (
+//                   <div style={{ fontSize: '0.7em', color: '#FF9800', marginTop: '2px' }}>
+//                     Mixed Order (Regular Portion)
+//                   </div>
+//                 )}
+//                 {order.isMixedOrderGiftCard && (
+//                   <div style={{ fontSize: '0.7em', color: '#9C27B0', marginTop: '2px' }}>
+//                     Mixed Order (Gift Card Portion)
+//                   </div>
+//                 )}
+//                 {order.isGiftCardOrder && (
+//                   <div style={{ fontSize: '0.7em', color: '#9C27B0', marginTop: '2px' }}>
+//                     Gift Card Order
+//                   </div>
+//                 )}
+//                 {order.calculatedDiscountAllocation && (
+//                   <div style={{ fontSize: '0.7em', color: '#FF9800', marginTop: '2px' }}>
+//                     Proportional Discount Applied
+//                   </div>
+//                 )}
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 {new Date(order.createdAt).toLocaleTimeString('en-US', { 
+//                   hour: '2-digit', 
+//                   minute: '2-digit'
+//                 })}
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 <span style={{
+//                   padding: '4px 8px',
+//                   borderRadius: '4px',
+//                   fontSize: '0.8em',
+//                   backgroundColor: order.displayFinancialStatus === 'PAID' ? '#4CAF50' : 
+//                                  order.displayFinancialStatus === 'PENDING' ? '#FF9800' : '#F44336',
+//                   color: 'white'
+//                 }}>
+//                   {order.displayFinancialStatus}
+//                 </span>
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 <strong>
+//                   {order.calculatedTotalSales.toFixed(2)} {currencyCode}
+//                 </strong>
+//                 {order.calculatedGrossReturns > 0 && (
+//                   <div style={{ fontSize: '0.8em', color: '#F44336' }}>
+//                     Returns: -{order.calculatedGrossReturns.toFixed(2)}
+//                   </div>
+//                 )}
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 <div style={{ fontSize: '0.8em', color: '#666' }}>
+//                   <div>Net Sales: {order.calculatedNetSales.toFixed(2)}</div>
+//                   <div>Shipping: {order.calculatedShippingCharges.toFixed(2)}</div>
+//                   {order.calculatedReturnFees > 0 && (
+//                     <div style={{ color: '#795548' }}>
+//                       Return Fees: {order.calculatedReturnFees.toFixed(2)}
+//                     </div>
+//                   )}
+//                   <div>Taxes: {order.calculatedTaxes.toFixed(2)}</div>
+//                   {order.calculatedDiscountAllocation && (
+//                     <div style={{ color: '#FF9800' }}>
+//                       Discount: {parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0).toFixed(2)}
+//                     </div>
+//                   )}
+//                   {order.hasOverRefund && (
+//                     <div style={{ color: '#F44336' }}>Over Refund</div>
+//                   )}
+//                   {order.hasUnderRefund && (
+//                     <div style={{ color: '#FF9800' }}>Under Refund</div>
+//                   )}
+//                 </div>
+//               </td>
+//             </tr>
+//           ))}
+//         </tbody>
+//       </table>
+//     </div>
+//   );
+// }
+
+// function MetricCard({ title, value, currency, color = '#333', emphasis = false, isCount = false }: any) {
+//   const isNegative = value < 0 && !isCount;
+//   const displayValue = isCount ? value.toString() : Math.abs(value).toFixed(2);
+  
+//   return (
+//     <div style={{
+//       padding: '16px',
+//       backgroundColor: 'white',
+//       borderRadius: '8px',
+//       border: emphasis ? `2px solid ${color}` : '1px solid #ddd',
+//       textAlign: 'center',
+//       boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+//     }}>
+//       <div style={{ fontSize: '0.9em', fontWeight: 'bold', color: '#666', marginBottom: '8px' }}>
+//         {title}
+//       </div>
+//       <div style={{ fontSize: '1.2em', fontWeight: 'bold', color: isCount ? color : (isNegative ? '#F44336' : color) }}>
+//         {!isCount && isNegative ? '-' : ''}
+//         {currency && !isCount ? `${currency} ` : ''}
+//         {displayValue}
+//         {isCount && ' orders'}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function MetricItem({ title, value, currency, isCount = false }: any) {
+//   const displayValue = isCount ? value : value.toFixed(2);
+  
+//   return (
+//     <div>
+//       <div style={{ fontSize: '0.9em', opacity: 0.9 }}>{title}</div>
+//       <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>
+//         {!isCount && currency}{displayValue}{isCount && ' orders'}
+//       </div>
+//     </div>
+//   );
+// }
+
+// // SINGLE DEFAULT EXPORT
+// export default function OrdersToday() {
+//   const { today, summaries, summary, debug } = useLoaderData<typeof loader>();
+
+//   return (
+//     <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
+//       <h2>Today's Orders - {summary.date}</h2>
+//       <p style={{ color: '#666', marginBottom: 20 }}>
+//         Store Timezone: {summary.storeTimezone} • {summary.orderCount} orders today
+//         {debug && (
+//           <span style={{ fontSize: '0.8em', color: '#999' }}>
+//             {' '}({debug.regularOrders} regular + {debug.giftCardOrders} gift card)
+//           </span>
+//         )}
+//       </p>
+
+//       {/* Regular Orders */}
+//       <div style={{ marginBottom: 40 }}>
+//         <h3 style={{ borderBottom: '2px solid #2196F3', paddingBottom: 8, color: '#2196F3' }}>
+//           Regular Orders ({summaries.regular.totalOrders} orders)
+//         </h3>
+//         <MetricsGrid metrics={summaries.regular} />
+//         <OrdersTable orders={today.regularOrders} currencyCode={summaries.regular.currencyCode} />
+//       </div>
+
+//       {/* Gift Card Orders */}
+//       {today.giftCardOrders.length > 0 && (
+//         <div style={{ marginBottom: 40 }}>
+//           <h3 style={{ borderBottom: '2px solid #9C27B0', paddingBottom: 8, color: '#9C27B0' }}>
+//             Gift Card Orders ({summaries.giftCard.totalOrders} orders)
+//           </h3>
+//           <MetricsGrid metrics={summaries.giftCard} />
+//           <OrdersTable orders={today.giftCardOrders} currencyCode={summaries.giftCard.currencyCode} isGiftCard={true} />
+//         </div>
+//       )}
+
+//       {/* Combined Summary */}
+//       <div style={{ 
+//         padding: 20, 
+//         backgroundColor: '#4CAF50', 
+//         color: 'white', 
+//         borderRadius: 8,
+//         marginTop: 20
+//       }}>
+//         <h3 style={{ margin: '0 0 10px 0' }}>Combined Today's Performance</h3>
+//         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+//           <MetricItem 
+//             title="Total Sales" 
+//             value={summaries.regular.totalSales + summaries.giftCard.totalSales} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//           <MetricItem 
+//             title="Total Orders" 
+//             value={summaries.regular.totalOrders + summaries.giftCard.totalOrders} 
+//             isCount={true}
+//           />
+//           <MetricItem 
+//             title="Net Sales" 
+//             value={summaries.regular.totalNetSales + summaries.giftCard.totalNetSales} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//           <MetricItem 
+//             title="Shipping Charges" 
+//             value={summaries.regular.totalShippingCharges + summaries.giftCard.totalShippingCharges} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//           <MetricItem 
+//             title="Return Fees" 
+//             value={summaries.regular.totalReturnFees + summaries.giftCard.totalReturnFees} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { json, LoaderFunctionArgs } from "@remix-run/node";
+// import { useLoaderData } from "@remix-run/react";
+// import { authenticate } from "../shopify.server";
+
+// // Reuse your existing helper functions
+// const getStoreLocalDateString = (utcDate: Date, timezone: string = 'America/New_York'): string => {
+//   return utcDate.toLocaleDateString('en-CA', { timeZone: timezone });
+// };
+
+// const isTodayInStoreTime = (utcDate: Date, storeTimezone: string = 'America/New_York'): boolean => {
+//   const nowUTC = new Date();
+//   const orderDateStore = getStoreLocalDateString(utcDate, storeTimezone);
+//   const todayStore = getStoreLocalDateString(nowUTC, storeTimezone);
+//   return orderDateStore === todayStore;
+// };
+
+// // Reuse your existing calculation functions
+// function allocateDiscountProportional(totalDiscount: number, subtotalA: number, subtotalB: number) {
+//   const totalSubtotal = subtotalA + subtotalB;
+  
+//   if (totalSubtotal === 0) {
+//     return { portionADiscount: 0, portionBDiscount: 0 };
+//   }
+  
+//   const portionADiscount = Math.round((totalDiscount * (subtotalA / totalSubtotal)) * 100) / 100;
+//   const portionBDiscount = Math.round((totalDiscount - portionADiscount) * 100) / 100;
+  
+//   return {
+//     portionADiscount,
+//     portionBDiscount
+//   };
+// }
+
+// function calculateOrderMetrics(order: any) {
+//   const lineItemsTotal = order.lineItems?.edges?.reduce((sum: number, li: any) => {
+//     return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//   }, 0) || 0;
+
+//   const discounts = parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+//   const refundDiscrepancy = parseFloat(order.refundDiscrepancySet?.shopMoney?.amount || 0);
+
+//   let grossReturns = 0;
+//   order.refunds?.forEach((refund: any) => {
+//     refund.refundLineItems?.edges?.forEach((edge: any) => {
+//       grossReturns += parseFloat(edge.node.subtotalSet?.shopMoney?.amount || 0);
+//     });
+//   });
+
+//   const refundedShipping = parseFloat(order.totalRefundedShippingSet?.shopMoney?.amount || 0);
+//   const shippingAmount = parseFloat(order.totalShippingPriceSet?.shopMoney?.amount || 0);
+//   const shippingCharges = shippingAmount - refundedShipping;
+
+//   let totalRestockingFees = 0;
+//   let totalReturnShippingFees = 0;
+  
+//   order.returns?.nodes?.forEach((returnItem: any) => {
+//     returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
+//       if (lineItem.restockingFee?.amountSet?.shopMoney?.amount) {
+//         totalRestockingFees += parseFloat(lineItem.restockingFee.amountSet.shopMoney.amount);
+//       }
+//     });
+    
+//     returnItem.returnShippingFees?.forEach((shippingFee: any) => {
+//       if (shippingFee?.amountSet?.shopMoney?.amount) {
+//         totalReturnShippingFees += parseFloat(shippingFee.amountSet.shopMoney.amount);
+//       }
+//     });
+//   });
+
+//   const totalReturnFees = totalRestockingFees + totalReturnShippingFees;
+//   const grossSales = lineItemsTotal;
+
+//   let netSales = grossSales - grossReturns - discounts;
+
+//   if (refundDiscrepancy > 0) {
+//     netSales += refundDiscrepancy;
+//   } else if (refundDiscrepancy < 0) {
+//     netSales -= Math.abs(refundDiscrepancy);
+//   }
+
+//   let netReturns = grossReturns;
+//   if (refundDiscrepancy > 0) {
+//     netReturns = grossReturns - refundDiscrepancy;
+//   } else if (refundDiscrepancy < 0) {
+//     netReturns = grossReturns + Math.abs(refundDiscrepancy);
+//   }
+
+//   const taxes = parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+//   const totalSales = netSales + shippingCharges + totalReturnFees + taxes;
+
+//   return {
+//     ...order,
+//     calculatedGrossSales: grossSales,
+//     calculatedGrossReturns: grossReturns,
+//     calculatedNetReturns: netReturns,
+//     calculatedRefundedShipping: refundedShipping,
+//     calculatedReturnShippingFees: totalReturnShippingFees,
+//     calculatedNetSales: netSales,
+//     calculatedRefundDiscrepancy: refundDiscrepancy,
+//     calculatedRestockingFees: totalRestockingFees,
+//     calculatedReturnFees: totalReturnFees,
+//     calculatedShippingCharges: shippingCharges,
+//     calculatedTaxes: taxes,
+//     calculatedTotalSales: totalSales,
+//     hasOverRefund: refundDiscrepancy > 0,
+//     hasUnderRefund: refundDiscrepancy < 0
+//   };
+// }
+
+// const processOrders = (orders: any[]) => {
+//   const regularOrders: any[] = [];
+//   const giftCardOrders: any[] = [];
+//   const mixedOrdersRegular: any[] = [];
+//   const mixedOrdersGiftCard: any[] = [];
+
+//   orders.forEach((order: any) => {
+//     const hasGiftCards = order.lineItems?.edges?.some((li: any) => 
+//       li.node.name?.toLowerCase().includes('gift card') || 
+//       li.node.title?.toLowerCase().includes('gift card') || 
+//       li.node.product?.title?.toLowerCase().includes('gift card')
+//     );
+
+//     if (!hasGiftCards) {
+//       const processed = calculateOrderMetrics(order);
+//       regularOrders.push(processed);
+//     } else {
+//       const giftCardLineItems = order.lineItems?.edges?.filter((li: any) => 
+//         li.node.name?.toLowerCase().includes('gift card') || 
+//         li.node.title?.toLowerCase().includes('gift card') || 
+//         li.node.product?.title?.toLowerCase().includes('gift card')
+//       );
+      
+//       const regularLineItems = order.lineItems?.edges?.filter((li: any) => 
+//         !li.node.name?.toLowerCase().includes('gift card') && 
+//         !li.node.title?.toLowerCase().includes('gift card') && 
+//         !li.node.product?.title?.toLowerCase().includes('gift card')
+//       );
+
+//       if (regularLineItems.length > 0 && giftCardLineItems.length > 0) {
+//         const regularSubtotal = regularLineItems.reduce((sum: number, li: any) => {
+//           return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//         }, 0);
+        
+//         const giftCardSubtotal = giftCardLineItems.reduce((sum: number, li: any) => {
+//           return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//         }, 0);
+        
+//         const totalOrderDiscount = parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+        
+//         const discountAllocation = allocateDiscountProportional(
+//           totalOrderDiscount, 
+//           giftCardSubtotal, 
+//           regularSubtotal
+//         );
+        
+//         const giftCardDiscount = discountAllocation.portionADiscount;
+//         const regularDiscount = discountAllocation.portionBDiscount;
+
+//         const createMoneySet = (amount: number, currencyCode: string = 'USD') => {
+//           return {
+//             shopMoney: { 
+//               amount: amount.toFixed(2), 
+//               currencyCode: currencyCode || order.totalPriceSet?.shopMoney?.currencyCode || 'USD' 
+//             }
+//           };
+//         };
+
+//         const regularPortion = {
+//           ...order,
+//           lineItems: { edges: regularLineItems },
+//           isMixedOrderRegular: true,
+//           totalDiscountsSet: createMoneySet(regularDiscount),
+//           calculatedDiscountAllocation: {
+//             method: 'proportional',
+//             regularDiscount,
+//             giftCardDiscount,
+//             totalOrderDiscount
+//           }
+//         };
+        
+//         const giftCardPortion = {
+//           ...order,
+//           lineItems: { edges: giftCardLineItems },
+//           isMixedOrderGiftCard: true,
+//           totalShippingPriceSet: createMoneySet(0),
+//           totalRefundedShippingSet: createMoneySet(0),
+//           totalDiscountsSet: createMoneySet(giftCardDiscount),
+//           calculatedDiscountAllocation: {
+//             method: 'proportional',
+//             regularDiscount,
+//             giftCardDiscount,
+//             totalOrderDiscount
+//           }
+//         };
+
+//         const processedRegular = calculateOrderMetrics(regularPortion);
+//         const processedGiftCard = calculateOrderMetrics(giftCardPortion);
+        
+//         mixedOrdersRegular.push(processedRegular);
+//         mixedOrdersGiftCard.push(processedGiftCard);
+//       } else {
+//         const giftCardOrder = {
+//           ...order,
+//           totalShippingPriceSet: { shopMoney: { amount: "0.00", currencyCode: order.totalShippingPriceSet?.shopMoney?.currencyCode || "USD" } },
+//           totalRefundedShippingSet: { shopMoney: { amount: "0.00", currencyCode: order.totalRefundedShippingSet?.shopMoney?.currencyCode || "USD" } }
+//         };
+//         const processed = calculateOrderMetrics(giftCardOrder);
+//         processed.isGiftCardOrder = true;
+//         giftCardOrders.push(processed);
+//       }
+//     }
+//   });
+
+//   const allRegularOrders = [...regularOrders, ...mixedOrdersRegular];
+//   const allGiftCardOrders = [...giftCardOrders, ...mixedOrdersGiftCard];
+  
+//   return {
+//     regularOrders: allRegularOrders,
+//     giftCardOrders: allGiftCardOrders
+//   };
+// };
+
+// function calculateFinancialMetrics(orders: any[]): any {
+//   const totalGrossSales = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedGrossSales || 0);
+//   }, 0);
+
+//   const totalDiscounts = orders.reduce((sum: number, order: any) => {
+//     return sum + parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+//   }, 0);
+
+//   const totalNetReturns = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetReturns || 0);
+//   }, 0);
+
+//   const totalNetSales = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetSales || 0);
+//   }, 0);
+
+//   const totalShippingCharges = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedShippingCharges || 0);
+//   }, 0);
+
+//   const totalReturnFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnFees || 0);
+//   }, 0);
+
+//   const totalTaxes = orders.reduce((sum: number, order: any) => {
+//     return sum + parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+//   }, 0);
+
+//   const totalSales = totalNetSales + totalShippingCharges + totalReturnFees + totalTaxes;
+
+//   const totalOrders = orders.length;
+//   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+//   const totalRestockingFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedRestockingFees || 0);
+//   }, 0);
+
+//   const totalReturnShippingFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnShippingFees || 0);
+//   }, 0);
+
+//   return {
+//     totalGrossSales,
+//     totalDiscounts,
+//     totalReturns: totalNetReturns,
+//     totalNetSales,
+//     totalShippingCharges,
+//     totalReturnFees,
+//     totalTaxes,
+//     totalSales,
+//     totalOrders,
+//     averageOrderValue,
+//     totalRestockingFees,
+//     totalReturnShippingFees,
+//     currencyCode: orders[0]?.totalPriceSet?.shopMoney?.currencyCode || 'USD'
+//   };
+// }
+
+// // NEW LOADER FOR MODIFIED ORDERS
+// export const loader = async ({ request }: LoaderFunctionArgs) => {
+//   const { admin, session } = await authenticate.admin(request);
+//   const shop = session.shop;
+
+//   const storeTimezone = 'America/New_York';
+//   const nowUTC = new Date();
+//   const todayStore = getStoreLocalDateString(nowUTC, storeTimezone);
+
+//   // Get UTC date range for today
+//   const todayStart = new Date(`${todayStore}T00:00:00`);
+//   const todayEnd = new Date(`${todayStore}T23:59:59`);
+//   const todayStartUTC = todayStart.toISOString();
+//   const todayEndUTC = todayEnd.toISOString();
+
+//   console.log('Fetching orders modified today with pagination...');
+//   console.log('Store timezone:', storeTimezone);
+//   console.log('Today in store time:', todayStore);
+//   console.log('UTC date range:', todayStartUTC, 'to', todayEndUTC);
+
+//   let allModifiedOrders: any[] = [];
+//   let hasNextPage = true;
+//   let afterCursor = null;
+//   let pageCount = 0;
+//   const maxPages = 50;
+
+//   while (hasNextPage && pageCount < maxPages) {
+//     pageCount++;
+    
+//     const paginationVariables: any = {
+//       query: `updated_at:>=${todayStartUTC} updated_at:<=${todayEndUTC}`,
+//       first: 100
+//     };
+    
+//     if (afterCursor) {
+//       paginationVariables.after = afterCursor;
+//     }
+
+//     try {
+//       const response = await admin.graphql(
+//         `#graphql
+//         query ModifiedOrdersPaginated($query: String!, $first: Int!, $after: String) {
+//           orders(first: $first, query: $query, sortKey: UPDATED_AT, reverse: true, after: $after) {
+//             pageInfo {
+//               hasNextPage
+//               endCursor
+//             }
+//             edges {
+//               cursor
+//               node {
+//                 id
+//                 name
+//                 createdAt
+//                 updatedAt
+//                 displayFinancialStatus
+//                 displayFulfillmentStatus
+//                 confirmed
+//                 cancelledAt
+//                 cancelReason
+//                 note
+//                 fullyPaid
+//                 totalReceivedSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalRefundedSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalOutstandingSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalDiscountsSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalShippingPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalRefundedShippingSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 refundDiscrepancySet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 returns(first: 7) {
+//                   nodes {
+//                     returnLineItems(first: 10) {
+//                       nodes {
+//                         ... on ReturnLineItem {
+//                           restockingFee {
+//                             amountSet {
+//                               shopMoney {
+//                                 amount
+//                                 currencyCode
+//                               }
+//                             }
+//                           }
+//                         }
+//                       }
+//                     }
+//                     returnShippingFees {
+//                       amountSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                     }
+//                   }
+//                 }
+//                 refunds {
+//                   id
+//                   createdAt
+//                   note
+//                   totalRefundedSet {
+//                     shopMoney {
+//                       amount
+//                       currencyCode
+//                     }
+//                   }
+//                   refundLineItems(first: 10) {
+//                     edges {
+//                       node {
+//                         lineItem {
+//                           id
+//                           name
+//                         }
+//                         quantity
+//                         subtotalSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                         totalTaxSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                       }
+//                     }
+//                   }
+//                 }
+//                 currentSubtotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 currentTotalTaxSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 currentTotalDiscountsSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 currentTotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 subtotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 lineItems(first: 50) {
+//                   edges {
+//                     node {
+//                       id
+//                       name
+//                       title
+//                       quantity
+//                       sku
+//                       variantTitle
+//                       product {
+//                         id
+//                         title
+//                       }
+//                       variant {
+//                         id
+//                         title
+//                         sku
+//                         price
+//                       }
+//                       originalUnitPriceSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       discountedUnitPriceSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       discountedTotalSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       originalTotalSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       taxLines {
+//                         priceSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                         rate
+//                         title
+//                       }
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         }`,
+//         { variables: paginationVariables }
+//       );
+
+//       const responseData: any = await response.json();
+      
+//       if (responseData.errors && Array.isArray(responseData.errors)) {
+//         console.error('GraphQL Errors:', responseData.errors);
+//         throw new Error(`GraphQL error: ${JSON.stringify(responseData.errors)}`);
+//       }
+
+//       const ordersData = responseData?.data?.orders;
+//       if (!ordersData) {
+//         console.error('No orders data in response:', responseData);
+//         break;
+//       }
+
+//       const pageOrders = ordersData?.edges?.map((x: any) => x.node) ?? [];
+//       console.log(`Page ${pageCount}: Fetched ${pageOrders.length} modified orders`);
+
+//       allModifiedOrders = [...allModifiedOrders, ...pageOrders];
+//       hasNextPage = ordersData?.pageInfo?.hasNextPage || false;
+//       afterCursor = ordersData?.pageInfo?.endCursor;
+
+//       if (hasNextPage) {
+//         await new Promise(resolve => setTimeout(resolve, 200));
+//       }
+
+//       console.log(`Total modified orders so far: ${allModifiedOrders.length}, Has next page: ${hasNextPage}`);
+
+//     } catch (error: any) {
+//       console.error(`Error fetching page ${pageCount}:`, error);
+//       break;
+//     }
+//   }
+
+//   console.log(`Pagination complete. Total modified orders fetched: ${allModifiedOrders.length} over ${pageCount} pages`);
+
+//   // Filter to only include orders that were CREATED before today but MODIFIED today
+//   const pastOrdersModifiedToday = allModifiedOrders.filter((order: any) => {
+//     const orderCreatedUTC = new Date(order.createdAt);
+//     return !isTodayInStoreTime(orderCreatedUTC, storeTimezone);
+//   });
+
+//   console.log(`Past orders modified today: ${pastOrdersModifiedToday.length}`);
+
+//   // Process orders with the same logic as your original component
+//   const processed = processOrders(pastOrdersModifiedToday);
+
+//   // Calculate summaries
+//   const regularSummary = calculateFinancialMetrics(processed.regularOrders);
+//   const giftCardSummary = calculateFinancialMetrics(processed.giftCardOrders);
+
+//   return json({ 
+//     modifiedOrders: processed,
+//     summaries: {
+//       regular: regularSummary,
+//       giftCard: giftCardSummary
+//     },
+//     summary: {
+//       orderCount: pastOrdersModifiedToday.length,
+//       date: new Date().toLocaleDateString('en-US', { 
+//         weekday: 'long', 
+//         year: 'numeric', 
+//         month: 'long', 
+//         day: 'numeric',
+//         timeZone: storeTimezone 
+//       }),
+//       storeTimezone
+//     },
+//     debug: {
+//       totalFetched: allModifiedOrders.length,
+//       modifiedFiltered: pastOrdersModifiedToday.length,
+//       regularOrders: processed.regularOrders.length,
+//       giftCardOrders: processed.giftCardOrders.length
+//     }
+//   });
+// };
+
+// // REUSE YOUR EXACT UI COMPONENTS
+// function MetricsGrid({ metrics }: { metrics: any }) {
+//   return (
+//     <div style={{ 
+//       display: 'grid', 
+//       gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+//       gap: 16, 
+//       marginBottom: 20,
+//       padding: 16,
+//       backgroundColor: '#f5f5f5',
+//       borderRadius: 8
+//     }}>
+//       <MetricCard title="Gross Sales" value={metrics.totalGrossSales} currency={metrics.currencyCode} color="#4CAF50" />
+//       <MetricCard title="Discounts" value={-metrics.totalDiscounts} currency={metrics.currencyCode} color="#FF9800" />
+//       <MetricCard title="Returns" value={-metrics.totalReturns} currency={metrics.currencyCode} color="#F44336" />
+//       <MetricCard title="Net Sales" value={metrics.totalNetSales} currency={metrics.currencyCode} color="#2196F3" />
+//       <MetricCard title="Shipping Charges" value={metrics.totalShippingCharges} currency={metrics.currencyCode} color="#9C27B0" />
+//       <MetricCard title="Return Fees" value={metrics.totalReturnFees} currency={metrics.currencyCode} color="#795548" />
+//       <MetricCard title="Taxes" value={metrics.totalTaxes} currency={metrics.currencyCode} color="#607D8B" />
+//       <MetricCard title="Total Sales" value={metrics.totalSales} currency={metrics.currencyCode} color="#4CAF50" emphasis={true} />
+//     </div>
+//   );
+// }
+
+// function OrdersTable({ orders, currencyCode, isGiftCard = false }: { orders: any[], currencyCode: string, isGiftCard?: boolean }) {
+//   if (orders.length === 0) {
+//     return (
+//       <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+//         No {isGiftCard ? 'gift card ' : ''}orders modified today.
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
+//       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+//         <thead style={{ backgroundColor: '#f5f5f5' }}>
+//           <tr>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Order</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Created</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Modified</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Status</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Total Sales</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Details</th>
+//           </tr>
+//         </thead>
+//         <tbody>
+//           {orders.map((order: any) => (
+//             <tr key={order.id} style={{ borderBottom: '1px solid #eee' }}>
+//               <td style={{ padding: '12px' }}>
+//                 <strong>{order.name}</strong>
+//                 {order.note && (
+//                   <div style={{ fontSize: '0.8em', color: '#666', marginTop: '4px' }}>
+//                     📝 {order.note}
+//                   </div>
+//                 )}
+//                 {order.isMixedOrderRegular && (
+//                   <div style={{ fontSize: '0.7em', color: '#FF9800', marginTop: '2px' }}>
+//                     Mixed Order (Regular Portion)
+//                   </div>
+//                 )}
+//                 {order.isMixedOrderGiftCard && (
+//                   <div style={{ fontSize: '0.7em', color: '#9C27B0', marginTop: '2px' }}>
+//                     Mixed Order (Gift Card Portion)
+//                   </div>
+//                 )}
+//                 {order.isGiftCardOrder && (
+//                   <div style={{ fontSize: '0.7em', color: '#9C27B0', marginTop: '2px' }}>
+//                     Gift Card Order
+//                   </div>
+//                 )}
+//                 {order.calculatedDiscountAllocation && (
+//                   <div style={{ fontSize: '0.7em', color: '#FF9800', marginTop: '2px' }}>
+//                     Proportional Discount Applied
+//                   </div>
+//                 )}
+//                 <div style={{ fontSize: '0.7em', color: '#FF6B35', marginTop: '2px', fontWeight: 'bold' }}>
+//                   MODIFIED TODAY
+//                 </div>
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 {new Date(order.createdAt).toLocaleDateString('en-US')}
+//                 <div style={{ fontSize: '0.8em', color: '#666' }}>
+//                   {new Date(order.createdAt).toLocaleTimeString('en-US', { 
+//                     hour: '2-digit', 
+//                     minute: '2-digit'
+//                   })}
+//                 </div>
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 {new Date(order.updatedAt).toLocaleTimeString('en-US', { 
+//                   hour: '2-digit', 
+//                   minute: '2-digit'
+//                 })}
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 <span style={{
+//                   padding: '4px 8px',
+//                   borderRadius: '4px',
+//                   fontSize: '0.8em',
+//                   backgroundColor: order.displayFinancialStatus === 'PAID' ? '#4CAF50' : 
+//                                  order.displayFinancialStatus === 'PENDING' ? '#FF9800' : '#F44336',
+//                   color: 'white'
+//                 }}>
+//                   {order.displayFinancialStatus}
+//                 </span>
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 <strong>
+//                   {order.calculatedTotalSales.toFixed(2)} {currencyCode}
+//                 </strong>
+//                 {order.calculatedGrossReturns > 0 && (
+//                   <div style={{ fontSize: '0.8em', color: '#F44336' }}>
+//                     Returns: -{order.calculatedGrossReturns.toFixed(2)}
+//                   </div>
+//                 )}
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 <div style={{ fontSize: '0.8em', color: '#666' }}>
+//                   <div>Net Sales: {order.calculatedNetSales.toFixed(2)}</div>
+//                   <div>Shipping: {order.calculatedShippingCharges.toFixed(2)}</div>
+//                   {order.calculatedReturnFees > 0 && (
+//                     <div style={{ color: '#795548' }}>
+//                       Return Fees: {order.calculatedReturnFees.toFixed(2)}
+//                     </div>
+//                   )}
+//                   <div>Taxes: {order.calculatedTaxes.toFixed(2)}</div>
+//                   {order.calculatedDiscountAllocation && (
+//                     <div style={{ color: '#FF9800' }}>
+//                       Discount: {parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0).toFixed(2)}
+//                     </div>
+//                   )}
+//                   {order.hasOverRefund && (
+//                     <div style={{ color: '#F44336' }}>Over Refund</div>
+//                   )}
+//                   {order.hasUnderRefund && (
+//                     <div style={{ color: '#FF9800' }}>Under Refund</div>
+//                   )}
+//                 </div>
+//               </td>
+//             </tr>
+//           ))}
+//         </tbody>
+//       </table>
+//     </div>
+//   );
+// }
+
+// function MetricCard({ title, value, currency, color = '#333', emphasis = false, isCount = false }: any) {
+//   const isNegative = value < 0 && !isCount;
+//   const displayValue = isCount ? value.toString() : Math.abs(value).toFixed(2);
+  
+//   return (
+//     <div style={{
+//       padding: '16px',
+//       backgroundColor: 'white',
+//       borderRadius: '8px',
+//       border: emphasis ? `2px solid ${color}` : '1px solid #ddd',
+//       textAlign: 'center',
+//       boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+//     }}>
+//       <div style={{ fontSize: '0.9em', fontWeight: 'bold', color: '#666', marginBottom: '8px' }}>
+//         {title}
+//       </div>
+//       <div style={{ fontSize: '1.2em', fontWeight: 'bold', color: isCount ? color : (isNegative ? '#F44336' : color) }}>
+//         {!isCount && isNegative ? '-' : ''}
+//         {currency && !isCount ? `${currency} ` : ''}
+//         {displayValue}
+//         {isCount && ' orders'}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function MetricItem({ title, value, currency, isCount = false }: any) {
+//   const displayValue = isCount ? value : value.toFixed(2);
+  
+//   return (
+//     <div>
+//       <div style={{ fontSize: '0.9em', opacity: 0.9 }}>{title}</div>
+//       <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>
+//         {!isCount && currency}{displayValue}{isCount && ' orders'}
+//       </div>
+//     </div>
+//   );
+// }
+
+// // NEW COMPONENT FOR MODIFIED ORDERS
+// export default function OrdersModifiedToday() {
+//   const { modifiedOrders, summaries, summary, debug } = useLoaderData<typeof loader>();
+
+//   return (
+//     <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
+//       <h2>Past Orders Modified Today - {summary.date}</h2>
+//       <p style={{ color: '#666', marginBottom: 20 }}>
+//         Store Timezone: {summary.storeTimezone} • {summary.orderCount} past orders modified today
+//         {debug && (
+//           <span style={{ fontSize: '0.8em', color: '#999' }}>
+//             {' '}({debug.regularOrders} regular + {debug.giftCardOrders} gift card)
+//           </span>
+//         )}
+//       </p>
+
+//       {/* Regular Orders */}
+//       <div style={{ marginBottom: 40 }}>
+//         <h3 style={{ borderBottom: '2px solid #2196F3', paddingBottom: 8, color: '#2196F3' }}>
+//           Regular Orders ({summaries.regular.totalOrders} orders)
+//         </h3>
+//         <MetricsGrid metrics={summaries.regular} />
+//         <OrdersTable orders={modifiedOrders.regularOrders} currencyCode={summaries.regular.currencyCode} />
+//       </div>
+
+//       {/* Gift Card Orders */}
+//       {modifiedOrders.giftCardOrders.length > 0 && (
+//         <div style={{ marginBottom: 40 }}>
+//           <h3 style={{ borderBottom: '2px solid #9C27B0', paddingBottom: 8, color: '#9C27B0' }}>
+//             Gift Card Orders ({summaries.giftCard.totalOrders} orders)
+//           </h3>
+//           <MetricsGrid metrics={summaries.giftCard} />
+//           <OrdersTable orders={modifiedOrders.giftCardOrders} currencyCode={summaries.giftCard.currencyCode} isGiftCard={true} />
+//         </div>
+//       )}
+
+//       {/* Combined Summary */}
+//       <div style={{ 
+//         padding: 20, 
+//         backgroundColor: '#FF6B35', 
+//         color: 'white', 
+//         borderRadius: 8,
+//         marginTop: 20
+//       }}>
+//         <h3 style={{ margin: '0 0 10px 0' }}>Combined Modification Impact Today</h3>
+//         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+//           <MetricItem 
+//             title="Total Sales Impact" 
+//             value={summaries.regular.totalSales + summaries.giftCard.totalSales} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//           <MetricItem 
+//             title="Orders Modified" 
+//             value={summaries.regular.totalOrders + summaries.giftCard.totalOrders} 
+//             isCount={true}
+//           />
+//           <MetricItem 
+//             title="Net Sales Impact" 
+//             value={summaries.regular.totalNetSales + summaries.giftCard.totalNetSales} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//           <MetricItem 
+//             title="Shipping Impact" 
+//             value={summaries.regular.totalShippingCharges + summaries.giftCard.totalShippingCharges} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//           <MetricItem 
+//             title="Return Fees Impact" 
+//             value={summaries.regular.totalReturnFees + summaries.giftCard.totalReturnFees} 
+//             currency={summaries.regular.currencyCode}
+//           />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import { json, LoaderFunctionArgs } from "@remix-run/node";
+// import { useLoaderData } from "@remix-run/react";
+// import { authenticate } from "../shopify.server";
+
+// // Helper function to convert a UTC date to store timezone and get YYYY-MM-DD
+// const getStoreLocalDateString = (utcDate: Date, timezone: string = 'America/New_York'): string => {
+//   return utcDate.toLocaleDateString('en-CA', { timeZone: timezone });
+// };
+
+// // Helper to check if a UTC date is today in store timezone
+// const isTodayInStoreTime = (utcDate: Date, storeTimezone: string = 'America/New_York'): boolean => {
+//   const nowUTC = new Date();
+//   const orderDateStore = getStoreLocalDateString(utcDate, storeTimezone);
+//   const todayStore = getStoreLocalDateString(nowUTC, storeTimezone);
+//   return orderDateStore === todayStore;
+// };
+
+// // Proportional discount allocation function (matches Shopify's rounding)
+// function allocateDiscountProportional(totalDiscount: number, subtotalA: number, subtotalB: number) {
+//   const totalSubtotal = subtotalA + subtotalB;
+  
+//   if (totalSubtotal === 0) {
+//     return { portionADiscount: 0, portionBDiscount: 0 };
+//   }
+  
+//   // Calculate first portion with rounding to match Shopify
+//   const portionADiscount = Math.round((totalDiscount * (subtotalA / totalSubtotal)) * 100) / 100;
+  
+//   // Derive second portion to ensure exact total
+//   const portionBDiscount = Math.round((totalDiscount - portionADiscount) * 100) / 100;
+  
+//   return {
+//     portionADiscount,
+//     portionBDiscount
+//   };
+// }
+
+// // Calculate order metrics following your exact logic
+// function calculateOrderMetrics(order: any) {
+//   // Calculate line items total (ORIGINAL prices before discounts)
+//   const lineItemsTotal = order.lineItems?.edges?.reduce((sum: number, li: any) => {
+//     return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//   }, 0) || 0;
+
+//   // Get discounts from the order data
+//   const discounts = parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+
+//   // Get refund discrepancy directly from Shopify
+//   const refundDiscrepancy = parseFloat(order.refundDiscrepancySet?.shopMoney?.amount || 0);
+
+//   // Calculate gross returns (sum of refunded line items)
+//   let grossReturns = 0;
+//   order.refunds?.forEach((refund: any) => {
+//     refund.refundLineItems?.edges?.forEach((edge: any) => {
+//       grossReturns += parseFloat(edge.node.subtotalSet?.shopMoney?.amount || 0);
+//     });
+//   });
+
+//   // Calculate refunded shipping - FROM REFUNDS DATA
+//   const refundedShipping = parseFloat(order.totalRefundedShippingSet?.shopMoney?.amount || 0);
+
+//   // Calculate shipping charges
+//   const shippingAmount = parseFloat(order.totalShippingPriceSet?.shopMoney?.amount || 0);
+//   const shippingCharges = shippingAmount - refundedShipping;
+
+//   // Calculate restocking fees and return shipping fees - FROM RETURNS DATA
+//   let totalRestockingFees = 0;
+//   let totalReturnShippingFees = 0;
+  
+//   order.returns?.nodes?.forEach((returnItem: any) => {
+//     returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
+//       if (lineItem.restockingFee?.amountSet?.shopMoney?.amount) {
+//         totalRestockingFees += parseFloat(lineItem.restockingFee.amountSet.shopMoney.amount);
+//       }
+//     });
+    
+//     // Calculate return shipping fees from returns
+//     returnItem.returnShippingFees?.forEach((shippingFee: any) => {
+//       if (shippingFee?.amountSet?.shopMoney?.amount) {
+//         totalReturnShippingFees += parseFloat(shippingFee.amountSet.shopMoney.amount);
+//       }
+//     });
+//   });
+
+//   // Calculate total return fees (restocking + return shipping)
+//   const totalReturnFees = totalRestockingFees + totalReturnShippingFees;
+
+//   // Calculate sales metrics using accurate data
+//   // Gross Sales = Original line items total (BEFORE any discounts)
+//   const grossSales = lineItemsTotal;
+
+//   // Net Sales = Gross Sales - Returns - Discounts
+//   let netSales = grossSales - grossReturns - discounts;
+
+//   // Handle refund discrepancies - OVER-refunds ADD to net sales, UNDER-refunds DEDUCT from net sales
+//   if (refundDiscrepancy > 0) {
+//     // Positive discrepancy = OVER-refund (we refunded more than we should have)
+//     netSales += refundDiscrepancy;
+//   } else if (refundDiscrepancy < 0) {
+//     // Negative discrepancy = UNDER-refund (we refunded less than we should have)
+//     netSales -= Math.abs(refundDiscrepancy);
+//   }
+
+//   // Calculate net returns (gross returns adjusted for discrepancies)
+//   let netReturns = grossReturns;
+//   if (refundDiscrepancy > 0) {
+//     netReturns = grossReturns - refundDiscrepancy;
+//   } else if (refundDiscrepancy < 0) {
+//     netReturns = grossReturns + Math.abs(refundDiscrepancy);
+//   }
+
+
+
+
+
+//   // Calculate taxes from line item tax lines (most reliable for modified orders)
+// // Calculate taxes from line item tax lines (most reliable for modified orders)
+// let taxes = 0;
+// order.lineItems?.edges?.forEach((li: any) => {
+//   li.node.taxLines?.forEach((taxLine: any) => {
+//     taxes += parseFloat(taxLine.priceSet?.shopMoney?.amount || 0);
+//   });
+// });
+
+// // If no tax from line items, fallback to currentTotalTaxSet
+// if (taxes === 0) {
+//   taxes = parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+// }
+
+// // If this is a refunded order, make taxes negative
+// // If there are refunds on this order, make taxes negative to reflect tax refund
+// if (order.refunds && order.refunds.length > 0) {
+//   taxes = -Math.abs(taxes);
+// }
+
+//   // Pull taxes directly from Shopify - use totalTaxSet for accurate tax data
+// //const taxes = parseFloat(order.totalTaxSet?.shopMoney?.amount || order.currentTotalTaxSet?.shopMoney?.amount || 0);
+
+
+//   // TOTAL SALES = Net Sales + Shipping Charges + Return Fees + Taxes
+//   const totalSales = netSales + shippingCharges + totalReturnFees + taxes;
+
+//   return {
+//     ...order,
+//     // Core calculated metrics
+//     calculatedGrossSales: grossSales,
+//     calculatedGrossReturns: grossReturns,
+//     calculatedNetReturns: netReturns,
+//     calculatedRefundedShipping: refundedShipping,
+//     calculatedReturnShippingFees: totalReturnShippingFees,
+//     calculatedNetSales: netSales,
+//     calculatedRefundDiscrepancy: refundDiscrepancy,
+//     calculatedRestockingFees: totalRestockingFees,
+//     calculatedReturnFees: totalReturnFees,
+//     calculatedShippingCharges: shippingCharges,
+//     calculatedTaxes: taxes,
+//     calculatedTotalSales: totalSales,
+    
+//     // Add flags for display purposes
+//     hasOverRefund: refundDiscrepancy > 0,
+//     hasUnderRefund: refundDiscrepancy < 0
+//   };
+// }
+
+// // Process orders and separate gift card transactions with proportional discount allocation
+// const processOrders = (orders: any[]) => {
+//   const regularOrders: any[] = [];
+//   const giftCardOrders: any[] = [];
+//   const mixedOrdersRegular: any[] = [];
+//   const mixedOrdersGiftCard: any[] = [];
+
+//   orders.forEach((order: any) => {
+//     // Check if order contains gift cards
+//     const hasGiftCards = order.lineItems?.edges?.some((li: any) => 
+//       li.node.name?.toLowerCase().includes('gift card') || 
+//       li.node.title?.toLowerCase().includes('gift card') || 
+//       li.node.product?.title?.toLowerCase().includes('gift card')
+//     );
+
+//     if (!hasGiftCards) {
+//       // Pure regular order
+//       const processed = calculateOrderMetrics(order);
+//       regularOrders.push(processed);
+//     } else {
+//       // Order contains gift cards - check if mixed or pure gift card
+//       const giftCardLineItems = order.lineItems?.edges?.filter((li: any) => 
+//         li.node.name?.toLowerCase().includes('gift card') || 
+//         li.node.title?.toLowerCase().includes('gift card') || 
+//         li.node.product?.title?.toLowerCase().includes('gift card')
+//       );
+      
+//       const regularLineItems = order.lineItems?.edges?.filter((li: any) => 
+//         !li.node.name?.toLowerCase().includes('gift card') && 
+//         !li.node.title?.toLowerCase().includes('gift card') && 
+//         !li.node.product?.title?.toLowerCase().includes('gift card')
+//       );
+
+//       if (regularLineItems.length > 0 && giftCardLineItems.length > 0) {
+//         // Mixed order - use proportional discount allocation
+        
+//         // Calculate subtotals for each portion
+//         const regularSubtotal = regularLineItems.reduce((sum: number, li: any) => {
+//           return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//         }, 0);
+        
+//         const giftCardSubtotal = giftCardLineItems.reduce((sum: number, li: any) => {
+//           return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
+//         }, 0);
+        
+//         const totalOrderDiscount = parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+        
+//         // Allocate discount proportionally (matching Shopify's rounding)
+//         const discountAllocation = allocateDiscountProportional(
+//           totalOrderDiscount, 
+//           giftCardSubtotal, 
+//           regularSubtotal
+//         );
+        
+//         const giftCardDiscount = discountAllocation.portionADiscount;
+//         const regularDiscount = discountAllocation.portionBDiscount;
+
+//         // Helper function to create money set
+//         const createMoneySet = (amount: number, currencyCode: string = 'USD') => {
+//           return {
+//             shopMoney: { 
+//               amount: amount.toFixed(2), 
+//               currencyCode: currencyCode || order.totalPriceSet?.shopMoney?.currencyCode || 'USD' 
+//             }
+//           };
+//         };
+
+//         // Create regular portion with proportional discount
+//         const regularPortion = {
+//           ...order,
+//           lineItems: { edges: regularLineItems },
+//           isMixedOrderRegular: true,
+//           // Apply proportional discount
+//           totalDiscountsSet: createMoneySet(regularDiscount),
+//           calculatedDiscountAllocation: {
+//             method: 'proportional',
+//             regularDiscount,
+//             giftCardDiscount,
+//             totalOrderDiscount
+//           }
+//         };
+        
+//         // Create gift card portion with proportional discount and NO shipping
+//         const giftCardPortion = {
+//           ...order,
+//           lineItems: { edges: giftCardLineItems },
+//           isMixedOrderGiftCard: true,
+//           // Gift cards get NO shipping
+//           totalShippingPriceSet: createMoneySet(0),
+//           totalRefundedShippingSet: createMoneySet(0),
+//           // Apply proportional discount
+//           totalDiscountsSet: createMoneySet(giftCardDiscount),
+//           calculatedDiscountAllocation: {
+//             method: 'proportional',
+//             regularDiscount,
+//             giftCardDiscount,
+//             totalOrderDiscount
+//           }
+//         };
+
+//         const processedRegular = calculateOrderMetrics(regularPortion);
+//         const processedGiftCard = calculateOrderMetrics(giftCardPortion);
+        
+//         mixedOrdersRegular.push(processedRegular);
+//         mixedOrdersGiftCard.push(processedGiftCard);
+//       } else {
+//         // Pure gift card order
+//         const giftCardOrder = {
+//           ...order,
+//           // Gift cards get NO shipping
+//           totalShippingPriceSet: { shopMoney: { amount: "0.00", currencyCode: order.totalShippingPriceSet?.shopMoney?.currencyCode || "USD" } },
+//           totalRefundedShippingSet: { shopMoney: { amount: "0.00", currencyCode: order.totalRefundedShippingSet?.shopMoney?.currencyCode || "USD" } }
+//         };
+//         const processed = calculateOrderMetrics(giftCardOrder);
+//         processed.isGiftCardOrder = true;
+//         giftCardOrders.push(processed);
+//       }
+//     }
+//   });
+
+//   // Combine all regular orders (pure regular + mixed regular portions)
+//   const allRegularOrders = [...regularOrders, ...mixedOrdersRegular];
+//   const allGiftCardOrders = [...giftCardOrders, ...mixedOrdersGiftCard];
+  
+//   return {
+//     regularOrders: allRegularOrders,
+//     giftCardOrders: allGiftCardOrders
+//   };
+// };
+
+// // // Calculate financial metrics
+// // function calculateFinancialMetrics(orders: any[]): any {
+// //   const totalGrossSales = orders.reduce((sum: number, order: any) => {
+// //     return sum + (order.calculatedGrossSales || 0);
+// //   }, 0);
+
+// //   const totalDiscounts = orders.reduce((sum: number, order: any) => {
+// //     return sum + parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+// //   }, 0);
+
+// //   const totalNetReturns = orders.reduce((sum: number, order: any) => {
+// //     return sum + (order.calculatedNetReturns || 0);
+// //   }, 0);
+
+// //   const totalNetSales = orders.reduce((sum: number, order: any) => {
+// //     return sum + (order.calculatedNetSales || 0);
+// //   }, 0);
+
+// //   const totalShippingCharges = orders.reduce((sum: number, order: any) => {
+// //     return sum + (order.calculatedShippingCharges || 0);
+// //   }, 0);
+
+// //   // Return fees (restocking + return shipping)
+// //   const totalReturnFees = orders.reduce((sum: number, order: any) => {
+// //     return sum + (order.calculatedReturnFees || 0);
+// //   }, 0);
+
+// //   const totalTaxes = orders.reduce((sum: number, order: any) => {
+// //     return sum + parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+// //   }, 0);
+
+
+
+// // // const totalTaxes = orders.reduce((sum: number, order: any) => {
+// // //   return sum + (order.calculatedTaxes || 0);
+// // // }, 0);
+
+// //   // TOTAL SALES = Net Sales + Shipping Charges + Return Fees + Taxes
+// //   const totalSales = totalNetSales + totalShippingCharges + totalReturnFees + totalTaxes;
+
+// //   const totalOrders = orders.length;
+// //   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+// //   // Breakdown of return fees
+// //   const totalRestockingFees = orders.reduce((sum: number, order: any) => {
+// //     return sum + (order.calculatedRestockingFees || 0);
+// //   }, 0);
+
+// //   const totalReturnShippingFees = orders.reduce((sum: number, order: any) => {
+// //     return sum + (order.calculatedReturnShippingFees || 0);
+// //   }, 0);
+
+// //   return {
+// //     totalGrossSales,
+// //     totalDiscounts,
+// //     totalReturns: totalNetReturns,
+// //     totalNetSales,
+// //     totalShippingCharges,
+// //     totalReturnFees,
+// //     totalTaxes,
+// //     totalSales,
+// //     totalOrders,
+// //     averageOrderValue,
+// //     totalRestockingFees,
+// //     totalReturnShippingFees,
+// //     currencyCode: orders[0]?.totalPriceSet?.shopMoney?.currencyCode || 'USD'
+// //   };
+// // }
+
+
+
+
+
+// function calculateFinancialMetrics(orders: any[], useCalculatedTaxes: boolean = false): any {
+//   const totalGrossSales = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedGrossSales || 0);
+//   }, 0);
+
+//   const totalDiscounts = orders.reduce((sum: number, order: any) => {
+//     return sum + parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+//   }, 0);
+
+//   const totalNetReturns = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetReturns || 0);
+//   }, 0);
+
+//   const totalNetSales = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetSales || 0);
+//   }, 0);
+
+//   const totalShippingCharges = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedShippingCharges || 0);
+//   }, 0);
+
+//   // Return fees (restocking + return shipping)
+//   const totalReturnFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnFees || 0);
+//   }, 0);
+
+//   // TAX CALCULATION - Use parameter to determine which method to use
+//   const totalTaxes = orders.reduce((sum: number, order: any) => {
+//     if (useCalculatedTaxes) {
+//       // For modified orders - use calculatedTaxes (handles refund scenarios)
+//       return sum + (order.calculatedTaxes || 0);
+//     } else {
+//       // For today's orders - use currentTotalTaxSet (original approach)
+//       return sum + parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+//     }
+//   }, 0);
+
+//   // TOTAL SALES = Net Sales + Shipping Charges + Return Fees + Taxes
+//   const totalSales = totalNetSales + totalShippingCharges + totalReturnFees + totalTaxes;
+
+//   const totalOrders = orders.length;
+//   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+//   // Breakdown of return fees
+//   const totalRestockingFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedRestockingFees || 0);
+//   }, 0);
+
+//   const totalReturnShippingFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnShippingFees || 0);
+//   }, 0);
+
+//   return {
+//     totalGrossSales,
+//     totalDiscounts,
+//     totalReturns: totalNetReturns,
+//     totalNetSales,
+//     totalShippingCharges,
+//     totalReturnFees,
+//     totalTaxes,
+//     totalSales,
+//     totalOrders,
+//     averageOrderValue,
+//     totalRestockingFees,
+//     totalReturnShippingFees,
+//     currencyCode: orders[0]?.totalPriceSet?.shopMoney?.currencyCode || 'USD'
+//   };
+// }
+
+
+// // Generic function to fetch orders with pagination
+// async function fetchOrdersWithPagination(admin: any, query: string, description: string) {
+//   let allOrders: any[] = [];
+//   let hasNextPage = true;
+//   let afterCursor = null;
+//   let pageCount = 0;
+//   const maxPages = 50;
+
+//   while (hasNextPage && pageCount < maxPages) {
+//     pageCount++;
+    
+//     const paginationVariables: any = {
+//       query: query,
+//       first: 100
+//     };
+    
+//     if (afterCursor) {
+//       paginationVariables.after = afterCursor;
+//     }
+
+//     try {
+//       const response = await admin.graphql(
+//         `#graphql
+//         query OrdersPaginated($query: String!, $first: Int!, $after: String) {
+//           orders(first: $first, query: $query, sortKey: CREATED_AT, reverse: true, after: $after) {
+//             pageInfo {
+//               hasNextPage
+//               endCursor
+//             }
+//             edges {
+//               cursor
+//               node {
+//                 id
+//                 name
+//                 createdAt
+//                 updatedAt
+//                 displayFinancialStatus
+//                 displayFulfillmentStatus
+//                 confirmed
+//                 cancelledAt
+//                 cancelReason
+//                 note
+//                 fullyPaid
+//                 totalReceivedSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalRefundedSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalOutstandingSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalDiscountsSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalShippingPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalRefundedShippingSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 refundDiscrepancySet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 returns(first: 7) {
+//                   nodes {
+//                     returnLineItems(first: 10) {
+//                       nodes {
+//                         ... on ReturnLineItem {
+//                           restockingFee {
+//                             amountSet {
+//                               shopMoney {
+//                                 amount
+//                                 currencyCode
+//                               }
+//                             }
+//                           }
+//                         }
+//                       }
+//                     }
+//                     returnShippingFees {
+//                       amountSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                     }
+//                   }
+//                 }
+//                 refunds {
+//                   id
+//                   createdAt
+//                   note
+//                   totalRefundedSet {
+//                     shopMoney {
+//                       amount
+//                       currencyCode
+//                     }
+//                   }
+//                   refundLineItems(first: 10) {
+//                     edges {
+//                       node {
+//                         lineItem {
+//                           id
+//                           name
+//                         }
+//                         quantity
+//                         subtotalSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                         totalTaxSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                       }
+//                     }
+//                   }
+//                 }
+//                 currentSubtotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 currentTotalTaxSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalTaxSet {
+//   shopMoney {
+//     amount
+//     currencyCode
+//   }
+// }
+//                 currentTotalDiscountsSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 currentTotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 subtotalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 totalPriceSet {
+//                   shopMoney {
+//                     amount
+//                     currencyCode
+//                   }
+//                 }
+//                 lineItems(first: 50) {
+//                   edges {
+//                     node {
+//                       id
+//                       name
+//                       title
+//                       quantity
+//                       sku
+//                       variantTitle
+//                       product {
+//                         id
+//                         title
+//                       }
+//                       variant {
+//                         id
+//                         title
+//                         sku
+//                         price
+//                       }
+//                       originalUnitPriceSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       discountedUnitPriceSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       discountedTotalSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       originalTotalSet {
+//                         shopMoney {
+//                           amount
+//                           currencyCode
+//                         }
+//                       }
+//                       taxLines {
+//                         priceSet {
+//                           shopMoney {
+//                             amount
+//                             currencyCode
+//                           }
+//                         }
+//                         rate
+//                         title
+//                       }
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         }`,
+//         { variables: paginationVariables }
+//       );
+
+//       const responseData: any = await response.json();
+      
+//       // Handle GraphQL errors
+//       if (responseData.errors && Array.isArray(responseData.errors)) {
+//         console.error('GraphQL Errors:', responseData.errors);
+//         throw new Error(`GraphQL error: ${JSON.stringify(responseData.errors)}`);
+//       }
+
+//       const ordersData = responseData?.data?.orders;
+//       if (!ordersData) {
+//         console.error('No orders data in response:', responseData);
+//         break;
+//       }
+
+//       const pageOrders = ordersData?.edges?.map((x: any) => x.node) ?? [];
+//       console.log(`Page ${pageCount} (${description}): Fetched ${pageOrders.length} orders`);
+
+//       allOrders = [...allOrders, ...pageOrders];
+//       hasNextPage = ordersData?.pageInfo?.hasNextPage || false;
+//       afterCursor = ordersData?.pageInfo?.endCursor;
+
+//       // Add a small delay to be respectful of API limits
+//       if (hasNextPage) {
+//         await new Promise(resolve => setTimeout(resolve, 200));
+//       }
+
+//       console.log(`Total ${description} orders so far: ${allOrders.length}, Has next page: ${hasNextPage}`);
+
+//     } catch (error: any) {
+//       console.error(`Error fetching page ${pageCount} (${description}):`, error);
+//       break;
+//     }
+//   }
+
+//   console.log(`Pagination complete for ${description}. Total orders fetched: ${allOrders.length} over ${pageCount} pages`);
+//   return allOrders;
+// }
+
+// export const loader = async ({ request }: LoaderFunctionArgs) => {
+//   const { admin, session } = await authenticate.admin(request);
+//   const shop = session.shop;
+
+//   // Get store timezone (default to Eastern Time)
+//   const storeTimezone = 'America/New_York';
+  
+//   // Get current UTC time
+//   const nowUTC = new Date();
+//   const todayStore = getStoreLocalDateString(nowUTC, storeTimezone);
+
+//   // Calculate reference dates for the queries - 7 months ago to cover all time ranges
+//   const sevenMonthsAgoUTC = new Date(nowUTC);
+//   sevenMonthsAgoUTC.setMonth(nowUTC.getMonth() - 7);
+
+//   // Get UTC date range for today
+//   const todayStart = new Date(`${todayStore}T00:00:00`);
+//   const todayEnd = new Date(`${todayStore}T23:59:59`);
+//   const todayStartUTC = todayStart.toISOString();
+//   const todayEndUTC = todayEnd.toISOString();
+
+//   console.log('Fetching all relevant orders for today...');
+//   console.log('Store timezone:', storeTimezone);
+//   console.log('Today in store time:', todayStore);
+
+//   // Fetch orders CREATED today
+//   const createdTodayQuery = `created_at:>=${todayStartUTC} created_at:<=${todayEndUTC}`;
+//   const createdTodayOrders = await fetchOrdersWithPagination(admin, createdTodayQuery, "created today");
+
+//   // Fetch orders MODIFIED today but CREATED before today
+//   const modifiedTodayQuery = `updated_at:>=${todayStartUTC} updated_at:<=${todayEndUTC} created_at:<${todayStartUTC}`;
+//   const modifiedTodayOrders = await fetchOrdersWithPagination(admin, modifiedTodayQuery, "modified today");
+
+//   // Filter created today orders to only include those created today (in store timezone)
+//   const filteredCreatedToday = createdTodayOrders.filter((order: any) => {
+//     const orderDateUTC = new Date(order.createdAt);
+//     return isTodayInStoreTime(orderDateUTC, storeTimezone);
+//   });
+
+//   // Filter modified today orders to only include those created before today
+//   const filteredModifiedToday = modifiedTodayOrders.filter((order: any) => {
+//     const orderCreatedUTC = new Date(order.createdAt);
+//     return !isTodayInStoreTime(orderCreatedUTC, storeTimezone);
+//   });
+
+
+
+//   // DEBUG: Check raw tax data from API for modified orders
+// console.log('=== RAW MODIFIED ORDERS TAX DATA ===');
+// filteredModifiedToday.slice(0, 3).forEach((order: any, index: number) => {
+//   console.log(`Modified order ${index + 1} (${order.name}):`, {
+//     currentTotalTaxSet: order.currentTotalTaxSet,
+//     totalPriceSet: order.totalPriceSet,
+//     financialStatus: order.displayFinancialStatus
+//   });
+// });
+
+//   console.log(`Created today after filtering: ${filteredCreatedToday.length}`);
+//   console.log(`Modified today after filtering: ${filteredModifiedToday.length}`);
+
+//   // Process both sets of orders
+//   const todayCreatedProcessed = processOrders(filteredCreatedToday);
+//   const todayModifiedProcessed = processOrders(filteredModifiedToday);
+
+
+
+
+  
+
+
+
+
+// // DEBUG: Check tax data in modified orders
+// console.log('=== MODIFIED ORDERS TAX DEBUG ===');
+// todayModifiedProcessed.regularOrders.forEach((order: any) => {
+//   console.log(`Modified order ${order.name}:`, {
+//     taxes: order.calculatedTaxes,
+//     currentTotalTaxSet: order.currentTotalTaxSet
+//   });
+// });
+
+
+//   // Calculate summaries for both sets
+// //   const todayCreatedSummary = calculateFinancialMetrics(todayCreatedProcessed.regularOrders);
+// //   const todayCreatedGiftCardSummary = calculateFinancialMetrics(todayCreatedProcessed.giftCardOrders);
+// //   const todayModifiedSummary = calculateFinancialMetrics(todayModifiedProcessed.regularOrders);
+// //   const todayModifiedGiftCardSummary = calculateFinancialMetrics(todayModifiedProcessed.giftCardOrders);
+
+
+
+
+// // Today's orders - use currentTotalTaxSet (false)
+// const todayCreatedSummary = calculateFinancialMetrics(todayCreatedProcessed.regularOrders, false);
+// const todayCreatedGiftCardSummary = calculateFinancialMetrics(todayCreatedProcessed.giftCardOrders, false);
+
+// // Modified orders - use calculatedTaxes (true)  
+// const todayModifiedSummary = calculateFinancialMetrics(todayModifiedProcessed.regularOrders, true);
+// const todayModifiedGiftCardSummary = calculateFinancialMetrics(todayModifiedProcessed.giftCardOrders, true);
+
+
+//   return json({ 
+//     todayCreated: todayCreatedProcessed,
+//     todayModified: todayModifiedProcessed,
+//     summaries: {
+//       created: {
+//         regular: todayCreatedSummary,
+//         giftCard: todayCreatedGiftCardSummary
+//       },
+//       modified: {
+//         regular: todayModifiedSummary,
+//         giftCard: todayModifiedGiftCardSummary
+//       }
+//     },
+//     summary: {
+//       date: new Date().toLocaleDateString('en-US', { 
+//         weekday: 'long', 
+//         year: 'numeric', 
+//         month: 'long', 
+//         day: 'numeric',
+//         timeZone: storeTimezone 
+//       }),
+//       storeTimezone,
+//       createdOrderCount: filteredCreatedToday.length,
+//       modifiedOrderCount: filteredModifiedToday.length
+//     },
+//     debug: {
+//       created: {
+//         totalFetched: createdTodayOrders.length,
+//         todayFiltered: filteredCreatedToday.length,
+//         regularOrders: todayCreatedProcessed.regularOrders.length,
+//         giftCardOrders: todayCreatedProcessed.giftCardOrders.length
+//       },
+//       modified: {
+//         totalFetched: modifiedTodayOrders.length,
+//         modifiedFiltered: filteredModifiedToday.length,
+//         regularOrders: todayModifiedProcessed.regularOrders.length,
+//         giftCardOrders: todayModifiedProcessed.giftCardOrders.length
+//       }
+//     }
+//   });
+// };
+
+// // Supporting components
+// function MetricsGrid({ metrics }: { metrics: any }) {
+//   return (
+//     <div style={{ 
+//       display: 'grid', 
+//       gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+//       gap: 16, 
+//       marginBottom: 20,
+//       padding: 16,
+//       backgroundColor: '#f5f5f5',
+//       borderRadius: 8
+//     }}>
+//       <MetricCard title="Gross Sales" value={metrics.totalGrossSales} currency={metrics.currencyCode} color="#4CAF50" />
+//       <MetricCard title="Discounts" value={-metrics.totalDiscounts} currency={metrics.currencyCode} color="#FF9800" />
+//       <MetricCard title="Returns" value={-metrics.totalReturns} currency={metrics.currencyCode} color="#F44336" />
+//       <MetricCard title="Net Sales" value={metrics.totalNetSales} currency={metrics.currencyCode} color="#2196F3" />
+//       <MetricCard title="Shipping Charges" value={metrics.totalShippingCharges} currency={metrics.currencyCode} color="#9C27B0" />
+//       <MetricCard title="Return Fees" value={metrics.totalReturnFees} currency={metrics.currencyCode} color="#795548" />
+//       <MetricCard title="Taxes" value={metrics.totalTaxes} currency={metrics.currencyCode} color="#607D8B" />
+//       <MetricCard title="Total Sales" value={metrics.totalSales} currency={metrics.currencyCode} color="#4CAF50" emphasis={true} />
+//     </div>
+//   );
+// }
+
+// function OrdersTable({ orders, currencyCode, isGiftCard = false, showModified = false }: { orders: any[], currencyCode: string, isGiftCard?: boolean, showModified?: boolean }) {
+//   if (orders.length === 0) {
+//     return (
+//       <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+//         No {isGiftCard ? 'gift card ' : ''}orders {showModified ? 'modified' : 'created'} today.
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
+//       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+//         <thead style={{ backgroundColor: '#f5f5f5' }}>
+//           <tr>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Order</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>
+//               {showModified ? 'Created' : 'Time'}
+//             </th>
+//             {showModified && (
+//               <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Modified</th>
+//             )}
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Status</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Total Sales</th>
+//             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Details</th>
+//           </tr>
+//         </thead>
+//         <tbody>
+//           {orders.map((order: any) => (
+//             <tr key={order.id} style={{ borderBottom: '1px solid #eee' }}>
+//               <td style={{ padding: '12px' }}>
+//                 <strong>{order.name}</strong>
+//                 {order.note && (
+//                   <div style={{ fontSize: '0.8em', color: '#666', marginTop: '4px' }}>
+//                     📝 {order.note}
+//                   </div>
+//                 )}
+//                 {order.isMixedOrderRegular && (
+//                   <div style={{ fontSize: '0.7em', color: '#FF9800', marginTop: '2px' }}>
+//                     Mixed Order (Regular Portion)
+//                   </div>
+//                 )}
+//                 {order.isMixedOrderGiftCard && (
+//                   <div style={{ fontSize: '0.7em', color: '#9C27B0', marginTop: '2px' }}>
+//                     Mixed Order (Gift Card Portion)
+//                   </div>
+//                 )}
+//                 {order.isGiftCardOrder && (
+//                   <div style={{ fontSize: '0.7em', color: '#9C27B0', marginTop: '2px' }}>
+//                     Gift Card Order
+//                   </div>
+//                 )}
+//                 {order.calculatedDiscountAllocation && (
+//                   <div style={{ fontSize: '0.7em', color: '#FF9800', marginTop: '2px' }}>
+//                     Proportional Discount Applied
+//                   </div>
+//                 )}
+//                 {showModified && (
+//                   <div style={{ fontSize: '0.7em', color: '#FF6B35', marginTop: '2px', fontWeight: 'bold' }}>
+//                     MODIFIED TODAY
+//                   </div>
+//                 )}
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 {showModified ? (
+//                   <>
+//                     {new Date(order.createdAt).toLocaleDateString('en-US')}
+//                     <div style={{ fontSize: '0.8em', color: '#666' }}>
+//                       {new Date(order.createdAt).toLocaleTimeString('en-US', { 
+//                         hour: '2-digit', 
+//                         minute: '2-digit'
+//                       })}
+//                     </div>
+//                   </>
+//                 ) : (
+//                   new Date(order.createdAt).toLocaleTimeString('en-US', { 
+//                     hour: '2-digit', 
+//                     minute: '2-digit'
+//                   })
+//                 )}
+//               </td>
+//               {showModified && (
+//                 <td style={{ padding: '12px' }}>
+//                   {new Date(order.updatedAt).toLocaleTimeString('en-US', { 
+//                     hour: '2-digit', 
+//                     minute: '2-digit'
+//                   })}
+//                 </td>
+//               )}
+//               <td style={{ padding: '12px' }}>
+//                 <span style={{
+//                   padding: '4px 8px',
+//                   borderRadius: '4px',
+//                   fontSize: '0.8em',
+//                   backgroundColor: order.displayFinancialStatus === 'PAID' ? '#4CAF50' : 
+//                                  order.displayFinancialStatus === 'PENDING' ? '#FF9800' : '#F44336',
+//                   color: 'white'
+//                 }}>
+//                   {order.displayFinancialStatus}
+//                 </span>
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 <strong>
+//                   {order.calculatedTotalSales.toFixed(2)} {currencyCode}
+//                 </strong>
+//                 {order.calculatedGrossReturns > 0 && (
+//                   <div style={{ fontSize: '0.8em', color: '#F44336' }}>
+//                     Returns: -{order.calculatedGrossReturns.toFixed(2)}
+//                   </div>
+//                 )}
+//               </td>
+//               <td style={{ padding: '12px' }}>
+//                 <div style={{ fontSize: '0.8em', color: '#666' }}>
+//                   <div>Net Sales: {order.calculatedNetSales.toFixed(2)}</div>
+//                   <div>Shipping: {order.calculatedShippingCharges.toFixed(2)}</div>
+//                   {order.calculatedReturnFees > 0 && (
+//                     <div style={{ color: '#795548' }}>
+//                       Return Fees: {order.calculatedReturnFees.toFixed(2)}
+//                     </div>
+//                   )}
+//                   <div>Taxes: {order.calculatedTaxes.toFixed(2)}</div>
+//                   {order.calculatedDiscountAllocation && (
+//                     <div style={{ color: '#FF9800' }}>
+//                       Discount: {parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0).toFixed(2)}
+//                     </div>
+//                   )}
+//                   {order.hasOverRefund && (
+//                     <div style={{ color: '#F44336' }}>Over Refund</div>
+//                   )}
+//                   {order.hasUnderRefund && (
+//                     <div style={{ color: '#FF9800' }}>Under Refund</div>
+//                   )}
+//                 </div>
+//               </td>
+//             </tr>
+//           ))}
+//         </tbody>
+//       </table>
+//     </div>
+//   );
+// }
+
+// function MetricCard({ title, value, currency, color = '#333', emphasis = false, isCount = false }: any) {
+//   const isNegative = value < 0 && !isCount;
+//   const displayValue = isCount ? value.toString() : Math.abs(value).toFixed(2);
+  
+//   return (
+//     <div style={{
+//       padding: '16px',
+//       backgroundColor: 'white',
+//       borderRadius: '8px',
+//       border: emphasis ? `2px solid ${color}` : '1px solid #ddd',
+//       textAlign: 'center',
+//       boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+//     }}>
+//       <div style={{ fontSize: '0.9em', fontWeight: 'bold', color: '#666', marginBottom: '8px' }}>
+//         {title}
+//       </div>
+//       <div style={{ fontSize: '1.2em', fontWeight: 'bold', color: isCount ? color : (isNegative ? '#F44336' : color) }}>
+//         {!isCount && isNegative ? '-' : ''}
+//         {currency && !isCount ? `${currency} ` : ''}
+//         {displayValue}
+//         {isCount && ' orders'}
+//       </div>
+//     </div>
+//   );
+// }
+
+// function MetricItem({ title, value, currency, isCount = false }: any) {
+//   const displayValue = isCount ? value : value.toFixed(2);
+  
+//   return (
+//     <div>
+//       <div style={{ fontSize: '0.9em', opacity: 0.9 }}>{title}</div>
+//       <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>
+//         {!isCount && currency}{displayValue}{isCount && ' orders'}
+//       </div>
+//     </div>
+//   );
+// }
+
+// // SINGLE DEFAULT EXPORT - MERGED COMPONENT
+// export default function OrdersToday() {
+//   const { todayCreated, todayModified, summaries, summary, debug } = useLoaderData<typeof loader>();
+
+//   return (
+//     <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
+//       <h2>Today's Orders & Modifications - {summary.date}</h2>
+//       <p style={{ color: '#666', marginBottom: 20 }}>
+//         Store Timezone: {summary.storeTimezone} • {summary.createdOrderCount} orders created today • {summary.modifiedOrderCount} past orders modified today
+//       </p>
+
+//       {/* TODAY'S ORDERS SECTION */}
+//       <div style={{ marginBottom: 40, padding: 20, backgroundColor: '#f8f9fa', borderRadius: 8 }}>
+//         <h2 style={{ borderBottom: '3px solid #4CAF50', paddingBottom: 8, color: '#4CAF50', marginBottom: 20 }}>
+//           📋 Orders Created Today
+//         </h2>
+        
+//         {/* Regular Orders Created Today */}
+//         <div style={{ marginBottom: 40 }}>
+//           <h3 style={{ borderBottom: '2px solid #2196F3', paddingBottom: 8, color: '#2196F3' }}>
+//             Regular Orders ({summaries.created.regular.totalOrders} orders)
+//           </h3>
+//           <MetricsGrid metrics={summaries.created.regular} />
+//           <OrdersTable 
+//             orders={todayCreated.regularOrders} 
+//             currencyCode={summaries.created.regular.currencyCode} 
+//           />
+//         </div>
+
+//         {/* Gift Card Orders Created Today */}
+//         {todayCreated.giftCardOrders.length > 0 && (
+//           <div style={{ marginBottom: 40 }}>
+//             <h3 style={{ borderBottom: '2px solid #9C27B0', paddingBottom: 8, color: '#9C27B0' }}>
+//               Gift Card Orders ({summaries.created.giftCard.totalOrders} orders)
+//             </h3>
+//             <MetricsGrid metrics={summaries.created.giftCard} />
+//             <OrdersTable 
+//               orders={todayCreated.giftCardOrders} 
+//               currencyCode={summaries.created.giftCard.currencyCode} 
+//               isGiftCard={true} 
+//             />
+//           </div>
+//         )}
+//       </div>
+
+//       {/* MODIFIED ORDERS SECTION */}
+//       <div style={{ marginBottom: 40, padding: 20, backgroundColor: '#fff3e0', borderRadius: 8 }}>
+//         <h2 style={{ borderBottom: '3px solid #FF6B35', paddingBottom: 8, color: '#FF6B35', marginBottom: 20 }}>
+//           🔄 Past Orders Modified Today
+//         </h2>
+        
+//         {/* Regular Orders Modified Today */}
+//         <div style={{ marginBottom: 40 }}>
+//           <h3 style={{ borderBottom: '2px solid #2196F3', paddingBottom: 8, color: '#2196F3' }}>
+//             Regular Orders ({summaries.modified.regular.totalOrders} orders)
+//           </h3>
+//           <MetricsGrid metrics={summaries.modified.regular} />
+//           <OrdersTable 
+//             orders={todayModified.regularOrders} 
+//             currencyCode={summaries.modified.regular.currencyCode} 
+//             showModified={true}
+//           />
+//         </div>
+
+//         {/* Gift Card Orders Modified Today */}
+//         {todayModified.giftCardOrders.length > 0 && (
+//           <div style={{ marginBottom: 40 }}>
+//             <h3 style={{ borderBottom: '2px solid #9C27B0', paddingBottom: 8, color: '#9C27B0' }}>
+//               Gift Card Orders ({summaries.modified.giftCard.totalOrders} orders)
+//             </h3>
+//             <MetricsGrid metrics={summaries.modified.giftCard} />
+//             <OrdersTable 
+//               orders={todayModified.giftCardOrders} 
+//               currencyCode={summaries.modified.giftCard.currencyCode} 
+//               isGiftCard={true} 
+//               showModified={true}
+//             />
+//           </div>
+//         )}
+//       </div>
+
+//       {/* COMBINED SUMMARY */}
+//       <div style={{ 
+//         padding: 20, 
+//         backgroundColor: '#4CAF50', 
+//         color: 'white', 
+//         borderRadius: 8,
+//         marginTop: 20
+//       }}>
+//         <h3 style={{ margin: '0 0 10px 0' }}>Combined Today's Performance</h3>
+//         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+//           <MetricItem 
+//             title="Total Sales (Created + Modified)" 
+//             value={summaries.created.regular.totalSales + summaries.created.giftCard.totalSales + summaries.modified.regular.totalSales + summaries.modified.giftCard.totalSales} 
+//             currency={summaries.created.regular.currencyCode}
+//           />
+//           <MetricItem 
+//             title="Total Orders" 
+//             value={summaries.created.regular.totalOrders + summaries.created.giftCard.totalOrders + summaries.modified.regular.totalOrders + summaries.modified.giftCard.totalOrders} 
+//             isCount={true}
+//           />
+//           <MetricItem 
+//             title="Net Sales" 
+//             value={summaries.created.regular.totalNetSales + summaries.created.giftCard.totalNetSales + summaries.modified.regular.totalNetSales + summaries.modified.giftCard.totalNetSales} 
+//             currency={summaries.created.regular.currencyCode}
+//           />
+//           <MetricItem 
+//             title="Orders Created Today" 
+//             value={summary.createdOrderCount} 
+//             isCount={true}
+//           />
+//           <MetricItem 
+//             title="Orders Modified Today" 
+//             value={summary.modifiedOrderCount} 
+//             isCount={true}
+//           />
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 import { json, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
-import type { EventSummary, OrderEvent, EventDetectionData } from "../types/analytics";
 
 // Helper function to convert a UTC date to store timezone and get YYYY-MM-DD
 const getStoreLocalDateString = (utcDate: Date, timezone: string = 'America/New_York'): string => {
@@ -48309,7 +53764,15 @@ function allocateDiscountProportional(totalDiscount: number, subtotalA: number, 
 }
 
 // Calculate order metrics following your exact logic
-function calculateOrderMetrics(order: any) {
+// Calculate order metrics following your exact logic
+// Calculate order metrics following your exact logic
+
+function calculateOrderMetrics(order: any, isGiftCardPortion: boolean = false, originalOrder?: any) {
+  console.log(`🚨 CALCULATING ORDER ${order.name} - GIFT CARD: ${isGiftCardPortion} 🚨`);
+  
+  // Use originalOrder for return detection if provided, otherwise use current order
+  const orderForReturnDetection = originalOrder || order;
+  
   // Calculate line items total (ORIGINAL prices before discounts)
   const lineItemsTotal = order.lineItems?.edges?.reduce((sum: number, li: any) => {
     return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
@@ -48320,43 +53783,145 @@ function calculateOrderMetrics(order: any) {
 
   // Get refund discrepancy directly from Shopify
   const refundDiscrepancy = parseFloat(order.refundDiscrepancySet?.shopMoney?.amount || 0);
+  console.log(`📊 ${order.name} - Refund Discrepancy: $${refundDiscrepancy}, Is Gift Card: ${isGiftCardPortion}`);
 
-  // Calculate gross returns (sum of refunded line items)
+  // Calculate gross returns with proper filtering for BOTH portions
   let grossReturns = 0;
   order.refunds?.forEach((refund: any) => {
     refund.refundLineItems?.edges?.forEach((edge: any) => {
-      grossReturns += parseFloat(edge.node.subtotalSet?.shopMoney?.amount || 0);
+      const lineItemName = edge.node.lineItem?.name?.toLowerCase() || '';
+      const lineItemTitle = edge.node.lineItem?.title?.toLowerCase() || '';
+      const isGiftCardItem = lineItemName.includes('gift card') || lineItemTitle.includes('gift card');
+      
+      // Gift card portion: ONLY include gift card refunds
+      if (isGiftCardPortion && isGiftCardItem) {
+        grossReturns += parseFloat(edge.node.subtotalSet?.shopMoney?.amount || 0);
+        console.log(`🎁 Gift Card Refund Included: ${lineItemName} - $${edge.node.subtotalSet?.shopMoney?.amount}`);
+      }
+      // Regular portion: ONLY include non-gift card refunds  
+      else if (!isGiftCardPortion && !isGiftCardItem) {
+        grossReturns += parseFloat(edge.node.subtotalSet?.shopMoney?.amount || 0);
+        console.log(`📦 Regular Refund Included: ${lineItemName} - $${edge.node.subtotalSet?.shopMoney?.amount}`);
+      }
+      // Empty refunds (no line items) - only include in regular portion
+      else if (!isGiftCardPortion && !edge.node.lineItem) {
+        grossReturns += parseFloat(edge.node.subtotalSet?.shopMoney?.amount || 0);
+        console.log(`📦 Empty Refund Included in Regular: $${edge.node.subtotalSet?.shopMoney?.amount}`);
+      }
     });
   });
 
-  // Calculate refunded shipping - FROM REFUNDS DATA
-  const refundedShipping = parseFloat(order.totalRefundedShippingSet?.shopMoney?.amount || 0);
+  console.log(`📊 ${order.name} - Gross Returns: $${grossReturns}`);
+
+  // Calculate refunded shipping - FROM REFUNDS DATA (only for regular portions)
+  let refundedShipping = 0;
+  if (!isGiftCardPortion) {
+    refundedShipping = parseFloat(order.totalRefundedShippingSet?.shopMoney?.amount || 0);
+  }
 
   // Calculate shipping charges
   const shippingAmount = parseFloat(order.totalShippingPriceSet?.shopMoney?.amount || 0);
   const shippingCharges = shippingAmount - refundedShipping;
 
-  // Calculate restocking fees and return shipping fees - FROM RETURNS DATA
+  // 🔥 NEW: MATCH RETURNS TO REFUNDS FOR FEE ALLOCATION
+  const matchReturnsToRefunds = (returns: any[], refunds: any[]) => {
+    const matchedFees = {
+      giftCard: { restocking: 0, shipping: 0 },
+      regular: { restocking: 0, shipping: 0 }
+    };
+
+    // Helper function to get restocking fee from a return item
+    const getRestockingFee = (returnItem: any): number => {
+      let total = 0;
+      returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
+        if (lineItem.restockingFee?.amountSet?.shopMoney?.amount) {
+          total += parseFloat(lineItem.restockingFee.amountSet.shopMoney.amount);
+        }
+      });
+      return total;
+    };
+
+    // Helper function to get return shipping fee
+    const getReturnShippingFee = (returnItem: any): number => {
+      let total = 0;
+      returnItem.returnShippingFees?.forEach((fee: any) => {
+        if (fee.amountSet?.shopMoney?.amount) {
+          total += parseFloat(fee.amountSet.shopMoney.amount);
+        }
+      });
+      return total;
+    };
+
+    console.log(`🔍 ${order.name} - Matching ${returns.length} returns to ${refunds.length} refunds`);
+
+    returns.forEach((returnItem, index) => {
+      const correspondingRefund = refunds[index];
+      
+      console.log(`🔍 ${order.name} - Return #${index + 1}:`, {
+        restockingFee: getRestockingFee(returnItem),
+        shippingFee: getReturnShippingFee(returnItem),
+        hasCorrespondingRefund: !!correspondingRefund
+      });
+
+      if (correspondingRefund) {
+        // Check if this refund contains gift card items
+        const hasGiftCardRefund = correspondingRefund.refundLineItems?.edges?.some((edge: any) => {
+          const lineItemName = edge.node.lineItem?.name?.toLowerCase() || '';
+          const lineItemTitle = edge.node.lineItem?.title?.toLowerCase() || '';
+          return lineItemName.includes('gift card') || lineItemTitle.includes('gift card');
+        });
+
+        console.log(`🔍 ${order.name} - Return #${index + 1} has gift card refund: ${hasGiftCardRefund}`);
+
+        if (hasGiftCardRefund) {
+          // This return belongs to gift card portion
+          matchedFees.giftCard.restocking += getRestockingFee(returnItem);
+          matchedFees.giftCard.shipping += getReturnShippingFee(returnItem);
+          console.log(`🎁 ${order.name} - Return #${index + 1} allocated to GIFT CARD: $${getRestockingFee(returnItem)} restocking + $${getReturnShippingFee(returnItem)} shipping`);
+        } else {
+          // This return belongs to regular portion
+          matchedFees.regular.restocking += getRestockingFee(returnItem);
+          matchedFees.regular.shipping += getReturnShippingFee(returnItem);
+          console.log(`📦 ${order.name} - Return #${index + 1} allocated to REGULAR: $${getRestockingFee(returnItem)} restocking + $${getReturnShippingFee(returnItem)} shipping`);
+        }
+      } else {
+        // No corresponding refund - use business logic
+        console.log(`❌ ${order.name} - Return #${index + 1} has no corresponding refund, using fallback logic`);
+      }
+    });
+
+    console.log(`📊 ${order.name} - Final Fee Allocation:`, matchedFees);
+    return matchedFees;
+  };
+
+  // Get the matched fees
+  const matchedFees = matchReturnsToRefunds(
+    orderForReturnDetection.returns?.nodes || [],
+    order.refunds || []
+  );
+
+  // Now calculate fees based on whether this is gift card or regular portion
   let totalRestockingFees = 0;
   let totalReturnShippingFees = 0;
-  
-  order.returns?.nodes?.forEach((returnItem: any) => {
-    returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
-      if (lineItem.restockingFee?.amountSet?.shopMoney?.amount) {
-        totalRestockingFees += parseFloat(lineItem.restockingFee.amountSet.shopMoney.amount);
-      }
-    });
-    
-    // Calculate return shipping fees from returns
-    returnItem.returnShippingFees?.forEach((shippingFee: any) => {
-      if (shippingFee?.amountSet?.shopMoney?.amount) {
-        totalReturnShippingFees += parseFloat(shippingFee.amountSet.shopMoney.amount);
-      }
-    });
-  });
+
+  if (isGiftCardPortion) {
+    totalRestockingFees = matchedFees.giftCard.restocking;
+    totalReturnShippingFees = matchedFees.giftCard.shipping;
+    console.log(`🎁 ${order.name} - GIFT CARD PORTION FEES: $${totalRestockingFees} restocking + $${totalReturnShippingFees} shipping`);
+  } else {
+    totalRestockingFees = matchedFees.regular.restocking;
+    totalReturnShippingFees = matchedFees.regular.shipping;
+    console.log(`📦 ${order.name} - REGULAR PORTION FEES: $${totalRestockingFees} restocking + $${totalReturnShippingFees} shipping`);
+  }
 
   // Calculate total return fees (restocking + return shipping)
   const totalReturnFees = totalRestockingFees + totalReturnShippingFees;
+
+  console.log(`📊 ${order.name} - FINAL FEE SUMMARY:`);
+  console.log(`📊   - Total Restocking Fees: $${totalRestockingFees}`);
+  console.log(`📊   - Total Return Shipping Fees: $${totalReturnShippingFees}`);
+  console.log(`📊   - Total Return Fees: $${totalReturnFees}`);
+  console.log(`📊   - Is Gift Card Portion: ${isGiftCardPortion}`);
 
   // Calculate sales metrics using accurate data
   // Gross Sales = Original line items total (BEFORE any discounts)
@@ -48364,29 +53929,57 @@ function calculateOrderMetrics(order: any) {
 
   // Net Sales = Gross Sales - Returns - Discounts
   let netSales = grossSales - grossReturns - discounts;
+  console.log(`📊 ${order.name} - Net Sales before discrepancy: $${netSales}`);
+
+  // FIXED: Gift cards should NOT have refund discrepancies
+  let finalRefundDiscrepancy = isGiftCardPortion ? 0 : refundDiscrepancy;
+  console.log(`📊 ${order.name} - Final Refund Discrepancy: $${finalRefundDiscrepancy}`);
 
   // Handle refund discrepancies - OVER-refunds ADD to net sales, UNDER-refunds DEDUCT from net sales
-  if (refundDiscrepancy > 0) {
+  if (finalRefundDiscrepancy > 0) {
     // Positive discrepancy = OVER-refund (we refunded more than we should have)
-    netSales += refundDiscrepancy;
-  } else if (refundDiscrepancy < 0) {
+    netSales += finalRefundDiscrepancy;
+    console.log(`📊 ${order.name} - After OVER-refund: $${netSales}`);
+  } else if (finalRefundDiscrepancy < 0) {
     // Negative discrepancy = UNDER-refund (we refunded less than we should have)
-    netSales -= Math.abs(refundDiscrepancy);
+    netSales -= Math.abs(finalRefundDiscrepancy);
+    console.log(`📊 ${order.name} - After UNDER-refund: $${netSales}`);
   }
+
+  console.log(`📊 ${order.name} - Final Net Sales: $${netSales}`);
 
   // Calculate net returns (gross returns adjusted for discrepancies)
   let netReturns = grossReturns;
-  if (refundDiscrepancy > 0) {
-    netReturns = grossReturns - refundDiscrepancy;
-  } else if (refundDiscrepancy < 0) {
-    netReturns = grossReturns + Math.abs(refundDiscrepancy);
+  if (finalRefundDiscrepancy > 0) {
+    netReturns = grossReturns - finalRefundDiscrepancy;
+  } else if (finalRefundDiscrepancy < 0) {
+    netReturns = grossReturns + Math.abs(finalRefundDiscrepancy);
   }
 
-  // Calculate taxes
-  const taxes = parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+  // Calculate taxes from line item tax lines (most reliable for modified orders)
+  let taxes = 0;
+  order.lineItems?.edges?.forEach((li: any) => {
+    li.node.taxLines?.forEach((taxLine: any) => {
+      taxes += parseFloat(taxLine.priceSet?.shopMoney?.amount || 0);
+    });
+  });
+
+  // If no tax from line items, fallback to currentTotalTaxSet
+  if (taxes === 0) {
+    taxes = parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+  }
+
+  // If this is a refunded order, make taxes negative
+  // If there are refunds on this order, make taxes negative to reflect tax refund
+  if (order.refunds && order.refunds.length > 0) {
+    taxes = -Math.abs(taxes);
+  }
 
   // TOTAL SALES = Net Sales + Shipping Charges + Return Fees + Taxes
   const totalSales = netSales + shippingCharges + totalReturnFees + taxes;
+
+  console.log(`✅ ${order.name} - FINAL TOTALS: Net Sales: $${netSales}, Total Sales: $${totalSales}, Return Fees: $${totalReturnFees}`);
+  console.log(`✅ ${order.name} - RETURN FEES: Restocking: $${totalRestockingFees}, Return Shipping: $${totalReturnShippingFees}, Total: $${totalReturnFees}`);
 
   return {
     ...order,
@@ -48397,7 +53990,7 @@ function calculateOrderMetrics(order: any) {
     calculatedRefundedShipping: refundedShipping,
     calculatedReturnShippingFees: totalReturnShippingFees,
     calculatedNetSales: netSales,
-    calculatedRefundDiscrepancy: refundDiscrepancy,
+    calculatedRefundDiscrepancy: finalRefundDiscrepancy,
     calculatedRestockingFees: totalRestockingFees,
     calculatedReturnFees: totalReturnFees,
     calculatedShippingCharges: shippingCharges,
@@ -48405,11 +53998,19 @@ function calculateOrderMetrics(order: any) {
     calculatedTotalSales: totalSales,
     
     // Add flags for display purposes
-    hasOverRefund: refundDiscrepancy > 0,
-    hasUnderRefund: refundDiscrepancy < 0
+    hasOverRefund: finalRefundDiscrepancy > 0,
+    hasUnderRefund: finalRefundDiscrepancy < 0,
+    
+    // Debug info for gift card returns
+    hasGiftCardReturnsWithFees: isGiftCardPortion && (totalRestockingFees > 0 || totalReturnShippingFees > 0),
+    
+    // Add matched fee details for debugging
+    calculatedMatchedFees: matchedFees
   };
 }
+// Process orders and separate gift card transactions with proportional discount allocation
 
+// Process orders and separate gift card transactions with proportional discount allocation
 // Process orders and separate gift card transactions with proportional discount allocation
 const processOrders = (orders: any[]) => {
   const regularOrders: any[] = [];
@@ -48417,9 +54018,9 @@ const processOrders = (orders: any[]) => {
   const mixedOrdersRegular: any[] = [];
   const mixedOrdersGiftCard: any[] = [];
 
-  orders.forEach((order: any) => {
+  orders.forEach((originalOrder: any) => {
     // Check if order contains gift cards
-    const hasGiftCards = order.lineItems?.edges?.some((li: any) => 
+    const hasGiftCards = originalOrder.lineItems?.edges?.some((li: any) => 
       li.node.name?.toLowerCase().includes('gift card') || 
       li.node.title?.toLowerCase().includes('gift card') || 
       li.node.product?.title?.toLowerCase().includes('gift card')
@@ -48427,17 +54028,17 @@ const processOrders = (orders: any[]) => {
 
     if (!hasGiftCards) {
       // Pure regular order
-      const processed = calculateOrderMetrics(order);
+      const processed = calculateOrderMetrics(originalOrder, false, originalOrder);
       regularOrders.push(processed);
     } else {
       // Order contains gift cards - check if mixed or pure gift card
-      const giftCardLineItems = order.lineItems?.edges?.filter((li: any) => 
+      const giftCardLineItems = originalOrder.lineItems?.edges?.filter((li: any) => 
         li.node.name?.toLowerCase().includes('gift card') || 
         li.node.title?.toLowerCase().includes('gift card') || 
         li.node.product?.title?.toLowerCase().includes('gift card')
       );
       
-      const regularLineItems = order.lineItems?.edges?.filter((li: any) => 
+      const regularLineItems = originalOrder.lineItems?.edges?.filter((li: any) => 
         !li.node.name?.toLowerCase().includes('gift card') && 
         !li.node.title?.toLowerCase().includes('gift card') && 
         !li.node.product?.title?.toLowerCase().includes('gift card')
@@ -48455,7 +54056,7 @@ const processOrders = (orders: any[]) => {
           return sum + parseFloat(li.node.originalTotalSet?.shopMoney?.amount || 0);
         }, 0);
         
-        const totalOrderDiscount = parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+        const totalOrderDiscount = parseFloat(originalOrder.totalDiscountsSet?.shopMoney?.amount || 0);
         
         // Allocate discount proportionally (matching Shopify's rounding)
         const discountAllocation = allocateDiscountProportional(
@@ -48472,14 +54073,14 @@ const processOrders = (orders: any[]) => {
           return {
             shopMoney: { 
               amount: amount.toFixed(2), 
-              currencyCode: currencyCode || order.totalPriceSet?.shopMoney?.currencyCode || 'USD' 
+              currencyCode: currencyCode || originalOrder.totalPriceSet?.shopMoney?.currencyCode || 'USD' 
             }
           };
         };
 
         // Create regular portion with proportional discount
         const regularPortion = {
-          ...order,
+          ...originalOrder,
           lineItems: { edges: regularLineItems },
           isMixedOrderRegular: true,
           // Apply proportional discount
@@ -48494,7 +54095,7 @@ const processOrders = (orders: any[]) => {
         
         // Create gift card portion with proportional discount and NO shipping
         const giftCardPortion = {
-          ...order,
+          ...originalOrder,
           lineItems: { edges: giftCardLineItems },
           isMixedOrderGiftCard: true,
           // Gift cards get NO shipping
@@ -48510,20 +54111,22 @@ const processOrders = (orders: any[]) => {
           }
         };
 
-        const processedRegular = calculateOrderMetrics(regularPortion);
-        const processedGiftCard = calculateOrderMetrics(giftCardPortion);
+        // FIX: Pass originalOrder as third parameter for proper return detection
+        const processedRegular = calculateOrderMetrics(regularPortion, false, originalOrder);
+        const processedGiftCard = calculateOrderMetrics(giftCardPortion, true, originalOrder);
         
         mixedOrdersRegular.push(processedRegular);
         mixedOrdersGiftCard.push(processedGiftCard);
       } else {
         // Pure gift card order
         const giftCardOrder = {
-          ...order,
+          ...originalOrder,
           // Gift cards get NO shipping
-          totalShippingPriceSet: { shopMoney: { amount: "0.00", currencyCode: order.totalShippingPriceSet?.shopMoney?.currencyCode || "USD" } },
-          totalRefundedShippingSet: { shopMoney: { amount: "0.00", currencyCode: order.totalRefundedShippingSet?.shopMoney?.currencyCode || "USD" } }
+          totalShippingPriceSet: { shopMoney: { amount: "0.00", currencyCode: originalOrder.totalShippingPriceSet?.shopMoney?.currencyCode || "USD" } },
+          totalRefundedShippingSet: { shopMoney: { amount: "0.00", currencyCode: originalOrder.totalRefundedShippingSet?.shopMoney?.currencyCode || "USD" } }
         };
-        const processed = calculateOrderMetrics(giftCardOrder);
+        // FIX: Pass originalOrder as third parameter
+        const processed = calculateOrderMetrics(giftCardOrder, true, originalOrder);
         processed.isGiftCardOrder = true;
         giftCardOrders.push(processed);
       }
@@ -48539,9 +54142,75 @@ const processOrders = (orders: any[]) => {
     giftCardOrders: allGiftCardOrders
   };
 };
+// // Calculate financial metrics
+// function calculateFinancialMetrics(orders: any[]): any {
+//   const totalGrossSales = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedGrossSales || 0);
+//   }, 0);
 
-// Calculate financial metrics
-function calculateFinancialMetrics(orders: any[]): any {
+//   const totalDiscounts = orders.reduce((sum: number, order: any) => {
+//     return sum + parseFloat(order.totalDiscountsSet?.shopMoney?.amount || 0);
+//   }, 0);
+
+//   const totalNetReturns = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetReturns || 0);
+//   }, 0);
+
+//   const totalNetSales = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedNetSales || 0);
+//   }, 0);
+
+//   const totalShippingCharges = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedShippingCharges || 0);
+//   }, 0);
+
+//   // Return fees (restocking + return shipping)
+//   const totalReturnFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnFees || 0);
+//   }, 0);
+
+//   const totalTaxes = orders.reduce((sum: number, order: any) => {
+//     return sum + parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+//   }, 0);
+
+// // const totalTaxes = orders.reduce((sum: number, order: any) => {
+// //   return sum + (order.calculatedTaxes || 0);
+// // }, 0);
+
+//   // TOTAL SALES = Net Sales + Shipping Charges + Return Fees + Taxes
+//   const totalSales = totalNetSales + totalShippingCharges + totalReturnFees + totalTaxes;
+
+//   const totalOrders = orders.length;
+//   const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+
+//   // Breakdown of return fees
+//   const totalRestockingFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedRestockingFees || 0);
+//   }, 0);
+
+//   const totalReturnShippingFees = orders.reduce((sum: number, order: any) => {
+//     return sum + (order.calculatedReturnShippingFees || 0);
+//   }, 0);
+
+//   return {
+//     totalGrossSales,
+//     totalDiscounts,
+//     totalReturns: totalNetReturns,
+//     totalNetSales,
+//     totalShippingCharges,
+//     totalReturnFees,
+//     totalTaxes,
+//     totalSales,
+//     totalOrders,
+//     averageOrderValue,
+//     totalRestockingFees,
+//     totalReturnShippingFees,
+//     currencyCode: orders[0]?.totalPriceSet?.shopMoney?.currencyCode || 'USD'
+//   };
+// }
+
+
+function calculateFinancialMetrics(orders: any[], useCalculatedTaxes: boolean = false): any {
   const totalGrossSales = orders.reduce((sum: number, order: any) => {
     return sum + (order.calculatedGrossSales || 0);
   }, 0);
@@ -48567,8 +54236,15 @@ function calculateFinancialMetrics(orders: any[]): any {
     return sum + (order.calculatedReturnFees || 0);
   }, 0);
 
+  // TAX CALCULATION - Use parameter to determine which method to use
   const totalTaxes = orders.reduce((sum: number, order: any) => {
-    return sum + parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+    if (useCalculatedTaxes) {
+      // For modified orders - use calculatedTaxes (handles refund scenarios)
+      return sum + (order.calculatedTaxes || 0);
+    } else {
+      // For today's orders - use currentTotalTaxSet (original approach)
+      return sum + parseFloat(order.currentTotalTaxSet?.shopMoney?.amount || 0);
+    }
   }, 0);
 
   // TOTAL SALES = Net Sales + Shipping Charges + Return Fees + Taxes
@@ -48603,1034 +54279,8 @@ function calculateFinancialMetrics(orders: any[]): any {
   };
 }
 
-
-
-
-
-// Add this function right before your event detection loop
-function debugReturnData(orders: any[]) {
-  console.log('=== RETURN DATA DEBUG ===');
-  
-  orders.forEach((order: any) => {
-    const returns = order.returns?.nodes || [];
-    if (returns.length > 0) {
-      console.log(`Order ${order.name} has ${returns.length} returns:`, {
-        orderId: order.id,
-        returns: returns.map((ret: any) => ({
-          id: ret.id,
-          createdAt: ret.createdAt,
-          hasRestockingFees: ret.returnLineItems?.nodes?.some((li: any) => li.restockingFee),
-          hasReturnShipping: ret.returnShippingFees?.length > 0,
-          hasTaxData: !!ret.totalTaxSet,
-          lineItems: ret.returnLineItems?.nodes?.map((li: any) => ({
-            hasRestockingFee: !!li.restockingFee,
-            restockingFeeAmount: li.restockingFee?.amountSet?.shopMoney?.amount,
-            totalPrice: li.totalPriceSet?.shopMoney?.amount
-          }))
-        }))
-      });
-    }
-  });
-  
-  console.log('=== END RETURN DATA DEBUG ===');
-}
-
-// EVENT DETECTION FUNCTIONS
-function parseMoneyAmount(moneySet: any): number {
-  if (!moneySet || !moneySet.shopMoney || !moneySet.shopMoney.amount) {
-    return 0;
-  }
-  return parseFloat(moneySet.shopMoney.amount) || 0;
-}
-
-function detectRefundEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
-  const events: OrderEvent[] = [];
-  const orderRefunds = order.refunds || [];
-
-  orderRefunds.forEach((refund: any) => {
-    const refundDate = new Date(refund.createdAt);
-    
-    if (refundDate >= periodStart && refundDate <= periodEnd && isTodayInStoreTime(refundDate, storeTimezone)) {
-      const refundAmount = parseMoneyAmount(refund.totalRefundedSet);
-      const totalOrderAmount = parseMoneyAmount(order.currentTotalPriceSet);
-      const isFullRefund = Math.abs(refundAmount - totalOrderAmount) < 0.01;
-
-      // Calculate refunded shipping from this refund
-      const refundedShipping = parseMoneyAmount(refund.shipping) || 0;
-      
-      // Calculate refunded taxes
-      const refundedTaxes = refund.refundLineItems?.edges?.reduce((sum: number, edge: any) => {
-        return sum + parseMoneyAmount(edge.node.totalTaxSet);
-      }, 0) || 0;
-      
-      // Calculate refund discrepancy if any
-      const refundDiscrepancy = parseMoneyAmount(order.refundDiscrepancySet) || 0;
-
-      if (isFullRefund) {
-        events.push({
-          orderId: order.id,
-          orderName: order.name,
-          eventType: 'refund',
-          eventDate: refundDate.toISOString(),
-          amount: -refundAmount,
-          currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-          description: `Full refund processed`,
-          details: { 
-            refundId: refund.id, 
-            note: refund.note,
-            refundedShipping: -refundedShipping,
-            refundedTaxes: -refundedTaxes,
-            refundDiscrepancy: refundDiscrepancy,
-            isFullRefund: true
-          }
-        });
-      } else {
-        events.push({
-          orderId: order.id,
-          orderName: order.name,
-          eventType: 'partial_refund',
-          eventDate: refundDate.toISOString(),
-          amount: -refundAmount,
-          currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-          description: `Partial refund: ${refundAmount.toFixed(2)}`,
-          details: { 
-            refundId: refund.id, 
-            note: refund.note, 
-            refundLineItems: refund.refundLineItems,
-            refundedShipping: -refundedShipping,
-            refundedTaxes: -refundedTaxes,
-            refundDiscrepancy: refundDiscrepancy
-          }
-        });
-      }
-
-      // Add separate event for refunded shipping if any
-      if (refundedShipping > 0) {
-        events.push({
-          orderId: order.id,
-          orderName: order.name,
-          eventType: 'refund_shipping',
-          eventDate: refundDate.toISOString(),
-          amount: -refundedShipping,
-          currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-          description: `Refunded shipping`,
-          details: { 
-            refundId: refund.id,
-            type: 'refund_shipping',
-            amount: -refundedShipping
-          }
-        });
-      }
-
-      // Add separate event for refunded taxes if any
-      if (refundedTaxes > 0) {
-        events.push({
-          orderId: order.id,
-          orderName: order.name,
-          eventType: 'refund_tax',
-          eventDate: refundDate.toISOString(),
-          amount: -refundedTaxes,
-          currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-          description: `Refunded taxes`,
-          details: { 
-            refundId: refund.id,
-            type: 'refund_tax',
-            amount: -refundedTaxes
-          }
-        });
-      }
-
-      // Add event for refund discrepancy if any
-      if (Math.abs(refundDiscrepancy) > 0.01) {
-        events.push({
-          orderId: order.id,
-          orderName: order.name,
-          eventType: refundDiscrepancy > 0 ? 'over_refund' : 'under_refund',
-          eventDate: refundDate.toISOString(),
-          amount: refundDiscrepancy > 0 ? -Math.abs(refundDiscrepancy) : Math.abs(refundDiscrepancy),
-          currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-          description: refundDiscrepancy > 0 ? 'Over refund discrepancy' : 'Under refund discrepancy',
-          details: { 
-            refundId: refund.id,
-            type: 'refund_discrepancy',
-            amount: refundDiscrepancy
-          }
-        });
-      }
-    }
-  });
-
-  return events;
-}
-
-function detectExchangeEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
-  console.log(`🔍 detectExchangeEvents CALLED for order: ${order.name}`);
-  const events: OrderEvent[] = [];
-  
-  // Check for exchanges in returns data - SAME LOGIC AS TODAY'S ORDERS
-  const returns = order.returns?.nodes || [];
-  
-  console.log(`📦 Order ${order.name} has ${returns.length} returns for exchange detection`);
-  
-  returns.forEach((returnItem: any, index: number) => {
-    // Use the same date handling as detectReturnEvents
-    let returnDate: Date | null = null;
-    let isValidDate = false;
-    
-    try {
-      if (returnItem.createdAt) {
-        returnDate = new Date(returnItem.createdAt);
-        isValidDate = !isNaN(returnDate.getTime());
-      }
-    } catch (error) {
-      console.log(`❌ Invalid date for return in exchange detection:`, returnItem.createdAt);
-      isValidDate = false;
-    }
-    
-    // If no valid date, use order updated date as fallback
-    if (!isValidDate) {
-      try {
-        returnDate = new Date(order.updatedAt);
-        isValidDate = !isNaN(returnDate.getTime());
-      } catch (error) {
-        console.log(`❌ No valid date available for exchange detection`);
-        return;
-      }
-    }
-
-    // Add null check here
-    if (!returnDate) {
-      console.log(`❌ No return date available for exchange detection`);
-      return;
-    }
-
-    const isInPeriod = returnDate >= periodStart && returnDate <= periodEnd;
-    const isToday = isTodayInStoreTime(returnDate, storeTimezone);
-    
-    console.log(`📅 Exchange date check for ${order.name}:`, {
-      returnDate: returnDate.toISOString(),
-      isInPeriod,
-      isToday,
-      storeTimezone
-    });
-
-    // Check if this return represents an exchange (you might need to adjust this condition)
-    // Look for returns that have specific characteristics of exchanges
-    const mightBeExchange = returnItem.returnLineItems?.nodes?.length > 0 && 
-                           returnItem.status !== 'cancelled'; // Adjust based on your exchange patterns
-    
-    if (isInPeriod && isToday && mightBeExchange) {
-      console.log(`🔄 Processing potential exchange for order ${order.name}`);
-      debugReturnStructure(returnItem); // Add this line
-      
-      // Calculate return value from return line items
-      let returnValue = 0;
-      returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
-        returnValue += parseMoneyAmount(lineItem.totalPriceSet) || 0;
-      });
-
-      events.push({
-        orderId: order.id,
-        orderName: order.name,
-        eventType: 'exchange',
-        eventDate: returnDate.toISOString(),
-        amount: -returnValue,
-        currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-        description: `Exchange processed`,
-        details: { returnId: returnItem.id, status: returnItem.status, returnValue }
-      });
-    } else {
-      console.log(`❌ Exchange filtered out for ${order.name}:`, {
-        reason: !isInPeriod ? 'Not in period' : !isToday ? 'Not today' : !mightBeExchange ? 'Not exchange pattern' : 'Unknown',
-        returnDate: returnDate.toISOString()
-      });
-    }
-  });
-
-  console.log(`🔄 Total exchange events created for order ${order.name}: ${events.length}`);
-  return events;
-}
-
-
-
-
-
-
-
-// Add this function to help debug return data structure
-function debugReturnStructure(returnItem: any) {
-  console.log('🔍 RETURN ITEM STRUCTURE DEBUG:', {
-    id: returnItem.id,
-    createdAt: returnItem.createdAt,
-    status: returnItem.status,
-    type: returnItem.type,
-    notes: returnItem.notes,
-    adminNote: returnItem.adminNote,
-    returnLineItems: returnItem.returnLineItems?.nodes?.map((li: any, index: number) => ({
-      index,
-      id: li.id,
-      lineItemId: li.lineItemId,
-      name: li.name,
-      title: li.title,
-      quantity: li.quantity,
-      reason: li.reason,
-      availableFields: Object.keys(li),
-      priceFields: {
-        totalPriceSet: li.totalPriceSet,
-        priceSet: li.priceSet,
-        subtotalSet: li.subtotalSet,
-        originalPriceSet: li.originalPriceSet
-      }
-    }))
-  });
-}
-
-
-function findExchangeGroup(events: OrderEvent[], startIndex: number, processedIds: Set<number>): OrderEvent[] {
-  const group: OrderEvent[] = [events[startIndex]];
-  const startTime = new Date(events[startIndex].eventDate).getTime();
-  const timeWindow = 10 * 60 * 1000; // 10 minute window for exchange events
-  
-  // Look for related events within time window
-  for (let i = startIndex + 1; i < events.length; i++) {
-    if (processedIds.has(events[i].internalId!)) continue;
-    
-    const eventTime = new Date(events[i].eventDate).getTime();
-    if (eventTime - startTime <= timeWindow) {
-      // Check if this event type fits exchange pattern
-      if (isExchangeRelatedEvent(events[i])) {
-        group.push(events[i]);
-      }
-    } else {
-      break; // Outside time window
-    }
-  }
-  
-  return group;
-}
-
-function isExchangeRelatedEvent(event: OrderEvent): boolean {
-  const exchangeRelatedTypes = [
-    'item_removed', 'item_added', 'product_return', 'restocking_fee', 
-    'return_shipping_fee', 'partial_refund', 'exchange'
-  ];
-  return exchangeRelatedTypes.includes(event.eventType);
-}
-
-
-function createCombinedExchangeEvent(events: OrderEvent[]): OrderEvent {
-  const firstEvent = events[0];
-  const totalAmount = events.reduce((sum, event) => sum + event.amount, 0);
-  
-  // Calculate components for details
-  const returnedValue = events
-    .filter(e => e.eventType === 'item_removed' || e.eventType === 'product_return')
-    .reduce((sum, e) => sum + Math.min(0, e.amount), 0);
-  
-  const newItemsValue = events
-    .filter(e => e.eventType === 'item_added')
-    .reduce((sum, e) => sum + Math.max(0, e.amount), 0);
-  
-  const fees = events
-    .filter(e => e.eventType === 'restocking_fee' || e.eventType === 'return_shipping_fee')
-    .reduce((sum, e) => sum + e.amount, 0);
-  
-  const refunds = events
-    .filter(e => e.eventType === 'partial_refund')
-    .reduce((sum, e) => sum + e.amount, 0);
-  
-  return {
-    orderId: firstEvent.orderId,
-    orderName: firstEvent.orderName,
-    eventType: 'exchange',
-    eventDate: firstEvent.eventDate,
-    amount: totalAmount,
-    currencyCode: firstEvent.currencyCode,
-    description: `Exchange processed (${events.length} actions)`,
-    details: {
-      isExchange: true,
-      componentEvents: events.length,
-      returnedValue: Math.abs(returnedValue),
-      newItemsValue: newItemsValue,
-      fees: fees,
-      refunds: refunds,
-      netValue: totalAmount,
-      originalEvents: events.map(e => ({
-        type: e.eventType,
-        amount: e.amount,
-        description: e.description
-      }))
-    }
-  };
-}
-
-
-function detectReturnEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
-  console.log(`🔍 detectReturnEvents CALLED for order: ${order.name}`);
-  const events: OrderEvent[] = [];
-  const returns = order.returns?.nodes || [];
-  
-  console.log(`📦 Order ${order.name} has ${returns.length} returns`);
-  
-  returns.forEach((returnItem: any, index: number) => {
-    // Validate and safely parse the return date
-    let returnDate: Date | null = null;
-    let isValidDate = false;
-    
-    try {
-      if (returnItem.createdAt) {
-        returnDate = new Date(returnItem.createdAt);
-        isValidDate = !isNaN(returnDate.getTime());
-      }
-    } catch (error) {
-      console.log(`❌ Invalid date for return:`, returnItem.createdAt);
-      isValidDate = false;
-    }
-    
-    // If no valid date, use order updated date as fallback
-    if (!isValidDate) {
-      try {
-        returnDate = new Date(order.updatedAt);
-        isValidDate = !isNaN(returnDate.getTime());
-        console.log(`🔄 Using order updated date as fallback for return: ${returnDate.toISOString()}`);
-      } catch (error) {
-        console.log(`❌ No valid date available for return`);
-        return; // Skip this return if no valid date
-      }
-    }
-    
-    console.log(`Return ${index + 1}:`, {
-      id: returnItem.id,
-      createdAt: returnItem.createdAt,
-      returnDate: returnDate?.toISOString(),
-      status: returnItem.status,
-      hasRestockingFees: returnItem.returnLineItems?.nodes?.some((li: any) => li.restockingFee),
-      hasReturnShipping: returnItem.returnShippingFees?.length > 0,
-      restockingFees: returnItem.returnLineItems?.nodes?.map((li: any) => ({
-        hasFee: !!li.restockingFee,
-        amount: li.restockingFee?.amountSet?.shopMoney?.amount
-      })),
-      returnShippingFees: returnItem.returnShippingFees?.map((fee: any) => ({
-        amount: fee?.amountSet?.shopMoney?.amount
-      }))
-    });
-    
-    // TEMPORARY: Remove date filtering for debugging (but keep date validation)
-    if (true && returnDate) { // Ensure returnDate exists
-      console.log(`✅ Processing return for order ${order.name} (date filtering disabled)`);
-      
-      // Calculate restocking fees
-      let totalRestockingFees = 0;
-      let restockingFeeItems = 0;
-      
-      returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
-        if (lineItem.restockingFee) {
-          const feeAmount = parseMoneyAmount(lineItem.restockingFee.amountSet);
-          totalRestockingFees += feeAmount;
-          restockingFeeItems++;
-          
-          console.log(`💰 Restocking fee detected: ${feeAmount} for line item ${lineItem.id}`);
-          
-          // Create individual restocking fee event
-          events.push({
-            orderId: order.id,
-            orderName: order.name,
-            eventType: 'restocking_fee',
-            eventDate: returnDate!.toISOString(), // Use non-null assertion since we checked
-            amount: feeAmount,
-            currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-            description: `Restocking fee for item`,
-            details: { 
-              returnId: returnItem.id, 
-              type: 'restocking_fee', 
-              amount: feeAmount,
-              lineItemId: lineItem.id
-            }
-          });
-        }
-      });
-
-      // Calculate return shipping fees
-      let totalReturnShippingFees = 0;
-      let returnShippingEvents = 0;
-      
-      returnItem.returnShippingFees?.forEach((shippingFee: any) => {
-        const shippingAmount = parseMoneyAmount(shippingFee.amountSet);
-        totalReturnShippingFees += shippingAmount;
-        returnShippingEvents++;
-        
-        console.log(`🚚 Return shipping fee detected: ${shippingAmount}`);
-        
-        // Create individual return shipping fee event
-        events.push({
-          orderId: order.id,
-          orderName: order.name,
-          eventType: 'return_shipping_fee',
-          eventDate: returnDate!.toISOString(), // Use non-null assertion since we checked
-          amount: shippingAmount,
-          currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-          description: `Return shipping fee`,
-          details: { 
-            returnId: returnItem.id, 
-            type: 'return_shipping_fee', 
-            amount: shippingAmount
-          }
-        });
-      });
-
-      // Calculate returned products value
-      let returnedProductsValue = 0;
-      let returnedItemsCount = 0;
-      
-      returnItem.returnLineItems?.nodes?.forEach((lineItem: any) => {
-        const itemValue = parseMoneyAmount(lineItem.totalPriceSet) || 0;
-        returnedProductsValue += itemValue;
-        returnedItemsCount++;
-      });
-
-      // Main return event for products
-      if (returnedItemsCount > 0) {
-        console.log(`📦 Product return detected: ${returnedItemsCount} items worth ${returnedProductsValue}`);
-        
-        events.push({
-          orderId: order.id,
-          orderName: order.name,
-          eventType: 'product_return',
-          eventDate: returnDate!.toISOString(), // Use non-null assertion since we checked
-          amount: -returnedProductsValue,
-          currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-          description: `Products returned (${returnedItemsCount} items)`,
-          details: { 
-            returnId: returnItem.id, 
-            type: 'product_return',
-            itemsCount: returnedItemsCount,
-            value: -returnedProductsValue
-          }
-        });
-      }
-
-      // Calculate and add tax impact from returns
-      const returnTaxImpact = parseMoneyAmount(returnItem.totalTaxSet) || 0;
-      if (returnTaxImpact !== 0) {
-        console.log(`🧾 Return tax impact detected: ${returnTaxImpact}`);
-        
-        events.push({
-          orderId: order.id,
-          orderName: order.name,
-          eventType: 'return_tax',
-          eventDate: returnDate!.toISOString(), // Use non-null assertion since we checked
-          amount: -returnTaxImpact,
-          currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-          description: `Tax adjustment from return`,
-          details: { 
-            returnId: returnItem.id, 
-            type: 'tax_adjustment',
-            amount: -returnTaxImpact
-          }
-        });
-      }
-
-      // Summary of what was detected for this return
-      console.log(`📊 Return ${returnItem.id} summary:`, {
-        restockingFees: totalRestockingFees,
-        returnShippingFees: totalReturnShippingFees,
-        returnedProductsValue: returnedProductsValue,
-        taxImpact: returnTaxImpact,
-        totalEventsCreated: events.length
-      });
-    } else {
-      console.log(`❌ Return filtered out: no valid date available`);
-    }
-  });
-
-  console.log(`🎯 Total events created for order ${order.name}: ${events.length}`);
-  return events;
-}
-
-
-
-
-
-
-
-
-
-function detectTaxEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
-  console.log(`🔍 detectTaxEvents CALLED for order: ${order.name}`);
-  const events: OrderEvent[] = [];
-  const orderUpdatedDate = new Date(order.updatedAt);
-
-  // Check if taxes were modified today
-  if (orderUpdatedDate >= periodStart && orderUpdatedDate <= periodEnd && isTodayInStoreTime(orderUpdatedDate, storeTimezone)) {
-    const originalTax = parseMoneyAmount(order.totalTaxSet) || 0;
-    const currentTax = parseMoneyAmount(order.currentTotalTaxSet) || 0;
-    const taxDifference = currentTax - originalTax;
-
-    console.log(`📊 Tax check for order ${order.name}:`, {
-      originalTax,
-      currentTax,
-      taxDifference,
-      updatedToday: isTodayInStoreTime(orderUpdatedDate, storeTimezone),
-      orderUpdatedDate: orderUpdatedDate.toISOString()
-    });
-
-    if (Math.abs(taxDifference) > 0.01) {
-      events.push({
-        orderId: order.id,
-        orderName: order.name,
-        eventType: 'tax_adjustment',
-        eventDate: orderUpdatedDate.toISOString(),
-        amount: taxDifference,
-        currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-        description: `Tax adjustment applied`,
-        details: { 
-          taxChange: taxDifference, 
-          originalTax, 
-          currentTax,
-          type: 'tax_adjustment'
-        }
-      });
-      
-      console.log(`✅ Tax adjustment event created for order ${order.name}: ${taxDifference}`);
-    }
-  }
-
-  return events;
-}
-
-
-// NEW FUNCTION: Detect newly added line items to existing orders
-function detectNewLineItems(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
-  console.log(`🔍 detectNewLineItems CALLED for order: ${order.name}`);
-  const events: OrderEvent[] = [];
-  const orderUpdatedDate = new Date(order.updatedAt);
-
-  // Check if order was modified today (but not created today)
-  const orderCreatedDate = new Date(order.createdAt);
-  if (orderUpdatedDate > orderCreatedDate && 
-      isTodayInStoreTime(orderUpdatedDate, storeTimezone) && 
-      !isTodayInStoreTime(orderCreatedDate, storeTimezone)) {
-    
-    // Get all line items
-    const lineItems = order.lineItems?.edges || [];
-    
-    // Try to identify newly added line items by looking for items with later creation dates
-    // or items that don't appear in the original order data
-    lineItems.forEach((edge: any) => {
-      const lineItem = edge.node;
-      
-      // Check if this line item was likely added today
-      // You might need to adjust this logic based on your actual data structure
-      const lineItemCreatedAt = lineItem.createdAt ? new Date(lineItem.createdAt) : orderUpdatedDate;
-      
-      if (lineItemCreatedAt >= periodStart && 
-          lineItemCreatedAt <= periodEnd && 
-          isTodayInStoreTime(lineItemCreatedAt, storeTimezone) &&
-          lineItemCreatedAt > orderCreatedDate) {
-        
-        const itemValue = parseMoneyAmount(lineItem.originalTotalSet) || 0;
-        
-        if (itemValue > 0) {
-          console.log(`🆕 New line item detected in order ${order.name}:`, {
-            lineItemId: lineItem.id,
-            name: lineItem.name,
-            value: itemValue,
-            createdAt: lineItemCreatedAt.toISOString()
-          });
-          
-          events.push({
-            orderId: order.id,
-            orderName: order.name,
-            eventType: 'item_added',
-            eventDate: lineItemCreatedAt.toISOString(),
-            amount: itemValue,
-            currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-            description: `New item added: ${lineItem.name}`,
-            details: { 
-              lineItemId: lineItem.id,
-              lineItemName: lineItem.name,
-              quantity: lineItem.quantity,
-              value: itemValue,
-              type: 'new_line_item'
-            }
-          });
-        }
-      }
-    });
-  }
-
-  console.log(`🆕 New line items detected for order ${order.name}: ${events.length}`);
-  return events;
-}
-
-function detectModificationEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
-  const events: OrderEvent[] = [];
-  const orderCreatedDate = new Date(order.createdAt);
-  const orderUpdatedDate = new Date(order.updatedAt);
-
-  // Check if order was modified today (but not created today)
-  if (orderUpdatedDate > orderCreatedDate && isTodayInStoreTime(orderUpdatedDate, storeTimezone) && !isTodayInStoreTime(orderCreatedDate, storeTimezone)) {
-    // Check for significant changes that indicate modifications
-    const originalSubtotal = parseMoneyAmount(order.subtotalPriceSet);
-    const currentSubtotal = parseMoneyAmount(order.currentSubtotalPriceSet);
-    const subtotalDifference = currentSubtotal - originalSubtotal;
-
-    if (Math.abs(subtotalDifference) > 0.01) {
-      if (subtotalDifference > 0) {
-        events.push({
-          orderId: order.id,
-          orderName: order.name,
-          eventType: 'item_added',
-          eventDate: orderUpdatedDate.toISOString(),
-          amount: subtotalDifference,
-          currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-          description: `Items added to order`,
-          details: { subtotalChange: subtotalDifference, originalSubtotal, currentSubtotal }
-        });
-      } else {
-        events.push({
-          orderId: order.id,
-          orderName: order.name,
-          eventType: 'item_removed',
-          eventDate: orderUpdatedDate.toISOString(),
-          amount: subtotalDifference,
-          currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-          description: `Items removed from order`,
-          details: { subtotalChange: subtotalDifference, originalSubtotal, currentSubtotal }
-        });
-      }
-    }
-
-    // Check for discount changes
-    const originalDiscounts = parseMoneyAmount(order.totalDiscountsSet);
-    const currentDiscounts = parseMoneyAmount(order.currentTotalDiscountsSet);
-    const discountDifference = currentDiscounts - originalDiscounts;
-
-    if (Math.abs(discountDifference) > 0.01) {
-      events.push({
-        orderId: order.id,
-        orderName: order.name,
-        eventType: 'discount',
-        eventDate: orderUpdatedDate.toISOString(),
-        amount: -discountDifference, // Negative because discount reduces revenue
-        currencyCode: order.totalPriceSet?.shopMoney?.currencyCode || 'USD',
-        description: `Discount modified`,
-        details: { discountChange: discountDifference, originalDiscounts, currentDiscounts }
-      });
-    }
-  }
-
-  return events;
-}
-
-// Main function to detect all events for an order
-function detectOrderEvents(order: any, periodStart: Date, periodEnd: Date, storeTimezone: string): OrderEvent[] {
-  const events: OrderEvent[] = [];
-
-  // Skip orders created today (they're already in today's orders)
-  const orderCreatedDate = new Date(order.createdAt);
-  if (isTodayInStoreTime(orderCreatedDate, storeTimezone)) {
-    return events;
-  }
-
-  // Detect all types of events
-  events.push(...detectRefundEvents(order, periodStart, periodEnd, storeTimezone));
-  events.push(...detectExchangeEvents(order, periodStart, periodEnd, storeTimezone));
-  events.push(...detectReturnEvents(order, periodStart, periodEnd, storeTimezone));
-  events.push(...detectModificationEvents(order, periodStart, periodEnd, storeTimezone));
-  events.push(...detectTaxEvents(order, periodStart, periodEnd, storeTimezone));
-  events.push(...detectNewLineItems(order, periodStart, periodEnd, storeTimezone)); // NEW: Detect newly added line items
-
-  return events;
-}
-
-// Calculate event summary from events
-function calculateEventSummary(events: OrderEvent[]): EventSummary {
-  const summary: EventSummary = {
-    refunds: { count: 0, value: 0 },
-    exchanges: { count: 0, value: 0 },
-    partialRefunds: { count: 0, value: 0 },
-    modifications: { count: 0, value: 0 },
-    returns: { count: 0, value: 0 },
-    discounts: { count: 0, value: 0 },
-    restockingFees: { count: 0, value: 0 },
-    returnShippingFees: { count: 0, value: 0 },
-    refundShipping: { count: 0, value: 0 },
-    taxAdjustments: { count: 0, value: 0 },
-    refundTaxes: { count: 0, value: 0 },
-    newLineItems: { count: 0, value: 0 }, // NEW: Track newly added line items
-    totalEvents: events.length,
-    netValue: 0
-  };
-
- events.forEach(event => {
-  switch (event.eventType) {
-    case 'refund':
-      summary.refunds.count++;
-      summary.refunds.value += event.amount;
-      break;
-    case 'exchange':
-      summary.exchanges.count++;
-      summary.exchanges.value += event.amount;
-      break;
-    case 'partial_refund':
-      summary.partialRefunds.count++;
-      summary.partialRefunds.value += event.amount;
-      break;
-    case 'item_added':
-      // Only count as new line item if it's specifically a new line item addition
-      if (event.details?.type === 'new_line_item') {
-        summary.newLineItems.count++;
-        summary.newLineItems.value += event.amount;
-      } else {
-        // Regular modification tracking
-        summary.modifications.count++;
-        summary.modifications.value += event.amount;
-      }
-      break;
-    case 'item_removed':
-      summary.modifications.count++;
-      summary.modifications.value += event.amount;
-      break;
-    case 'product_return':
-      summary.returns.count++;
-      summary.returns.value += event.amount;
-      break;
-    case 'discount':
-      summary.discounts.count++;
-      summary.discounts.value += event.amount;
-      break;
-    case 'restocking_fee':
-      summary.restockingFees.count++;
-      summary.restockingFees.value += event.amount;
-      break;
-    case 'return_shipping_fee':
-      summary.returnShippingFees.count++;
-      summary.returnShippingFees.value += event.amount;
-      break;
-    case 'refund_shipping':
-      summary.refundShipping.count++;
-      summary.refundShipping.value += event.amount;
-      break;
-    case 'tax_adjustment':
-    case 'return_tax':
-      summary.taxAdjustments.count++;
-      summary.taxAdjustments.value += event.amount;
-      break;
-    case 'refund_tax':
-      summary.refundTaxes.count++;
-      summary.refundTaxes.value += event.amount;
-      break;
-    case 'over_refund':
-    case 'under_refund':
-      summary.refunds.count++;
-      summary.refunds.value += event.amount;
-      break;
-  }
-  summary.netValue += event.amount;
-});
-
-return summary;
-}
-
-// Calculate event order metrics (MIRRORS TODAY'S ORDERS LOGIC)
-function calculateEventOrderMetrics(orderEvents: OrderEvent[]): any[] {
-  // Group events by order
-  const eventsByOrder: { [orderId: string]: OrderEvent[] } = {};
-  orderEvents.forEach(event => {
-    if (!eventsByOrder[event.orderId]) {
-      eventsByOrder[event.orderId] = [];
-    }
-    eventsByOrder[event.orderId].push(event);
-  });
-
-  // Calculate metrics for each order with events
-  const orderMetrics = Object.entries(eventsByOrder).map(([orderId, events]) => {
-    const firstEvent = events[0];
-    
-    // Calculate financial impact from events
-    const grossSalesImpact = events
-      .filter(e => e.eventType === 'item_added')
-      .reduce((sum, e) => sum + Math.max(0, e.amount), 0);
-    
-    const returnsImpact = events
-      .filter(e => e.eventType === 'refund' || e.eventType === 'partial_refund' || e.eventType === 'product_return')
-      .reduce((sum, e) => sum + Math.min(0, e.amount), 0);
-    
-    const discountsImpact = events
-      .filter(e => e.eventType === 'discount')
-      .reduce((sum, e) => sum + e.amount, 0);
-    
-    const shippingImpact = events
-      .filter(e => e.eventType === 'refund_shipping' || e.eventType === 'return_shipping_fee')
-      .reduce((sum, e) => sum + e.amount, 0);
-    
-    const returnFeesImpact = events
-      .filter(e => e.eventType === 'restocking_fee' || e.eventType === 'return_shipping_fee')
-      .reduce((sum, e) => sum + e.amount, 0);
-    
-    const taxesImpact = events
-      .filter(e => e.eventType === 'tax_adjustment' || e.eventType === 'return_tax' || e.eventType === 'refund_tax')
-      .reduce((sum, e) => sum + e.amount, 0);
-
-    const netSalesImpact = grossSalesImpact + returnsImpact + discountsImpact;
-    const totalImpact = netSalesImpact + shippingImpact + returnFeesImpact + taxesImpact;
-
-    return {
-      orderId,
-      orderName: firstEvent.orderName,
-      currencyCode: firstEvent.currencyCode,
-      events,
-      // Core calculated metrics (MIRRORING TODAY'S ORDERS)
-      calculatedGrossSales: grossSalesImpact,
-      calculatedGrossReturns: Math.abs(returnsImpact),
-      calculatedNetReturns: Math.abs(returnsImpact),
-      calculatedRefundedShipping: events.filter(e => e.eventType === 'refund_shipping').reduce((sum, e) => sum + Math.abs(e.amount), 0),
-      calculatedReturnShippingFees: events.filter(e => e.eventType === 'return_shipping_fee').reduce((sum, e) => sum + e.amount, 0),
-      calculatedNetSales: netSalesImpact,
-      calculatedRefundDiscrepancy: events.filter(e => e.eventType === 'over_refund' || e.eventType === 'under_refund').reduce((sum, e) => sum + e.amount, 0),
-      calculatedRestockingFees: events.filter(e => e.eventType === 'restocking_fee').reduce((sum, e) => sum + e.amount, 0),
-      calculatedReturnFees: returnFeesImpact,
-      calculatedShippingCharges: shippingImpact,
-      calculatedTaxes: taxesImpact,
-      calculatedTotalSales: totalImpact,
-      
-      // Flags (MIRRORING TODAY'S ORDERS)
-      hasOverRefund: events.some(e => e.eventType === 'over_refund'),
-      hasUnderRefund: events.some(e => e.eventType === 'under_refund'),
-      eventTypes: [...new Set(events.map(e => e.eventType))]
-    };
-  });
-
-  return orderMetrics;
-}
-
-// Calculate financial metrics for events (MIRRORING calculateFinancialMetrics)
-// Calculate financial metrics for events (MIRRORING calculateFinancialMetrics)
-function calculateEventFinancialMetrics(orderMetrics: any[]): any {
-  const totalGrossSales = orderMetrics.reduce((sum: number, order: any) => {
-    return sum + (order.calculatedGrossSales || 0);
-  }, 0);
-
-  const totalDiscounts = orderMetrics.reduce((sum: number, order: any) => {
-    const discountEvents = order.events.filter((e: OrderEvent) => e.eventType === 'discount');
-    return sum + discountEvents.reduce((discountSum: number, e: OrderEvent) => discountSum + Math.abs(e.amount), 0);
-  }, 0);
-
-  const totalNetReturns = orderMetrics.reduce((sum: number, order: any) => {
-    return sum + (order.calculatedNetReturns || 0);
-  }, 0);
-
-  const totalNetSales = orderMetrics.reduce((sum: number, order: any) => {
-    return sum + (order.calculatedNetSales || 0);
-  }, 0);
-
-  const totalShippingCharges = orderMetrics.reduce((sum: number, order: any) => {
-    return sum + (order.calculatedShippingCharges || 0);
-  }, 0);
-
-  const totalReturnFees = orderMetrics.reduce((sum: number, order: any) => {
-    return sum + (order.calculatedReturnFees || 0);
-  }, 0);
-
-  const totalTaxes = orderMetrics.reduce((sum: number, order: any) => {
-    return sum + (order.calculatedTaxes || 0);
-  }, 0);
-
-  const totalSales = totalNetSales + totalShippingCharges + totalReturnFees + totalTaxes;
-
-  const totalOrders = orderMetrics.length;
-  const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
-
-  const totalRestockingFees = orderMetrics.reduce((sum: number, order: any) => {
-    return sum + (order.calculatedRestockingFees || 0);
-  }, 0);
-
-  const totalReturnShippingFees = orderMetrics.reduce((sum: number, order: any) => {
-    return sum + (order.calculatedReturnShippingFees || 0);
-  }, 0);
-
-  return {
-    totalGrossSales,
-    totalDiscounts,
-    totalReturns: totalNetReturns,
-    totalNetSales,
-    totalShippingCharges,
-    totalReturnFees,
-    totalTaxes,
-    totalSales,
-    totalOrders,
-    averageOrderValue,
-    totalRestockingFees,
-    totalReturnShippingFees,
-    currencyCode: orderMetrics[0]?.currencyCode || 'USD'
-  };
-}
-
-// Add this function RIGHT AFTER your calculateEventSummary function
-
-// Debug function to log all event details
-function debugEventDetection(events: OrderEvent[], eventSummary: EventSummary) {
-  console.log('=== EVENT DETECTION DEBUG ===');
-  console.log(`Total events detected: ${events.length}`);
-  console.log(`Orders with events: ${new Set(events.map(e => e.orderId)).size}`);
-  
-  // Log event type breakdown
-  const eventTypeCount: Record<string, number> = {};
-  events.forEach(event => {
-    eventTypeCount[event.eventType] = (eventTypeCount[event.eventType] || 0) + 1;
-  });
-  
-  console.log('Event type breakdown:', eventTypeCount);
-  
-  // Log financial summary
-  console.log('Financial Summary:', {
-    totalEvents: eventSummary.totalEvents,
-    netValue: eventSummary.netValue,
-    refunds: eventSummary.refunds,
-    exchanges: eventSummary.exchanges,
-    partialRefunds: eventSummary.partialRefunds,
-    modifications: eventSummary.modifications,
-    returns: eventSummary.returns,
-    discounts: eventSummary.discounts,
-    restockingFees: eventSummary.restockingFees,
-    returnShippingFees: eventSummary.returnShippingFees,
-    refundShipping: eventSummary.refundShipping,
-    taxAdjustments: eventSummary.taxAdjustments
-  });
-  
-  // Log detailed events for first 5 orders (to avoid console spam)
-  const uniqueOrderIds = [...new Set(events.map(e => e.orderId))].slice(0, 5);
-  uniqueOrderIds.forEach(orderId => {
-    const orderEvents = events.filter(e => e.orderId === orderId);
-    console.log(`Order ${orderId} events:`, orderEvents);
-  });
-  
-  console.log('=== END EVENT DEBUG ===');
-}
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin, session } = await authenticate.admin(request);
-  const shop = session.shop;
-
-  // Get store timezone (default to Eastern Time)
-  const storeTimezone = 'America/New_York';
-  
-  // Get current UTC time
-  const nowUTC = new Date();
-  const todayStore = getStoreLocalDateString(nowUTC, storeTimezone);
-
-  // Calculate reference dates for the queries - 7 months ago to cover all time ranges
-  const sevenMonthsAgoUTC = new Date(nowUTC);
-  sevenMonthsAgoUTC.setMonth(nowUTC.getMonth() - 7);
-
-  // Fetch orders for all time periods - use UTC for the API query
-  const dateQuery = `created_at:>=${sevenMonthsAgoUTC.toISOString()} created_at:<=${nowUTC.toISOString()}`;
-
-  console.log('Fetching today\'s orders with pagination...');
-  console.log('Store timezone:', storeTimezone);
-  console.log('Today in store time:', todayStore);
-
+// Generic function to fetch orders with pagination
+async function fetchOrdersWithPagination(admin: any, query: string, description: string) {
   let allOrders: any[] = [];
   let hasNextPage = true;
   let afterCursor = null;
@@ -49641,7 +54291,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     pageCount++;
     
     const paginationVariables: any = {
-      query: dateQuery,
+      query: query,
       first: 100
     };
     
@@ -49652,7 +54302,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     try {
       const response = await admin.graphql(
         `#graphql
-        query TodayOrdersPaginated($query: String!, $first: Int!, $after: String) {
+        query OrdersPaginated($query: String!, $first: Int!, $after: String) {
           orders(first: $first, query: $query, sortKey: CREATED_AT, reverse: true, after: $after) {
             pageInfo {
               hasNextPage
@@ -49786,6 +54436,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
                     currencyCode
                   }
                 }
+                totalTaxSet {
+  shopMoney {
+    amount
+    currencyCode
+  }
+}
                 currentTotalDiscountsSet {
                   shopMoney {
                     amount
@@ -49888,7 +54544,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       }
 
       const pageOrders = ordersData?.edges?.map((x: any) => x.node) ?? [];
-      console.log(`Page ${pageCount}: Fetched ${pageOrders.length} orders`);
+      console.log(`Page ${pageCount} (${description}): Fetched ${pageOrders.length} orders`);
 
       allOrders = [...allOrders, ...pageOrders];
       hasNextPage = ordersData?.pageInfo?.hasNextPage || false;
@@ -49899,78 +54555,119 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         await new Promise(resolve => setTimeout(resolve, 200));
       }
 
-      console.log(`Total orders so far: ${allOrders.length}, Has next page: ${hasNextPage}`);
+      console.log(`Total ${description} orders so far: ${allOrders.length}, Has next page: ${hasNextPage}`);
 
     } catch (error: any) {
-      console.error(`Error fetching page ${pageCount}:`, error);
+      console.error(`Error fetching page ${pageCount} (${description}):`, error);
       break;
     }
   }
 
-  console.log(`Pagination complete. Total orders fetched: ${allOrders.length} over ${pageCount} pages`);
+  console.log(`Pagination complete for ${description}. Total orders fetched: ${allOrders.length} over ${pageCount} pages`);
+  return allOrders;
+}
 
-  // Filter orders for today using STORE LOCAL TIME
-  const todayOrders = allOrders.filter((order: any) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { admin, session } = await authenticate.admin(request);
+  const shop = session.shop;
+
+  // Get store timezone (default to Eastern Time)
+  const storeTimezone = 'America/New_York';
+  
+  // Get current UTC time
+  const nowUTC = new Date();
+  const todayStore = getStoreLocalDateString(nowUTC, storeTimezone);
+
+  // Calculate reference dates for the queries - 7 months ago to cover all time ranges
+  const sevenMonthsAgoUTC = new Date(nowUTC);
+  sevenMonthsAgoUTC.setMonth(nowUTC.getMonth() - 7);
+
+  // Get UTC date range for today
+  const todayStart = new Date(`${todayStore}T00:00:00`);
+  const todayEnd = new Date(`${todayStore}T23:59:59`);
+  const todayStartUTC = todayStart.toISOString();
+  const todayEndUTC = todayEnd.toISOString();
+
+  console.log('Fetching all relevant orders for today...');
+  console.log('Store timezone:', storeTimezone);
+  console.log('Today in store time:', todayStore);
+
+  // Fetch orders CREATED today
+  const createdTodayQuery = `created_at:>=${todayStartUTC} created_at:<=${todayEndUTC}`;
+  const createdTodayOrders = await fetchOrdersWithPagination(admin, createdTodayQuery, "created today");
+
+  // Fetch orders MODIFIED today but CREATED before today
+  const modifiedTodayQuery = `updated_at:>=${todayStartUTC} updated_at:<=${todayEndUTC} created_at:<${todayStartUTC}`;
+  const modifiedTodayOrders = await fetchOrdersWithPagination(admin, modifiedTodayQuery, "modified today");
+
+  // Filter created today orders to only include those created today (in store timezone)
+  const filteredCreatedToday = createdTodayOrders.filter((order: any) => {
     const orderDateUTC = new Date(order.createdAt);
     return isTodayInStoreTime(orderDateUTC, storeTimezone);
   });
 
-  console.log(`Today's orders after filtering: ${todayOrders.length}`);
-
-  // Process orders with gift card separation and proportional discount allocation
-  const todayProcessed = processOrders(todayOrders);
-
-  debugReturnData(allOrders);
-
-  // EVENT DETECTION FOR PAST ORDERS
-  const periodStart = new Date(sevenMonthsAgoUTC);
-  const periodEnd = new Date(nowUTC);
-  
-  const pastOrderEvents: OrderEvent[] = [];
-  const ordersWithEvents = new Set<string>();
-
-  allOrders.forEach((order: any) => {
-    const events = detectOrderEvents(order, periodStart, periodEnd, storeTimezone);
-    if (events.length > 0) {
-      pastOrderEvents.push(...events);
-      ordersWithEvents.add(order.id);
-    }
+  // Filter modified today orders to only include those created before today
+  const filteredModifiedToday = modifiedTodayOrders.filter((order: any) => {
+    const orderCreatedUTC = new Date(order.createdAt);
+    return !isTodayInStoreTime(orderCreatedUTC, storeTimezone);
   });
 
-  const eventSummary = calculateEventSummary(pastOrderEvents);
+  // DEBUG: Check raw tax data from API for modified orders
+console.log('=== RAW MODIFIED ORDERS TAX DATA ===');
+filteredModifiedToday.slice(0, 3).forEach((order: any, index: number) => {
+  console.log(`Modified order ${index + 1} (${order.name}):`, {
+    currentTotalTaxSet: order.currentTotalTaxSet,
+    totalPriceSet: order.totalPriceSet,
+    financialStatus: order.displayFinancialStatus
+  });
+});
 
-  console.log(`Event detection: Found ${pastOrderEvents.length} events across ${ordersWithEvents.size} past orders`);
+  console.log(`Created today after filtering: ${filteredCreatedToday.length}`);
+  console.log(`Modified today after filtering: ${filteredModifiedToday.length}`);
 
+  // Process both sets of orders
+  const todayCreatedProcessed = processOrders(filteredCreatedToday);
+  const todayModifiedProcessed = processOrders(filteredModifiedToday);
 
-  // NEW: Calculate event metrics that mirror today's orders
-const eventOrderMetrics = calculateEventOrderMetrics(pastOrderEvents);
-const eventFinancialMetrics = calculateEventFinancialMetrics(eventOrderMetrics);
+  
 
+// DEBUG: Check tax data in modified orders
+console.log('=== MODIFIED ORDERS TAX DEBUG ===');
+todayModifiedProcessed.regularOrders.forEach((order: any) => {
+  console.log(`Modified order ${order.name}:`, {
+    taxes: order.calculatedTaxes,
+    currentTotalTaxSet: order.currentTotalTaxSet
+  });
+});
 
-debugEventDetection(pastOrderEvents, eventSummary);
+  // Calculate summaries for both sets
+//   const todayCreatedSummary = calculateFinancialMetrics(todayCreatedProcessed.regularOrders);
+//   const todayCreatedGiftCardSummary = calculateFinancialMetrics(todayCreatedProcessed.giftCardOrders);
+//   const todayModifiedSummary = calculateFinancialMetrics(todayModifiedProcessed.regularOrders);
+//   const todayModifiedGiftCardSummary = calculateFinancialMetrics(todayModifiedProcessed.giftCardOrders);
 
+// Today's orders - use currentTotalTaxSet (false)
+const todayCreatedSummary = calculateFinancialMetrics(todayCreatedProcessed.regularOrders, false);
+const todayCreatedGiftCardSummary = calculateFinancialMetrics(todayCreatedProcessed.giftCardOrders, false);
 
-  // Calculate summaries for today's orders
-  const todayRegularSummary = calculateFinancialMetrics(todayProcessed.regularOrders);
-  const todayGiftCardSummary = calculateFinancialMetrics(todayProcessed.giftCardOrders);
+// Modified orders - use calculatedTaxes (true)  
+const todayModifiedSummary = calculateFinancialMetrics(todayModifiedProcessed.regularOrders, true);
+const todayModifiedGiftCardSummary = calculateFinancialMetrics(todayModifiedProcessed.giftCardOrders, true);
 
   return json({ 
-    today: todayProcessed,
+    todayCreated: todayCreatedProcessed,
+    todayModified: todayModifiedProcessed,
     summaries: {
-      regular: todayRegularSummary,
-      giftCard: todayGiftCardSummary
-    },
-    // NEW: Event detection data
-    events: {
-      pastOrderEvents,
-      eventSummary,
-      ordersWithEventsCount: ordersWithEvents.size,
-      totalEventsCount: pastOrderEvents.length,
-       eventOrderMetrics,
-    eventFinancialMetrics
+      created: {
+        regular: todayCreatedSummary,
+        giftCard: todayCreatedGiftCardSummary
+      },
+      modified: {
+        regular: todayModifiedSummary,
+        giftCard: todayModifiedGiftCardSummary
+      }
     },
     summary: {
-      orderCount: todayOrders.length,
       date: new Date().toLocaleDateString('en-US', { 
         weekday: 'long', 
         year: 'numeric', 
@@ -49978,31 +54675,26 @@ debugEventDetection(pastOrderEvents, eventSummary);
         day: 'numeric',
         timeZone: storeTimezone 
       }),
-      storeTimezone
+      storeTimezone,
+      createdOrderCount: filteredCreatedToday.length,
+      modifiedOrderCount: filteredModifiedToday.length
     },
     debug: {
-      totalFetched: allOrders.length,
-      todayFiltered: todayOrders.length,
-      regularOrders: todayProcessed.regularOrders.length,
-      giftCardOrders: todayProcessed.giftCardOrders.length
+      created: {
+        totalFetched: createdTodayOrders.length,
+        todayFiltered: filteredCreatedToday.length,
+        regularOrders: todayCreatedProcessed.regularOrders.length,
+        giftCardOrders: todayCreatedProcessed.giftCardOrders.length
+      },
+      modified: {
+        totalFetched: modifiedTodayOrders.length,
+        modifiedFiltered: filteredModifiedToday.length,
+        regularOrders: todayModifiedProcessed.regularOrders.length,
+        giftCardOrders: todayModifiedProcessed.giftCardOrders.length
+      }
     }
   });
 };
-
-// Helper function for event type colors
-function getEventTypeColor(eventType: string): string {
-  const colors: { [key: string]: string } = {
-    refund: '#F44336',
-    exchange: '#2196F3',
-    partial_refund: '#FF9800',
-    modification: '#9C27B0',
-    return: '#795548',
-    discount: '#607D8B',
-    item_added: '#4CAF50',
-    item_removed: '#F44336'
-  };
-  return colors[eventType] || '#666';
-}
 
 // Supporting components
 function MetricsGrid({ metrics }: { metrics: any }) {
@@ -50028,11 +54720,11 @@ function MetricsGrid({ metrics }: { metrics: any }) {
   );
 }
 
-function OrdersTable({ orders, currencyCode, isGiftCard = false }: { orders: any[], currencyCode: string, isGiftCard?: boolean }) {
+function OrdersTable({ orders, currencyCode, isGiftCard = false, showModified = false }: { orders: any[], currencyCode: string, isGiftCard?: boolean, showModified?: boolean }) {
   if (orders.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-        No {isGiftCard ? 'gift card ' : ''}orders today.
+        No {isGiftCard ? 'gift card ' : ''}orders {showModified ? 'modified' : 'created'} today.
       </div>
     );
   }
@@ -50043,7 +54735,12 @@ function OrdersTable({ orders, currencyCode, isGiftCard = false }: { orders: any
         <thead style={{ backgroundColor: '#f5f5f5' }}>
           <tr>
             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Order</th>
-            <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Time</th>
+            <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>
+              {showModified ? 'Created' : 'Time'}
+            </th>
+            {showModified && (
+              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Modified</th>
+            )}
             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Status</th>
             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Total Sales</th>
             <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Details</th>
@@ -50079,13 +54776,38 @@ function OrdersTable({ orders, currencyCode, isGiftCard = false }: { orders: any
                     Proportional Discount Applied
                   </div>
                 )}
+                {showModified && (
+                  <div style={{ fontSize: '0.7em', color: '#FF6B35', marginTop: '2px', fontWeight: 'bold' }}>
+                    MODIFIED TODAY
+                  </div>
+                )}
               </td>
               <td style={{ padding: '12px' }}>
-                {new Date(order.createdAt).toLocaleTimeString('en-US', { 
-                  hour: '2-digit', 
-                  minute: '2-digit'
-                })}
+                {showModified ? (
+                  <>
+                    {new Date(order.createdAt).toLocaleDateString('en-US')}
+                    <div style={{ fontSize: '0.8em', color: '#666' }}>
+                      {new Date(order.createdAt).toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit'
+                      })}
+                    </div>
+                  </>
+                ) : (
+                  new Date(order.createdAt).toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                  })
+                )}
               </td>
+              {showModified && (
+                <td style={{ padding: '12px' }}>
+                  {new Date(order.updatedAt).toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                  })}
+                </td>
+              )}
               <td style={{ padding: '12px' }}>
                 <span style={{
                   padding: '4px 8px',
@@ -50178,43 +54900,88 @@ function MetricItem({ title, value, currency, isCount = false }: any) {
   );
 }
 
-// SINGLE DEFAULT EXPORT
+// SINGLE DEFAULT EXPORT - MERGED COMPONENT
 export default function OrdersToday() {
-  const { today, summaries, summary, debug, events } = useLoaderData<typeof loader>();
+  const { todayCreated, todayModified, summaries, summary, debug } = useLoaderData<typeof loader>();
 
   return (
     <div style={{ padding: 20, fontFamily: 'Arial, sans-serif' }}>
-      <h2>Today's Orders - {summary.date}</h2>
+      <h2>Today's Orders & Modifications - {summary.date}</h2>
       <p style={{ color: '#666', marginBottom: 20 }}>
-        Store Timezone: {summary.storeTimezone} • {summary.orderCount} orders today
-        {debug && (
-          <span style={{ fontSize: '0.8em', color: '#999' }}>
-            {' '}({debug.regularOrders} regular + {debug.giftCardOrders} gift card)
-          </span>
-        )}
+        Store Timezone: {summary.storeTimezone} • {summary.createdOrderCount} orders created today • {summary.modifiedOrderCount} past orders modified today
       </p>
 
-      {/* Regular Orders */}
-      <div style={{ marginBottom: 40 }}>
-        <h3 style={{ borderBottom: '2px solid #2196F3', paddingBottom: 8, color: '#2196F3' }}>
-          Regular Orders ({summaries.regular.totalOrders} orders)
-        </h3>
-        <MetricsGrid metrics={summaries.regular} />
-        <OrdersTable orders={today.regularOrders} currencyCode={summaries.regular.currencyCode} />
+      {/* TODAY'S ORDERS SECTION */}
+      <div style={{ marginBottom: 40, padding: 20, backgroundColor: '#f8f9fa', borderRadius: 8 }}>
+        <h2 style={{ borderBottom: '3px solid #4CAF50', paddingBottom: 8, color: '#4CAF50', marginBottom: 20 }}>
+          📋 Orders Created Today
+        </h2>
+        
+        {/* Regular Orders Created Today */}
+        <div style={{ marginBottom: 40 }}>
+          <h3 style={{ borderBottom: '2px solid #2196F3', paddingBottom: 8, color: '#2196F3' }}>
+            Regular Orders ({summaries.created.regular.totalOrders} orders)
+          </h3>
+          <MetricsGrid metrics={summaries.created.regular} />
+          <OrdersTable 
+            orders={todayCreated.regularOrders} 
+            currencyCode={summaries.created.regular.currencyCode} 
+          />
+        </div>
+
+        {/* Gift Card Orders Created Today */}
+        {todayCreated.giftCardOrders.length > 0 && (
+          <div style={{ marginBottom: 40 }}>
+            <h3 style={{ borderBottom: '2px solid #9C27B0', paddingBottom: 8, color: '#9C27B0' }}>
+              Gift Card Orders ({summaries.created.giftCard.totalOrders} orders)
+            </h3>
+            <MetricsGrid metrics={summaries.created.giftCard} />
+            <OrdersTable 
+              orders={todayCreated.giftCardOrders} 
+              currencyCode={summaries.created.giftCard.currencyCode} 
+              isGiftCard={true} 
+            />
+          </div>
+        )}
       </div>
 
-      {/* Gift Card Orders */}
-      {today.giftCardOrders.length > 0 && (
+      {/* MODIFIED ORDERS SECTION */}
+      <div style={{ marginBottom: 40, padding: 20, backgroundColor: '#fff3e0', borderRadius: 8 }}>
+        <h2 style={{ borderBottom: '3px solid #FF6B35', paddingBottom: 8, color: '#FF6B35', marginBottom: 20 }}>
+          🔄 Past Orders Modified Today
+        </h2>
+        
+        {/* Regular Orders Modified Today */}
         <div style={{ marginBottom: 40 }}>
-          <h3 style={{ borderBottom: '2px solid #9C27B0', paddingBottom: 8, color: '#9C27B0' }}>
-            Gift Card Orders ({summaries.giftCard.totalOrders} orders)
+          <h3 style={{ borderBottom: '2px solid #2196F3', paddingBottom: 8, color: '#2196F3' }}>
+            Regular Orders ({summaries.modified.regular.totalOrders} orders)
           </h3>
-          <MetricsGrid metrics={summaries.giftCard} />
-          <OrdersTable orders={today.giftCardOrders} currencyCode={summaries.giftCard.currencyCode} isGiftCard={true} />
+          <MetricsGrid metrics={summaries.modified.regular} />
+          <OrdersTable 
+            orders={todayModified.regularOrders} 
+            currencyCode={summaries.modified.regular.currencyCode} 
+            showModified={true}
+          />
         </div>
-      )}
 
-      {/* Combined Summary */}
+        {/* Gift Card Orders Modified Today */}
+        {todayModified.giftCardOrders.length > 0 && (
+          <div style={{ marginBottom: 40 }}>
+            <h3 style={{ borderBottom: '2px solid #9C27B0', paddingBottom: 8, color: '#9C27B0' }}>
+              Gift Card Orders ({summaries.modified.giftCard.totalOrders} orders)
+            </h3>
+            <MetricsGrid metrics={summaries.modified.giftCard} />
+            <OrdersTable 
+              orders={todayModified.giftCardOrders} 
+              currencyCode={summaries.modified.giftCard.currencyCode} 
+              isGiftCard={true} 
+              showModified={true}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* COMBINED SUMMARY */}
       <div style={{ 
         padding: 20, 
         backgroundColor: '#4CAF50', 
@@ -50225,343 +54992,35 @@ export default function OrdersToday() {
         <h3 style={{ margin: '0 0 10px 0' }}>Combined Today's Performance</h3>
         <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
           <MetricItem 
-            title="Total Sales" 
-            value={summaries.regular.totalSales + summaries.giftCard.totalSales} 
-            currency={summaries.regular.currencyCode}
+            title="Total Sales (Created + Modified)" 
+            value={summaries.created.regular.totalSales + summaries.created.giftCard.totalSales + summaries.modified.regular.totalSales + summaries.modified.giftCard.totalSales} 
+            currency={summaries.created.regular.currencyCode}
           />
           <MetricItem 
             title="Total Orders" 
-            value={summaries.regular.totalOrders + summaries.giftCard.totalOrders} 
+            value={summaries.created.regular.totalOrders + summaries.created.giftCard.totalOrders + summaries.modified.regular.totalOrders + summaries.modified.giftCard.totalOrders} 
             isCount={true}
           />
           <MetricItem 
             title="Net Sales" 
-            value={summaries.regular.totalNetSales + summaries.giftCard.totalNetSales} 
-            currency={summaries.regular.currencyCode}
+            value={summaries.created.regular.totalNetSales + summaries.created.giftCard.totalNetSales + summaries.modified.regular.totalNetSales + summaries.modified.giftCard.totalNetSales} 
+            currency={summaries.created.regular.currencyCode}
           />
           <MetricItem 
-            title="Shipping Charges" 
-            value={summaries.regular.totalShippingCharges + summaries.giftCard.totalShippingCharges} 
-            currency={summaries.regular.currencyCode}
+            title="Orders Created Today" 
+            value={summary.createdOrderCount} 
+            isCount={true}
           />
           <MetricItem 
-            title="Return Fees" 
-            value={summaries.regular.totalReturnFees + summaries.giftCard.totalReturnFees} 
-            currency={summaries.regular.currencyCode}
+            title="Orders Modified Today" 
+            value={summary.modifiedOrderCount} 
+            isCount={true}
           />
         </div>
       </div>
-
-      {/* EVENT DETECTION SECTION - NEW */}
-    
-
-{/* EVENT DETECTION SECTION - ENHANCED */}
-<div style={{ marginBottom: 40, marginTop: 40 }}>
-  <h2 style={{ borderBottom: '2px solid #FF9800', paddingBottom: 8, color: '#FF9800' }}>
-    Today's Activity on Past Orders ({events.ordersWithEventsCount} orders with activity)
-  </h2>
-  
-  {events.totalEventsCount === 0 ? (
-    <div style={{ 
-      textAlign: 'center', 
-      padding: '40px', 
-      backgroundColor: '#fff3cd', 
-      borderRadius: 8,
-      border: '1px solid #ffeaa7'
-    }}>
-      <h3 style={{ color: '#856404', marginBottom: 10 }}>No Activity Detected</h3>
-      <p style={{ color: '#856404' }}>No modifications, refunds, or returns detected on past orders today.</p>
-    </div>
-  ) : (
-    <>
-      {/* Event Financial Summary - NEW */}
-     
-
-{/* Event Financial Summary - Show only what we detect */}
-{/* Event Financial Summary - Show only what we detect */}
-<div style={{ 
-  display: 'grid', 
-  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-  gap: 16, 
-  marginBottom: 20,
-  padding: 16,
-  backgroundColor: '#fff3cd',
-  borderRadius: 8
-}}>
-  <MetricCard title="Total Events" value={events.eventSummary.totalEvents} currency="" color="#FF9800" isCount={true} />
-  <MetricCard title="Net Value Impact" value={events.eventSummary.netValue} currency={summaries.regular.currencyCode} color="#FF9800" />
-  <MetricCard title="Orders Affected" value={events.ordersWithEventsCount} currency="" color="#FF9800" isCount={true} />
-  <MetricCard title="Refunds" value={events.eventSummary.refunds.value} currency={summaries.regular.currencyCode} color="#F44336" />
-  <MetricCard title="Exchanges" value={events.eventSummary.exchanges.value} currency={summaries.regular.currencyCode} color="#2196F3" />
-  <MetricCard title="Modifications" value={events.eventSummary.modifications.value} currency={summaries.regular.currencyCode} color="#9C27B0" />
-  <MetricCard title="New Items Added" value={events.eventSummary.newLineItems.value} currency={summaries.regular.currencyCode} color="#4CAF50" /> {/* ADD THIS LINE */}
-  <MetricCard title="Returns" value={events.eventSummary.returns.count} currency="" color="#795548" isCount={true} />
-  <MetricCard title="Discounts" value={events.eventSummary.discounts.value} currency={summaries.regular.currencyCode} color="#607D8B" />
-</div>
-
-{/* Return Events Breakdown - Show actual detected return events */}
-{events.eventSummary.returns.count > 0 && (
-  <div style={{ 
-    marginBottom: 20,
-    padding: 16,
-    backgroundColor: '#f3e5f5',
-    borderRadius: 8,
-    border: '1px solid #e1bee7'
-  }}>
-    <h4 style={{ marginBottom: 12, color: '#7b1fa2' }}>Return Events Detected</h4>
-    
-    {/* Calculate actual return fees from events */}
-    {(() => {
-      const returnEvents = events.pastOrderEvents.filter(event => event.eventType === 'return');
-      const restockingFees = returnEvents
-        .filter(event => event.details?.type === 'restocking_fee')
-        .reduce((sum, event) => sum + event.amount, 0);
-      
-      const returnShippingFees = returnEvents
-        .filter(event => event.details?.type === 'return_shipping')
-        .reduce((sum, event) => sum + event.amount, 0);
-      
-      const productReturns = returnEvents
-        .filter(event => event.details?.type === 'product_return')
-        .length;
-
-      return (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
-          <div>
-            <div style={{ fontSize: '0.9em', color: '#666' }}>Restocking Fees</div>
-            <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#7b1fa2' }}>
-              {summaries.regular.currencyCode} {restockingFees.toFixed(2)}
-            </div>
-            <div style={{ fontSize: '0.8em', color: '#666' }}>
-              {returnEvents.filter(e => e.details?.type === 'restocking_fee').length} events
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.9em', color: '#666' }}>Return Shipping</div>
-            <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#7b1fa2' }}>
-              {summaries.regular.currencyCode} {returnShippingFees.toFixed(2)}
-            </div>
-            <div style={{ fontSize: '0.8em', color: '#666' }}>
-              {returnEvents.filter(e => e.details?.type === 'return_shipping').length} events
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.9em', color: '#666' }}>Product Returns</div>
-            <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#f44336' }}>
-              {productReturns} returns
-            </div>
-            <div style={{ fontSize: '0.8em', color: '#666' }}>
-              Items returned to inventory
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.9em', color: '#666' }}>Total Return Fees</div>
-            <div style={{ fontSize: '1.1em', fontWeight: 'bold', color: '#4CAF50' }}>
-              {summaries.regular.currencyCode} {(restockingFees + returnShippingFees).toFixed(2)}
-            </div>
-            <div style={{ fontSize: '0.8em', color: '#666' }}>
-              Combined fees
-            </div>
-          </div>
-        </div>
-      );
-    })()}
-  </div>
-)}
-
-{/* Enhanced Order Details with Return Fee Breakdown */}
-{Array.from(new Set(events.pastOrderEvents.map(event => event.orderId))).map(orderId => {
-  const orderEvents = events.pastOrderEvents.filter(event => event.orderId === orderId);
-  const firstEvent = orderEvents[0];
-  
-  // Calculate financial impact for this order
-  const totalImpact = orderEvents.reduce((sum, event) => sum + event.amount, 0);
-  
-  // Calculate return fee breakdown for this order
-  const orderReturnEvents = orderEvents.filter(event => event.eventType === 'return');
-  const orderRestockingFees = orderReturnEvents
-    .filter(event => event.details?.type === 'restocking_fee')
-    .reduce((sum, event) => sum + event.amount, 0);
-  
-  const orderReturnShipping = orderReturnEvents
-    .filter(event => event.details?.type === 'return_shipping')
-    .reduce((sum, event) => sum + event.amount, 0);
-
-  return (
-    <details key={orderId} style={{ marginBottom: 15, border: '1px solid #ddd', borderRadius: 8 }}>
-      <summary style={{ 
-        cursor: 'pointer', 
-        padding: '16px', 
-        backgroundColor: '#f8f9fa',
-        fontWeight: 'bold',
-        fontSize: '16px'
-      }}>
-        <strong>{firstEvent.orderName}</strong>
-        <span style={{ float: 'right', fontWeight: 'normal' }}>
-          Impact: 
-          <strong style={{ color: totalImpact >= 0 ? '#4CAF50' : '#F44336', marginLeft: '8px' }}>
-            {totalImpact >= 0 ? '+' : ''}{totalImpact.toFixed(2)} {firstEvent.currencyCode}
-          </strong>
-          <span style={{ marginLeft: '16px', color: '#666' }}>
-            {orderEvents.length} event{orderEvents.length > 1 ? 's' : ''}
-          </span>
-        </span>
-      </summary>
-      
-      <div style={{ padding: '16px', backgroundColor: 'white' }}>
-        {/* Event List */}
-        <div style={{ marginBottom: '16px' }}>
-          <h4 style={{ marginBottom: '8px', color: '#333' }}>Event Details:</h4>
-          {orderEvents.map((event, index) => (
-            <div key={index} style={{ 
-              padding: '8px', 
-              marginBottom: '8px', 
-              backgroundColor: '#f5f5f5',
-              borderRadius: '4px',
-              borderLeft: `4px solid ${getEventTypeColor(event.eventType)}`
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <span style={{
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                    fontSize: '0.7em',
-                    backgroundColor: getEventTypeColor(event.eventType),
-                    color: 'white',
-                    marginRight: '8px'
-                  }}>
-                    {event.eventType.replace('_', ' ').toUpperCase()}
-                  </span>
-                  {event.amount !== 0 && (
-                    <strong style={{ color: event.amount >= 0 ? '#4CAF50' : '#F44336' }}>
-                      {event.amount >= 0 ? '+' : ''}{event.amount.toFixed(2)} {event.currencyCode}
-                    </strong>
-                  )}
-                  <span style={{ marginLeft: '8px' }}>{event.description}</span>
-                </div>
-                <div style={{ fontSize: '0.8em', color: '#666' }}>
-                  {new Date(event.eventDate).toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit'
-                  })}
-                </div>
-              </div>
-              {event.details && (
-                <div style={{ fontSize: '0.7em', color: '#666', marginTop: '4px' }}>
-                  {Object.entries(event.details).map(([key, value]) => (
-                    <span key={key} style={{ marginRight: '8px' }}>
-                      {key}: {String(value)}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Financial Summary */}
-        {(orderRestockingFees > 0 || orderReturnShipping > 0) && (
-          <div style={{ 
-            padding: '12px', 
-            backgroundColor: '#e8f5e8', 
-            borderRadius: '4px',
-            border: '1px solid #4CAF50',
-            marginBottom: '12px'
-          }}>
-            <h4 style={{ marginBottom: '8px', color: '#2e7d32' }}>Return Fees Summary:</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px' }}>
-              {orderRestockingFees > 0 && (
-                <div>
-                  <div style={{ fontSize: '0.8em', color: '#666' }}>Restocking Fees</div>
-                  <div style={{ color: '#7b1fa2', fontWeight: 'bold' }}>
-                    +{orderRestockingFees.toFixed(2)} {firstEvent.currencyCode}
-                  </div>
-                </div>
-              )}
-              {orderReturnShipping > 0 && (
-                <div>
-                  <div style={{ fontSize: '0.8em', color: '#666' }}>Return Shipping</div>
-                  <div style={{ color: '#7b1fa2', fontWeight: 'bold' }}>
-                    +{orderReturnShipping.toFixed(2)} {firstEvent.currencyCode}
-                  </div>
-                </div>
-              )}
-              {(orderRestockingFees > 0 || orderReturnShipping > 0) && (
-                <div>
-                  <div style={{ fontSize: '0.8em', color: '#666' }}>Total Return Fees</div>
-                  <div style={{ color: '#4CAF50', fontWeight: 'bold' }}>
-                    +{(orderRestockingFees + orderReturnShipping).toFixed(2)} {firstEvent.currencyCode}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </details>
-  );
-})}
-     
-
-      {/* Event Details Table (Original) */}
-      <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
-        <div style={{ padding: '12px', backgroundColor: '#f5f5f5', borderBottom: '1px solid #ddd' }}>
-          <h4 style={{ margin: 0, color: '#333' }}>All Events Timeline</h4>
-        </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead style={{ backgroundColor: '#f8f9fa' }}>
-            <tr>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Order</th>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Event Type</th>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Time</th>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Amount</th>
-              <th style={{ padding: '12px', textAlign: 'left', borderBottom: '1px solid #ddd' }}>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.pastOrderEvents.map((event: OrderEvent, index: number) => (
-              <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '12px' }}>
-                  <strong>{event.orderName}</strong>
-                </td>
-                <td style={{ padding: '12px' }}>
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '0.8em',
-                    backgroundColor: getEventTypeColor(event.eventType),
-                    color: 'white'
-                  }}>
-                    {event.eventType.replace('_', ' ').toUpperCase()}
-                  </span>
-                </td>
-                <td style={{ padding: '12px' }}>
-                  {new Date(event.eventDate).toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit'
-                  })}
-                </td>
-                <td style={{ padding: '12px' }}>
-                  <strong style={{ color: event.amount >= 0 ? '#4CAF50' : '#F44336' }}>
-                    {event.amount >= 0 ? '+' : ''}{event.amount.toFixed(2)} {event.currencyCode}
-                  </strong>
-                </td>
-                <td style={{ padding: '12px' }}>
-                  {event.description}
-                  {event.details && (
-                    <div style={{ fontSize: '0.8em', color: '#666', marginTop: '4px' }}>
-                      {JSON.stringify(event.details)}
-                    </div>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </>
-  )}
-</div>
     </div>
   );
 }
+
+
+

@@ -265,7 +265,6 @@
 
 
 
-
 // // ==================== TYPE DEFINITIONS ====================
 
 // export interface Order {
@@ -514,7 +513,6 @@
 //   ordersLoaded: number;
 //   currentDateInShopTZ: string;
 // }
-
 
 
 
@@ -842,7 +840,6 @@
 //     giftCardOrders: number;
 //   };
 // }
-
 
 
 
@@ -1239,7 +1236,6 @@
 
 
 
-
 // types/analytics.ts - CORRECTED VERSION
 
 // ==================== TYPE DEFINITIONS ====================
@@ -1589,7 +1585,6 @@ export interface TodayOrdersResponse {
 }
 
 
-
 // ==================== ORDER CHANGE TRACKING TYPES ====================
 
 export interface OrderChange {
@@ -1624,3 +1619,4 @@ export interface OrderFinancialSnapshot {
   returnsData: any[];
   updatedAt: string;
 }
+

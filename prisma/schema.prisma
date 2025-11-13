@@ -57,23 +57,3 @@ model EmailSentLog {
   @@map("email_sent_log")
 }
 
-// Add this model to your existing schema.prisma file
-model WebhookEvent {
-  id        String   @id @default(cuid())
-  eventId   String   @unique
-  topic     String   // e.g., "orders/updated", "refunds/create"
-  shop      String
-  orderId   String?
-  orderName String?
-  amount    Float?   // Financial impact amount
-  currency  String?  // Currency code
-  eventData Json     // Raw webhook data
-  processed Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([shop])
-  @@index([orderId])
-  @@index([createdAt])
-  @@index([processed])
-}
